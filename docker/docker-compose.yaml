@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  kimchi-ros:
+    build:
+      context: ..
+      dockerfile: docker/jazzy/Dockerfile
+      target: ros2
+    environment:
+      - DISPLAY
+      - QT_X11_NO_MITSHM=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
