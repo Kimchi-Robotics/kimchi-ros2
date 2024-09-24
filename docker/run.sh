@@ -47,6 +47,7 @@ while [[ "$1" != "" ]]; do
     esac
 done
 
+
 # Note: The `--build` flag was added to docker compose run after
 # https://github.com/docker/compose/releases/tag/v2.13.0.
 # We have this for convenience and compatibility with previous versions.
