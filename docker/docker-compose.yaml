@@ -4,7 +4,7 @@ services:
   kimchi-ros:
     build:
       context: ..
-      dockerfile: docker/jazzy/Dockerfile
+      dockerfile: docker/humble/Dockerfile
       target: ros2
     environment:
       - DISPLAY
