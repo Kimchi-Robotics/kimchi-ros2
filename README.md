@@ -102,6 +102,30 @@ This launch file accepts passing an argument for opening `rviz` automatically.
 
 **Note**: Remember you can check all the arguments that a launch file accepts by adding `-s` to the command: `ros2 launch andino_gazebo andino_one_robot.launch.py -s`.
 
+### Slam
+
+```
+ros2 launch andino_gazebo andino_gazebo_slam.launch.py world:=hq_world.sdf
+```
+
+### Navigation
+
+```
+ros2 launch andino_gazebo andino_gazebo_navigation.launch.py
+```
+
+### Run gRPC server
+
+```
+ros2 launch kimchi_grpc_server kimchi_grpc_server.launch.py
+```
+
+### Generate Protocol buffers
+
+cd ./kimchi_grpc_server/kimchi_grpc_server/proto
+./1_prepare_venv.sh
+./2_gen_grpc_and_protobuf.sh
+
 ### Running Andino with Battery
 
 ```sh
