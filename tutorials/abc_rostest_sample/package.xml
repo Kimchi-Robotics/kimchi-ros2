@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>abc_rostest_sample</name>
+  <version>0.1.0</version>
+  <description>Example Python rostest package</description>
+  <maintainer email="repos@ekumenlabs.com">Ekumen Repository Management</maintainer>
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rostest</build_depend>
+  <depend>std_msgs</depend>
+  <exec_depend>rospy</exec_depend>
+  <test_depend>abc_gazebo_worlds</test_depend>
+</package>
