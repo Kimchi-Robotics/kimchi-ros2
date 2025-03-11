@@ -1,0 +1,2 @@
+# Ignore .world files in this folder given they are auto-generated
+*.world

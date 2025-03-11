@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+    <!-- Convert xacro to urdf and put on parameter server -->
+    <param name="robot_description_xacro"
+           command="$(find xacro)/xacro $(find abc_sample_spawns)/urdf/rrbot.urdf.xacro" />
+    <!-- Spawn into Gazebo -->
+    <node name="spawn_xacro" pkg="gazebo_ros" type="spawn_model"
+          args="-param robot_description_xacro -urdf -model rrbot_xacro -x -3 -y 1" />
+
+    <!-- Load plain URDF on parameter server -->
+    <param name="robot_description_urdf"
+           textfile="$(find abc_sample_spawns)/urdf/rrbot.urdf" />
+    <!-- Spawn into Gazebo -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
+          args="-param robot_description_urdf -urdf -model rrbot_urdf -x 3 -y 1" />
+
+    <!-- Load SDF on parameter server -->
+    <param name="robot_description_sdf"
+           textfile="$(find abc_sample_spawns)/sdf/rrbot.sdf" />
+    <!-- Spawn into Gazebo -->
+    <node name="spawn_sdf" pkg="gazebo_ros" type="spawn_model"
+          args="-param robot_description_sdf -sdf -model rrbot_sdf -y 3" />
+</launch>

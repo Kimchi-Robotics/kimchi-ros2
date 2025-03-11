@@ -1,0 +1,16 @@
+<sdf version="1.4">
+    <world name="default">
+        <include>
+            <uri>model://sun</uri>
+        </include>
+        <include>
+            <uri>model://ground_plane</uri>
+        </include>
+        <include>
+            <uri>model://lamp_post</uri>
+            <name>LampPost</name>
+            <pose>0 0 0 0 0 0</pose>
+        </include>
+        <plugin name="abc_sample_plugin" filename="libabc_sample_plugin.so"/>
+    </world>
+</sdf>

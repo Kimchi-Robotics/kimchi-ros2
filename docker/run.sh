@@ -1,56 +1,96 @@
-set -o errexit
-cd $(dirname "$(readlink -f "$0")")
+#!/bin/bash
 
-[[ ! -z "${WITHIN_DEV}" ]] && echo "Already in the development environment!" && exit 1
-HELP="Usage: $(basename $0) [-b|--build] [-p|--privileged]"
+set +e
 
-set +o errexit
-VALID_ARGS=$(OPTERR=1 getopt -o bph --long build,privileged,help -- "$@")
-RET_CODE=$?
-set -o errexit
+# Prints information about usage.
+function show_help() {
+  echo $'\nUsage:\t run.sh [OPTIONS] \n
+  Options:\n
+  \t-i --image_name\t\t Name of the image to be run (default gazebo_ros2).\n
+  \t-c --container_name\t Name of the container(default gazebo_ros2).\n
+  \t--use_nvidia\t\t Use nvidia runtime.\n
+  Examples:\n
+  \trun.sh\n
+  \trun.sh --image_name custom_image_name --container_name custom_container_name \n'
+}
 
-if [[ $RET_CODE -eq 1 ]]; then
-    echo $HELP
-    exit 1;
-fi
-if [[ $RET_CODE -ne 0 ]]; then
-    >&2 echo "Unexpected getopt error"
-    exit 1;
-fi
+# Returns true when the path is relative, false otherwise.
+#
+# Arguments
+#   $1 -> Path
+function is_relative_path() {
+  case $1 in
+    /*) return 1 ;; # false
+    *) return 0 ;;  # true
+  esac
+}
 
-BUILD=false
-PRIVILEGED_CONTAINER=true
+echo "Running the container..."
 
-eval set -- "$VALID_ARGS"
-while [[ "$1" != "" ]]; do
-    case "$1" in
-    -b | --build)
-        BUILD=true
-        shift
-        ;;
-    -u | --non-privileged)
-        PRIVILEGED_CONTAINER=false
-        shift
-        ;;
-    -h | --help)
-        echo $HELP
-        exit 0
-        ;;
-    --) # start of positional arguments
-        shift
-        ;;
-    *)
-        >&2 echo "Unrecognized positional argument: $1"
-        echo $HELP
-        exit 1
-        ;;
+# Location of the repository
+REPOSITORY_FOLDER_PATH="$(cd "$(dirname "$0")"; cd ..; pwd)"
+REPOSITORY_FOLDER_NAME=$( basename $REPOSITORY_FOLDER_PATH )
+
+DSIM_REPOS_PARENT_FOLDER_PATH="$(cd "$(dirname "$0")"; cd ..; pwd)"
+# Location from where the script was executed.
+RUN_LOCATION="$(pwd)"
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -i|--image_name) IMAGE_NAME="${2}"; shift ;;
+        -c|--container_name) CONTAINER_NAME="${2}"; shift ;;
+        -h|--help) show_help ; exit 1 ;;
+        --use_nvidia) NVIDIA_FLAGS="--gpus=all -e NVIDIA_DRIVER_CAPABILITIES=all" ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
+    shift
 done
 
-# Note: The `--build` flag was added to docker compose run after
-# https://github.com/docker/compose/releases/tag/v2.13.0.
-# We have this for convenience and compatibility with previous versions.
-# Otherwise, we could just forward the script arguments to the run verb.
-[[ "$BUILD" = true ]] && docker compose build kimchi-ros
+# Update the arguments to default values if needed.
+IMAGE_NAME=${IMAGE_NAME:-gazebo_ros2}
+CONTAINER_NAME=${CONTAINER_NAME:-gazebo_ros2}
 
-PRIVILEGED_CONTAINER=$PRIVILEGED_CONTAINER USERID=$(id -u) GROUPID=dialout docker compose run --rm kimchi-ros
+SSH_PATH=/home/$USER/.ssh
+WORKSPACE_CONTAINER=/home/$(whoami)/ws/src/$REPOSITORY_FOLDER_NAME
+SSH_AUTH_SOCK_USER=$SSH_AUTH_SOCK
+
+# Check if name container is already taken.
+if sudo -g docker docker container ls -a | grep "${CONTAINER_NAME}$" -c &> /dev/null; then
+   printf "Error: Docker container called $CONTAINER_NAME is already opened.     \
+   \n\nTry removing the old container by doing: \n\t docker rm $CONTAINER_NAME   \
+   \nor just initialize it with a different name.\n"
+   exit 1
+fi
+
+xhost +
+sudo docker run -it $NVIDIA_FLAGS \
+       -e DISPLAY=$DISPLAY \
+       -e SSH_AUTH_SOCK=$SSH_AUTH_SOCK_USER \
+       -v $(dirname $SSH_AUTH_SOCK_USER):$(dirname $SSH_AUTH_SOCK_USER) \
+       -v /tmp/.X11-unix:/tmp/.X11-unix \
+       -v ${REPOSITORY_FOLDER_PATH}:${WORKSPACE_CONTAINER} \
+       -v $SSH_PATH:$SSH_PATH \
+       -v /dev/dri:/dev/dri \
+       --network host \
+       --privileged \
+       --name $CONTAINER_NAME $IMAGE_NAME
+xhost -
+
+# Trap workspace exits and give the user the choice to save changes.
+function onexit() {
+  while true; do
+    read -p "Do you want to overwrite the image called '$IMAGE_NAME' with the current changes? [y/n]: " answer
+    if [[ "${answer:0:1}" =~ y|Y ]]; then
+      echo "Overwriting docker image..."
+      sudo docker commit $CONTAINER_NAME $IMAGE_NAME
+      break
+    elif [[ "${answer:0:1}" =~ n|N ]]; then
+      break
+    fi
+  done
+  docker stop $CONTAINER_NAME > /dev/null
+  docker rm $CONTAINER_NAME > /dev/null
+}
+
+trap onexit EXIT
