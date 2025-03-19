@@ -8,6 +8,8 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from nav2_msgs.srv import SaveMap
 from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Twist
+
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
 from kimchi_grpc_server.map_info import MapInfo
 from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
@@ -20,17 +22,23 @@ class GrpcBridgeNode(Node):
         super().__init__('grpc_bridge_node')
         self._protected_pose = ProtectedPose2D(Pose2D(0, 0, 0))
 
-        # Subscribe to the map topic to get the map info
-        self._map_subscription = None
-        self._map_info = None
-        self.on_map_changed()
-
         # TODO: Use ROS parameters to set frame values
         self._robot_frame = 'base_link'
         self._map_frame = 'map'
         self._map_file_name = 'kimchi_map'
         self._map_file_format = 'png'
         self._map_topic = '/map'
+        self._vel_topic = '/cmd_vel'
+        self._max_linear_vel_ms = 0.5
+        self._man_angular_vel_rad = 1
+
+        # Subscribe to the map topic to get the map info
+        self._map_subscription = None
+        self._map_info = None
+        self.on_map_changed()
+
+        # Create velocity publisher
+        self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
 
         self._map_saver_client = self.create_client(SaveMap, '/map_saver/save_map')
 
@@ -95,6 +103,13 @@ class GrpcBridgeNode(Node):
                         '/map',
                         self.map_info_callback,
                         10)
+
+    def publish_velocity(self, linear_percentage, angular_percentage):
+        msg = Twist()
+        msg.linear.x = self._max_linear_vel_ms * linear_percentage
+        msg.angular.z = self._man_angular_vel_rad * angular_percentage
+        self.get_logger().info(f'Publishing velocity. linear: {msg.linear.x}, angular {msg.angular.z}')
+        self._vel_publisher.publish(msg)
 
     def get_map(self):
         if self._map_info is None:
