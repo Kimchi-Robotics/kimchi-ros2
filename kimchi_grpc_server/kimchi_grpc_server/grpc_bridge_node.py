@@ -1,6 +1,7 @@
 from threading import Thread
 from time import sleep
 import base64
+import os
 
 from rclpy.node import Node
 from tf2_ros import TransformException
@@ -8,6 +9,8 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from nav2_msgs.srv import SaveMap
 from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Twist
+
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
 from kimchi_grpc_server.map_info import MapInfo
 from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
@@ -20,17 +23,23 @@ class GrpcBridgeNode(Node):
         super().__init__('grpc_bridge_node')
         self._protected_pose = ProtectedPose2D(Pose2D(0, 0, 0))
 
-        # Subscribe to the map topic to get the map info
-        self._map_subscription = None
-        self._map_info = None
-        self.on_map_changed()
-
         # TODO: Use ROS parameters to set frame values
         self._robot_frame = 'base_link'
         self._map_frame = 'map'
         self._map_file_name = 'kimchi_map'
         self._map_file_format = 'png'
         self._map_topic = '/map'
+        self._vel_topic = '/cmd_vel'
+        self._max_linear_vel_ms = 0.5
+        self._man_angular_vel_rad = 1
+
+        # Subscribe to the map topic to get the map info
+        self._map_subscription = None
+        self._map_info = None
+        self.on_map_changed()
+
+        # Create velocity publisher
+        self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
 
         self._map_saver_client = self.create_client(SaveMap, '/map_saver/save_map')
 
@@ -96,6 +105,13 @@ class GrpcBridgeNode(Node):
                         self.map_info_callback,
                         10)
 
+    def publish_velocity(self, linear_percentage, angular_percentage):
+        msg = Twist()
+        msg.linear.x = self._max_linear_vel_ms * linear_percentage
+        msg.angular.z = self._man_angular_vel_rad * angular_percentage
+        self.get_logger().info(f'Publishing velocity. linear: {msg.linear.x}, angular {msg.angular.z}')
+        self._vel_publisher.publish(msg)
+
     def get_map(self):
         if self._map_info is None:
             self.get_logger().error('Map not yet initialized')
@@ -122,10 +138,10 @@ class GrpcBridgeNode(Node):
             self.get_logger().error('Failed to save map')
 
         # Save Map image as array of bytes (base 64).
-        filename = f'/home/arilow/ws/{self._map_file_name}.{self._map_file_format}'
+        filename = os.path.abspath(f"{self._map_file_name}.{self._map_file_format}")
         try:
             with open(filename, "rb") as image_file:
-                self.get_logger().error('Encoding image')
+                self.get_logger().info('Encoding image')
                 map_bytes = base64.b64encode(image_file.read())
         except Exception as e:
             self.get_logger().error(f'Failed to encode image from file {filename}: {e}')
@@ -137,6 +153,8 @@ class GrpcBridgeNode(Node):
             resolution = self._map_info.resolution,
             origin = kimchi_pb2.Pose(x = -self._map_info.origin.x, y = -self._map_info.origin.y, theta = self._map_info.origin.theta)
         )
+
+        self.get_logger().info('Sending Map')
 
         return map_info
 
