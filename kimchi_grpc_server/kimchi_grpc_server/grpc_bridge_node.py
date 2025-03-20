@@ -1,6 +1,7 @@
 from threading import Thread
 from time import sleep
 import base64
+import os
 
 from rclpy.node import Node
 from tf2_ros import TransformException
@@ -137,10 +138,10 @@ class GrpcBridgeNode(Node):
             self.get_logger().error('Failed to save map')
 
         # Save Map image as array of bytes (base 64).
-        filename = f'/home/arilow/ws/{self._map_file_name}.{self._map_file_format}'
+        filename = os.path.abspath(f"{self._map_file_name}.{self._map_file_format}")
         try:
             with open(filename, "rb") as image_file:
-                self.get_logger().error('Encoding image')
+                self.get_logger().info('Encoding image')
                 map_bytes = base64.b64encode(image_file.read())
         except Exception as e:
             self.get_logger().error(f'Failed to encode image from file {filename}: {e}')
@@ -152,6 +153,8 @@ class GrpcBridgeNode(Node):
             resolution = self._map_info.resolution,
             origin = kimchi_pb2.Pose(x = -self._map_info.origin.x, y = -self._map_info.origin.y, theta = self._map_info.origin.theta)
         )
+
+        self.get_logger().info('Sending Map')
 
         return map_info
 

@@ -5,8 +5,6 @@ from kimchi_grpc_server.pose_2d import Pose2D
 import grpc
 import asyncio
 
-from time import sleep
-
 # Define a class that will be used to serve the GetPose request
 # The class will have a method that will be called by the server
 # to serve the GetPose request
@@ -39,7 +37,7 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         Receives a stream of Velocity messages from the client.
         
         Args:
-            request_iterator: An iterator that yields Velocity objects
+            request_iterator: An iterator that yields Velocity Ratio objects. Velocity ratios are values from -1 to 1
             context: The RPC context
             
         Returns:
@@ -47,21 +45,16 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         """
         try:
             # Process each velocity message as it comes in
-            for velocity in request_iterator:
+            for velocity_ratio in request_iterator:
                 # Log the received velocity for debugging
-                self._logger.info(f"Received velocity: linear={velocity.linear}, angular={velocity.angular}")
+                self._logger.info(f"Received velocity: linear={velocity_ratio.linear}, angular={velocity_ratio.angular}")
+                self._current_linear_vel = velocity_ratio.linear
+                self._current_angular_vel = velocity_ratio.angular
 
-                # Publish significant changes in velocity
-                if abs(velocity.linear - self._current_linear_vel) < 0.1 and abs(velocity.angular - self._current_angular_vel) < 0.1:
-                    continue                    
-
-                self._current_linear_vel = velocity.linear
-                self._current_angular_vel = velocity.angular
-
-                 # If de velocity is close to 0, then it was probably meant to be 0.
-                if abs(velocity.linear) < 0.1:
+                 # If thee velocity is close to 0, then it was probably meant to be 0.
+                if abs(velocity_ratio.linear) < 0.1:
                     self._current_linear_vel = 0.0
-                if abs(velocity.angular) < 0.1:
+                if abs(velocity_ratio.angular) < 0.1:
                     self._current_angular_vel = 0.0
 
                 self._logger.info(f"Publishing velocity: linear={self._current_linear_vel}, angular={self._current_angular_vel}")
