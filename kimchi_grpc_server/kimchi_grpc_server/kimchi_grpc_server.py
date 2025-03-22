@@ -32,6 +32,10 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         self._logger.info(f"Serving GetMap request {request}")
         return self._ros_node.get_map()
 
+    def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Serving IsAlive request {request}")
+        return kimchi_pb2.IsAliveResponse(alive=True)
+
     def Move(self, request_iterator, context):
         """
         Receives a stream of Velocity messages from the client.

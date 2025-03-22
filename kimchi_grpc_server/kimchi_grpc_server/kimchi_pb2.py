@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ckimchi.proto\x12\x06kimchi\"+\n\x04Pose\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"+\n\x08Velocity\x12\x0e\n\x06linear\x18\x01 \x01(\x02\x12\x0f\n\x07\x61ngular\x18\x02 \x01(\x02\"F\n\x03Map\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x1c\n\x06origin\x18\x02 \x01(\x0b\x32\x0c.kimchi.Pose\x12\x12\n\nresolution\x18\x03 \x01(\x02\"\x07\n\x05\x45mpty\"3\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rnum_greetings\x18\x02 \x01(\t\"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t2\x8c\x01\n\tKimchiApp\x12*\n\x07GetPose\x12\r.kimchi.Empty\x1a\x0c.kimchi.Pose\"\x00\x30\x01\x12+\n\x04Move\x12\x10.kimchi.Velocity\x1a\r.kimchi.Empty\"\x00(\x01\x12&\n\x06GetMap\x12\r.kimchi.Empty\x1a\x0b.kimchi.Map\"\x00\x32\x43\n\x07Greeter\x12\x38\n\x08SayHello\x12\x14.kimchi.HelloRequest\x1a\x12.kimchi.HelloReply\"\x00\x30\x01\x42 \n\x0f\x63om.kimchi.grpcB\x0bKimchiProtoP\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ckimchi.proto\x12\x06kimchi\" \n\x0fIsAliveResponse\x12\r\n\x05\x61live\x18\x01 \x01(\x08\"+\n\x04Pose\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"+\n\x08Velocity\x12\x0e\n\x06linear\x18\x01 \x01(\x02\x12\x0f\n\x07\x61ngular\x18\x02 \x01(\x02\"F\n\x03Map\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x1c\n\x06origin\x18\x02 \x01(\x0b\x32\x0c.kimchi.Pose\x12\x12\n\nresolution\x18\x03 \x01(\x02\"\x07\n\x05\x45mpty\"3\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t\x12\x15\n\rnum_greetings\x18\x02 \x01(\t\"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t2\xc1\x01\n\tKimchiApp\x12\x33\n\x07IsAlive\x12\r.kimchi.Empty\x1a\x17.kimchi.IsAliveResponse\"\x00\x12*\n\x07GetPose\x12\r.kimchi.Empty\x1a\x0c.kimchi.Pose\"\x00\x30\x01\x12+\n\x04Move\x12\x10.kimchi.Velocity\x1a\r.kimchi.Empty\"\x00(\x01\x12&\n\x06GetMap\x12\r.kimchi.Empty\x1a\x0b.kimchi.Map\"\x00\x32\x43\n\x07Greeter\x12\x38\n\x08SayHello\x12\x14.kimchi.HelloRequest\x1a\x12.kimchi.HelloReply\"\x00\x30\x01\x42 \n\x0f\x63om.kimchi.grpcB\x0bKimchiProtoP\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,20 +32,22 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'kimchi_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\017com.kimchi.grpcB\013KimchiProtoP\001'
-  _globals['_POSE']._serialized_start=24
-  _globals['_POSE']._serialized_end=67
-  _globals['_VELOCITY']._serialized_start=69
-  _globals['_VELOCITY']._serialized_end=112
-  _globals['_MAP']._serialized_start=114
-  _globals['_MAP']._serialized_end=184
-  _globals['_EMPTY']._serialized_start=186
-  _globals['_EMPTY']._serialized_end=193
-  _globals['_HELLOREQUEST']._serialized_start=195
-  _globals['_HELLOREQUEST']._serialized_end=246
-  _globals['_HELLOREPLY']._serialized_start=248
-  _globals['_HELLOREPLY']._serialized_end=277
-  _globals['_KIMCHIAPP']._serialized_start=280
-  _globals['_KIMCHIAPP']._serialized_end=420
-  _globals['_GREETER']._serialized_start=422
-  _globals['_GREETER']._serialized_end=489
+  _globals['_ISALIVERESPONSE']._serialized_start=24
+  _globals['_ISALIVERESPONSE']._serialized_end=56
+  _globals['_POSE']._serialized_start=58
+  _globals['_POSE']._serialized_end=101
+  _globals['_VELOCITY']._serialized_start=103
+  _globals['_VELOCITY']._serialized_end=146
+  _globals['_MAP']._serialized_start=148
+  _globals['_MAP']._serialized_end=218
+  _globals['_EMPTY']._serialized_start=220
+  _globals['_EMPTY']._serialized_end=227
+  _globals['_HELLOREQUEST']._serialized_start=229
+  _globals['_HELLOREQUEST']._serialized_end=280
+  _globals['_HELLOREPLY']._serialized_start=282
+  _globals['_HELLOREPLY']._serialized_end=311
+  _globals['_KIMCHIAPP']._serialized_start=314
+  _globals['_KIMCHIAPP']._serialized_end=507
+  _globals['_GREETER']._serialized_start=509
+  _globals['_GREETER']._serialized_end=576
 # @@protoc_insertion_point(module_scope)

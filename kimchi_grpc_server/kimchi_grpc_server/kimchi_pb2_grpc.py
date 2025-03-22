@@ -5,7 +5,7 @@ import warnings
 
 import kimchi_grpc_server.kimchi_pb2 as kimchi__pb2
 
-GRPC_GENERATED_VERSION = '1.70.0'
+GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -35,6 +35,11 @@ class KimchiAppStub(object):
         Args:
             channel: A grpc.Channel.
         """
+        self.IsAlive = channel.unary_unary(
+                '/kimchi.KimchiApp/IsAlive',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.IsAliveResponse.FromString,
+                _registered_method=True)
         self.GetPose = channel.unary_stream(
                 '/kimchi.KimchiApp/GetPose',
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
@@ -55,6 +60,12 @@ class KimchiAppStub(object):
 class KimchiAppServicer(object):
     """Methods to communicate from the Kimchi App to the kimchi robot.
     """
+
+    def IsAlive(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
 
     def GetPose(self, request, context):
         """Missing associated documentation comment in .proto file."""
@@ -77,6 +88,11 @@ class KimchiAppServicer(object):
 
 def add_KimchiAppServicer_to_server(servicer, server):
     rpc_method_handlers = {
+            'IsAlive': grpc.unary_unary_rpc_method_handler(
+                    servicer.IsAlive,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.IsAliveResponse.SerializeToString,
+            ),
             'GetPose': grpc.unary_stream_rpc_method_handler(
                     servicer.GetPose,
                     request_deserializer=kimchi__pb2.Empty.FromString,
@@ -103,6 +119,33 @@ def add_KimchiAppServicer_to_server(servicer, server):
 class KimchiApp(object):
     """Methods to communicate from the Kimchi App to the kimchi robot.
     """
+
+    @staticmethod
+    def IsAlive(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/IsAlive',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.IsAliveResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
 
     @staticmethod
     def GetPose(request,

@@ -21,9 +21,14 @@ package kimchi;
 
 // Methods to communicate from the Kimchi App to the kimchi robot.
 service KimchiApp {
+  rpc IsAlive (Empty) returns (IsAliveResponse) {}
   rpc GetPose (Empty) returns (stream Pose) {}
   rpc Move (stream Velocity) returns (Empty) {}
   rpc GetMap (Empty) returns (Map) {}
+}
+
+message IsAliveResponse {
+  bool alive = 1;
 }
 
 message Pose {
