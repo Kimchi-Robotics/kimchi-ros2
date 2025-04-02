@@ -60,7 +60,7 @@ def generate_launch_description():
         launch_arguments={
             'params_file': os.path.join(pkg_andino_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': 'false',
-            'autostart': 'false',
+            'autostart': 'true',
             'map': LaunchConfiguration('map'),
         }.items(),
     )
@@ -69,7 +69,6 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_map_server, "launch", "map_saver_server.launch.py")),
     )
 
- 
     # Battery observer
     battery_observer = Node(
         package="andino_navigation",
