@@ -55,6 +55,11 @@ class KimchiAppStub(object):
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.Map.FromString,
                 _registered_method=True)
+        self.GetRobotState = channel.unary_unary(
+                '/kimchi.KimchiApp/GetRobotState',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.RobotStateMsg.FromString,
+                _registered_method=True)
 
 
 class KimchiAppServicer(object):
@@ -85,6 +90,12 @@ class KimchiAppServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def GetRobotState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_KimchiAppServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -107,6 +118,11 @@ def add_KimchiAppServicer_to_server(servicer, server):
                     servicer.GetMap,
                     request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.Map.SerializeToString,
+            ),
+            'GetRobotState': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetRobotState,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.RobotStateMsg.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -228,57 +244,8 @@ class KimchiApp(object):
             metadata,
             _registered_method=True)
 
-
-class GreeterStub(object):
-    """The greeting service definition.
-    """
-
-    def __init__(self, channel):
-        """Constructor.
-
-        Args:
-            channel: A grpc.Channel.
-        """
-        self.SayHello = channel.unary_stream(
-                '/kimchi.Greeter/SayHello',
-                request_serializer=kimchi__pb2.HelloRequest.SerializeToString,
-                response_deserializer=kimchi__pb2.HelloReply.FromString,
-                _registered_method=True)
-
-
-class GreeterServicer(object):
-    """The greeting service definition.
-    """
-
-    def SayHello(self, request, context):
-        """Sends a greeting
-        """
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-
-def add_GreeterServicer_to_server(servicer, server):
-    rpc_method_handlers = {
-            'SayHello': grpc.unary_stream_rpc_method_handler(
-                    servicer.SayHello,
-                    request_deserializer=kimchi__pb2.HelloRequest.FromString,
-                    response_serializer=kimchi__pb2.HelloReply.SerializeToString,
-            ),
-    }
-    generic_handler = grpc.method_handlers_generic_handler(
-            'kimchi.Greeter', rpc_method_handlers)
-    server.add_generic_rpc_handlers((generic_handler,))
-    server.add_registered_method_handlers('kimchi.Greeter', rpc_method_handlers)
-
-
- # This class is part of an EXPERIMENTAL API.
-class Greeter(object):
-    """The greeting service definition.
-    """
-
     @staticmethod
-    def SayHello(request,
+    def GetRobotState(request,
             target,
             options=(),
             channel_credentials=None,
@@ -288,12 +255,12 @@ class Greeter(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
-            '/kimchi.Greeter/SayHello',
-            kimchi__pb2.HelloRequest.SerializeToString,
-            kimchi__pb2.HelloReply.FromString,
+            '/kimchi.KimchiApp/GetRobotState',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.RobotStateMsg.FromString,
             options,
             channel_credentials,
             insecure,

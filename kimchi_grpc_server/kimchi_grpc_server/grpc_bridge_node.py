@@ -4,15 +4,19 @@ import base64
 import os
 
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
-from nav2_msgs.srv import SaveMap
+from kimchi_interfaces.srv import MapInfo as MapInfoSrv
+from kimchi_interfaces.msg import RobotState as RobotStateMsg
+
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
 
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
 from kimchi_grpc_server.map_info import MapInfo
+from kimchi_grpc_server.robot_state import RobotState
 from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
 import kimchi_grpc_server.kimchi_pb2 as kimchi_pb2
 import rclpy
@@ -22,26 +26,34 @@ class GrpcBridgeNode(Node):
     def __init__(self):
         super().__init__('grpc_bridge_node')
         self._protected_pose = ProtectedPose2D(Pose2D(0, 0, 0))
+        self._robot_state = RobotState.NO_MAP
 
         # TODO: Use ROS parameters to set frame values
         self._robot_frame = 'base_link'
         self._map_frame = 'map'
-        self._map_file_name = 'kimchi_map'
-        self._map_file_format = 'png'
-        self._map_topic = '/map'
         self._vel_topic = '/cmd_vel'
         self._max_linear_vel_ms = 0.5
         self._man_angular_vel_rad = 1
 
         # Subscribe to the map topic to get the map info
-        self._map_subscription = None
-        self._map_info = None
-        self.on_map_changed()
+        # self._map_subscription = None
+        # self._map_info = None
+        # self.on_map_changed()
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        self._robot_state_subscription = self.create_subscription(
+                    RobotStateMsg,
+                    '/kimchi_state_server/state',
+                    self.robot_state_callback,
+                    qos_profile)
 
         # Create velocity publisher
         self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
-
-        self._map_saver_client = self.create_client(SaveMap, '/map_saver/save_map')
+        self._map_info_client = self.create_client(MapInfoSrv, '/kimchi_map/get_map_info')
 
     @property
     def logger(self):
@@ -78,34 +90,43 @@ class GrpcBridgeNode(Node):
 
             sleep(0.5)
 
-    def map_info_callback(self, msg):
-        self.get_logger().info(f'map_info_callback called')
-        self.get_logger().info(f'Got map with width {msg.info.width}, height {msg.info.height}, resolution {msg.info.resolution}, origin {msg.info.origin}')
+    def robot_state_callback(self, msg):
+        self.get_logger().info(f'robot_state_callback called')
+        self.get_logger().info(f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
 
-        # Get map info.
-        self._map_info = MapInfo(
-            width = msg.info.width,
-            height = msg.info.height,
-            resolution = msg.info.resolution,
-            origin = Pose2D(x = msg.info.origin.position.x, y = msg.info.origin.position.y, theta = 0),
-            image = None
-        )
+        self._robot_state = RobotState.from_kimchi_robot_state_enum(msg.state)
+    # def map_info_callback(self, msg):
+    #     self.get_logger().info(f'map_info_callback called')
+    #     self.get_logger().info(f'Got map with width {msg.info.width}, height {msg.info.height}, resolution {msg.info.resolution}, origin {msg.info.origin}')
 
-        # Unsubscribe from the map topic to avoid receiving the same map info.
-        self.destroy_subscription(self._map_subscription)
-        self._map_subscription = None
+    #     # Get map info.
+    #     self._map_info = MapInfo(
+    #         width = msg.info.width,
+    #         height = msg.info.height,
+    #         resolution = msg.info.resolution,
+    #         origin = Pose2D(x = msg.info.origin.position.x, y = msg.info.origin.position.y, theta = 0),
+    #         image = None
+    #     )
 
-    def on_map_changed(self):
-        self._map_info = None
+    #     self._robot_state = RobotState.WAITING
+    #     # Unsubscribe from the map topic to avoid receiving the same map info.
+    #     self.destroy_subscription(self._map_subscription)
+    #     self._map_subscription = None
 
-        if self._map_subscription is None:
-            self._map_subscription = self.create_subscription(
-                        OccupancyGrid,
-                        '/map',
-                        self.map_info_callback,
-                        10)
+    # def on_map_changed(self):
+    #     self._map_info = None
+    #     self._robot_state = RobotState.NO_MAP
+
+    #     if self._map_subscription is None:
+    #         self._map_subscription = self.create_subscription(
+    #                     OccupancyGrid,
+    #                     '/map',
+    #                     self.map_info_callback,
+    #                     10)
 
     def publish_velocity(self, linear_percentage, angular_percentage):
+        self._robot_state = RobotState.TELEOP
+
         msg = Twist()
         msg.linear.x = self._max_linear_vel_ms * linear_percentage
         msg.angular.z = self._man_angular_vel_rad * angular_percentage
@@ -113,50 +134,31 @@ class GrpcBridgeNode(Node):
         self._vel_publisher.publish(msg)
 
     def get_map(self):
-        if self._map_info is None:
-            self.get_logger().error('Map not yet initialized')
-            return None
-
         # Save Map image as file.
-        self._map_saver_client.wait_for_service()
-        self.get_logger().info('Calling save map service')
-        request = SaveMap.Request()
-        request.map_topic = self._map_topic
-        request.map_url = self._map_file_name
-        request.image_format = self._map_file_format
-        request.map_mode = 'trinary'
-        request.free_thresh = 0.25
-        request.occupied_thresh = 0.65
+        self._map_info_client.wait_for_service()
+        self.get_logger().info('Calling map info service')
+        request = MapInfoSrv.Request()
+        request.str_place_holder = "May you share the mapo info please?"
 
-        response = self._map_saver_client.call(request)
-        response.result
+        response = self._map_info_client.call(request)
 
-        self.get_logger().info('Finished saving map')
-        if response.result is True:
-            self.get_logger().info('Map saved')
+        if response.success is True:
+            self.get_logger().info('Map info obtained')
         else:
-            self.get_logger().error('Failed to save map')
+            self.get_logger().error('Map info service returned empty map')
 
-        # Save Map image as array of bytes (base 64).
-        filename = os.path.abspath(f"{self._map_file_name}.{self._map_file_format}")
-        try:
-            with open(filename, "rb") as image_file:
-                self.get_logger().info('Encoding image')
-                map_bytes = base64.b64encode(image_file.read())
-        except Exception as e:
-            self.get_logger().error(f'Failed to encode image from file {filename}: {e}')
-            return None
-
-        # Multiply the width and height by the resolution to get the size in meters.
         map_info = kimchi_pb2.Map(
-            image = map_bytes,
-            resolution = self._map_info.resolution,
-            origin = kimchi_pb2.Pose(x = -self._map_info.origin.x, y = -self._map_info.origin.y, theta = self._map_info.origin.theta)
+            image = bytes(response.map_image),
+            resolution = response.resolution,
+            origin = kimchi_pb2.Pose(x = -response.origin.x, y = -response.origin.y, theta = response.origin.theta)
         )
 
         self.get_logger().info('Sending Map')
 
         return map_info
+
+    def get_robot_state(self):
+        return self._robot_state
 
 def main():
     rclpy.init()

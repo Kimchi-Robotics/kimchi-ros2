@@ -30,7 +30,18 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
 
     def GetMap(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving GetMap request {request}")
+        try:
+            map_info = self._ros_node.get_map()
+        except Exception as e:
+            self._logger.error(f"Error getting map: {e}")
+            return kimchi_pb2.Map()
         return self._ros_node.get_map()
+
+    def GetRobotState(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Serving GetRobotState request {request}")
+        robot_state = self._ros_node.get_robot_state()
+        self._logger.info(f"Sending robot state {robot_state}")
+        return kimchi_pb2.RobotStateMsg(state = robot_state.to_kimchi_robot_state_enum())
 
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")
