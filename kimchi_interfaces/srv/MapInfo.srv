@@ -1,0 +1,6 @@
+string str_place_holder
+---
+float32 resolution
+geometry_msgs/Pose2D origin
+int64[] map_image
+bool success

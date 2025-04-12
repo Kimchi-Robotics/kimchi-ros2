@@ -19,8 +19,11 @@ COPY docker/requirements.txt .
 RUN ./install.sh
 RUN rm install.sh requirements.txt
 
+# Install python dependencies
+RUN pip install grpcio-tools
+
 # Create a user with passwordless sudo
-RUN adduser --uid $USERID --gecos "ekumen developer" --disabled-password $USER
+RUN adduser --uid $USERID --gecos "kimchi developer" --disabled-password $USER
 RUN adduser $USER sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN echo "export QT_X11_NO_MITSHM=1" >> /home/$USER/.bashrc

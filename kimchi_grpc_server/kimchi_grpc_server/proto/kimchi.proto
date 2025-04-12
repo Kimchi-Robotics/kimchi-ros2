@@ -19,16 +19,30 @@ option java_outer_classname = "KimchiProto";
 
 package kimchi;
 
+enum RobotStateEnum {
+  NO_MAP = 0;
+  MAPPING_WITH_EXPLORATION = 1;
+  MAPPING_WITH_TELEOP = 2;
+  NAVIGATING = 3;
+  TELEOP = 4;
+  IDLE = 5;
+}
+
 // Methods to communicate from the Kimchi App to the kimchi robot.
 service KimchiApp {
   rpc IsAlive (Empty) returns (IsAliveResponse) {}
   rpc GetPose (Empty) returns (stream Pose) {}
   rpc Move (stream Velocity) returns (Empty) {}
   rpc GetMap (Empty) returns (Map) {}
+  rpc GetRobotState (Empty) returns (RobotStateMsg) {}
 }
 
 message IsAliveResponse {
   bool alive = 1;
+}
+
+message RobotStateMsg {
+  RobotStateEnum state = 1;
 }
 
 message Pose {
@@ -50,21 +64,4 @@ message Map {
 
 message Empty {
 
-}
-
-// The greeting service definition.
-service Greeter {
-  // Sends a greeting
-  rpc SayHello (HelloRequest) returns (stream HelloReply) {}
-}
-
-// The request message containing the user's name.
-message HelloRequest {
-  string name = 1;
-  string num_greetings = 2;
-}
-
-// The response message containing the greetings
-message HelloReply {
-  string message = 1;
 }
