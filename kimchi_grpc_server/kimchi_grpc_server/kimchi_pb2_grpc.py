@@ -40,11 +40,6 @@ class KimchiAppStub(object):
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.IsAliveResponse.FromString,
                 _registered_method=True)
-        self.GetPose = channel.unary_stream(
-                '/kimchi.KimchiApp/GetPose',
-                request_serializer=kimchi__pb2.Empty.SerializeToString,
-                response_deserializer=kimchi__pb2.Pose.FromString,
-                _registered_method=True)
         self.Move = channel.stream_unary(
                 '/kimchi.KimchiApp/Move',
                 request_serializer=kimchi__pb2.Velocity.SerializeToString,
@@ -60,6 +55,31 @@ class KimchiAppStub(object):
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.RobotStateMsg.FromString,
                 _registered_method=True)
+        self.StartMapping = channel.unary_unary(
+                '/kimchi.KimchiApp/StartMapping',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.StartMappingResponse.FromString,
+                _registered_method=True)
+        self.StartNavigation = channel.unary_unary(
+                '/kimchi.KimchiApp/StartNavigation',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.StartNavigationResponse.FromString,
+                _registered_method=True)
+        self.SubscribeToMap = channel.unary_stream(
+                '/kimchi.KimchiApp/SubscribeToMap',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Map.FromString,
+                _registered_method=True)
+        self.SubscribeToRobotState = channel.unary_stream(
+                '/kimchi.KimchiApp/SubscribeToRobotState',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.RobotStateMsg.FromString,
+                _registered_method=True)
+        self.GetPose = channel.unary_stream(
+                '/kimchi.KimchiApp/GetPose',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Pose.FromString,
+                _registered_method=True)
 
 
 class KimchiAppServicer(object):
@@ -67,12 +87,6 @@ class KimchiAppServicer(object):
     """
 
     def IsAlive(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
-    def GetPose(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -96,6 +110,37 @@ class KimchiAppServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def StartMapping(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StartNavigation(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeToMap(self, request, context):
+        """Stream subscriptions
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def SubscribeToRobotState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetPose(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_KimchiAppServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -103,11 +148,6 @@ def add_KimchiAppServicer_to_server(servicer, server):
                     servicer.IsAlive,
                     request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.IsAliveResponse.SerializeToString,
-            ),
-            'GetPose': grpc.unary_stream_rpc_method_handler(
-                    servicer.GetPose,
-                    request_deserializer=kimchi__pb2.Empty.FromString,
-                    response_serializer=kimchi__pb2.Pose.SerializeToString,
             ),
             'Move': grpc.stream_unary_rpc_method_handler(
                     servicer.Move,
@@ -123,6 +163,31 @@ def add_KimchiAppServicer_to_server(servicer, server):
                     servicer.GetRobotState,
                     request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.RobotStateMsg.SerializeToString,
+            ),
+            'StartMapping': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartMapping,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.StartMappingResponse.SerializeToString,
+            ),
+            'StartNavigation': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartNavigation,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.StartNavigationResponse.SerializeToString,
+            ),
+            'SubscribeToMap': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeToMap,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Map.SerializeToString,
+            ),
+            'SubscribeToRobotState': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeToRobotState,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.RobotStateMsg.SerializeToString,
+            ),
+            'GetPose': grpc.unary_stream_rpc_method_handler(
+                    servicer.GetPose,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Pose.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -153,33 +218,6 @@ class KimchiApp(object):
             '/kimchi.KimchiApp/IsAlive',
             kimchi__pb2.Empty.SerializeToString,
             kimchi__pb2.IsAliveResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def GetPose(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_stream(
-            request,
-            target,
-            '/kimchi.KimchiApp/GetPose',
-            kimchi__pb2.Empty.SerializeToString,
-            kimchi__pb2.Pose.FromString,
             options,
             channel_credentials,
             insecure,
@@ -261,6 +299,141 @@ class KimchiApp(object):
             '/kimchi.KimchiApp/GetRobotState',
             kimchi__pb2.Empty.SerializeToString,
             kimchi__pb2.RobotStateMsg.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StartMapping(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/StartMapping',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.StartMappingResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StartNavigation(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/StartNavigation',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.StartNavigationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeToMap(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/kimchi.KimchiApp/SubscribeToMap',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Map.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeToRobotState(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/kimchi.KimchiApp/SubscribeToRobotState',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.RobotStateMsg.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetPose(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/kimchi.KimchiApp/GetPose',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Pose.FromString,
             options,
             channel_credentials,
             insecure,

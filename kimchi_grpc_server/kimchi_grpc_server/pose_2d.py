@@ -2,6 +2,8 @@ from threading import Lock
 
 # Define a class that will be used to store the pose of the robot
 # in the 2D plane
+
+
 class Pose2D:
     def __init__(self, x: float, y: float, theta: float):
         self._x = x
@@ -11,11 +13,11 @@ class Pose2D:
     @property
     def x(self):
         return self._x
-    
+
     @property
     def y(self):
         return self._y
-    
+
     @property
     def theta(self):
         return self._theta
