@@ -13,6 +13,8 @@ from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
 from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
+from std_srvs.srv import Trigger
+
 
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
 from kimchi_grpc_server.map_info import MapInfo
@@ -22,6 +24,8 @@ import kimchi_grpc_server.kimchi_pb2 as kimchi_pb2
 import rclpy
 
 # Node that serves as a bridge between ROS and the gRPC server.
+
+
 class GrpcBridgeNode(Node):
     def __init__(self):
         super().__init__('grpc_bridge_node')
@@ -35,10 +39,6 @@ class GrpcBridgeNode(Node):
         self._max_linear_vel_ms = 0.5
         self._man_angular_vel_rad = 1
 
-        # Subscribe to the map topic to get the map info
-        # self._map_subscription = None
-        # self._map_info = None
-        # self.on_map_changed()
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
@@ -46,14 +46,19 @@ class GrpcBridgeNode(Node):
             depth=10
         )
         self._robot_state_subscription = self.create_subscription(
-                    RobotStateMsg,
-                    '/kimchi_state_server/state',
-                    self.robot_state_callback,
-                    qos_profile)
+            RobotStateMsg,
+            '/kimchi_state_server/state',
+            self.robot_state_callback,
+            qos_profile)
 
         # Create velocity publisher
         self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
-        self._map_info_client = self.create_client(MapInfoSrv, '/kimchi_map/get_map_info')
+        self._map_info_client = self.create_client(
+            MapInfoSrv, '/kimchi_map/get_map_info')
+        self._start_mapping_client = self.create_client(
+            Trigger, '/kimchi_state_server/start_slam')
+        self._start_navigation_client = self.create_client(
+            Trigger, '/kimchi_state_server/start_navigation')
 
     @property
     def logger(self):
@@ -73,10 +78,10 @@ class GrpcBridgeNode(Node):
         while True:
             try:
                 t = self.tf_buffer.lookup_transform(
-                        to_frame_rel,
-                        from_frame_rel,
-                        rclpy.time.Time(),
-                        rclpy.time.Duration(seconds=1.0))
+                    to_frame_rel,
+                    from_frame_rel,
+                    rclpy.time.Time(),
+                    rclpy.time.Duration(seconds=1.0))
             except TransformException as ex:
                 self.get_logger().info(
                     f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
@@ -92,49 +97,34 @@ class GrpcBridgeNode(Node):
 
     def robot_state_callback(self, msg):
         self.get_logger().info(f'robot_state_callback called')
-        self.get_logger().info(f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
+        self.get_logger().info(
+            f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
 
         self._robot_state = RobotState.from_kimchi_robot_state_enum(msg.state)
-    # def map_info_callback(self, msg):
-    #     self.get_logger().info(f'map_info_callback called')
-    #     self.get_logger().info(f'Got map with width {msg.info.width}, height {msg.info.height}, resolution {msg.info.resolution}, origin {msg.info.origin}')
-
-    #     # Get map info.
-    #     self._map_info = MapInfo(
-    #         width = msg.info.width,
-    #         height = msg.info.height,
-    #         resolution = msg.info.resolution,
-    #         origin = Pose2D(x = msg.info.origin.position.x, y = msg.info.origin.position.y, theta = 0),
-    #         image = None
-    #     )
-
-    #     self._robot_state = RobotState.WAITING
-    #     # Unsubscribe from the map topic to avoid receiving the same map info.
-    #     self.destroy_subscription(self._map_subscription)
-    #     self._map_subscription = None
-
-    # def on_map_changed(self):
-    #     self._map_info = None
-    #     self._robot_state = RobotState.NO_MAP
-
-    #     if self._map_subscription is None:
-    #         self._map_subscription = self.create_subscription(
-    #                     OccupancyGrid,
-    #                     '/map',
-    #                     self.map_info_callback,
-    #                     10)
 
     def publish_velocity(self, linear_percentage, angular_percentage):
-        self._robot_state = RobotState.TELEOP
-
         msg = Twist()
         msg.linear.x = self._max_linear_vel_ms * linear_percentage
         msg.angular.z = self._man_angular_vel_rad * angular_percentage
-        self.get_logger().info(f'Publishing velocity. linear: {msg.linear.x}, angular {msg.angular.z}')
+        self.get_logger().info(
+            f'Publishing velocity. linear: {msg.linear.x}, angular {msg.angular.z}')
         self._vel_publisher.publish(msg)
 
+    def start_mapping(self):
+        self._start_mapping_client.wait_for_service()
+        request = Trigger.Request()
+        self.get_logger().info('Calling start mapping service')
+        self._start_mapping_client.call(request)
+        self.get_logger().info('Finished calling start mapping service')
+
+    def start_navigation(self):
+        self._start_navigation_client.wait_for_service()
+        request = Trigger.Request()
+        self.get_logger().info('Calling start navigation service')
+        self._start_navigation_client.call(request)
+        self.get_logger().info('Finished calling start navigation service')
+
     def get_map(self):
-        # Save Map image as file.
         self._map_info_client.wait_for_service()
         self.get_logger().info('Calling map info service')
         request = MapInfoSrv.Request()
@@ -148,9 +138,10 @@ class GrpcBridgeNode(Node):
             self.get_logger().error('Map info service returned empty map')
 
         map_info = kimchi_pb2.Map(
-            image = bytes(response.map_image),
-            resolution = response.resolution,
-            origin = kimchi_pb2.Pose(x = -response.origin.x, y = -response.origin.y, theta = response.origin.theta)
+            image=bytes(response.map_image),
+            resolution=response.resolution,
+            origin=kimchi_pb2.Pose(
+                x=-response.origin.x, y=-response.origin.y, theta=response.origin.theta)
         )
 
         self.get_logger().info('Sending Map')
@@ -159,6 +150,7 @@ class GrpcBridgeNode(Node):
 
     def get_robot_state(self):
         return self._robot_state
+
 
 def main():
     rclpy.init()

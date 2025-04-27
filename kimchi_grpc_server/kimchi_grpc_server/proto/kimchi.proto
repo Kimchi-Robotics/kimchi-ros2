@@ -31,14 +31,31 @@ enum RobotStateEnum {
 // Methods to communicate from the Kimchi App to the kimchi robot.
 service KimchiApp {
   rpc IsAlive (Empty) returns (IsAliveResponse) {}
-  rpc GetPose (Empty) returns (stream Pose) {}
   rpc Move (stream Velocity) returns (Empty) {}
   rpc GetMap (Empty) returns (Map) {}
   rpc GetRobotState (Empty) returns (RobotStateMsg) {}
+  rpc StartMapping(Empty) returns (StartMappingResponse) {}
+  rpc StartNavigation(Empty) returns (StartNavigationResponse) {}
+
+  // Stream subscriptions
+  rpc SubscribeToMap(Empty) returns (stream Map) {}
+  rpc SubscribeToRobotState (Empty) returns (stream RobotStateMsg) {}
+  rpc GetPose (Empty) returns (stream Pose) {}
+
 }
 
 message IsAliveResponse {
   bool alive = 1;
+}
+
+message StartMappingResponse {
+  bool success = 1;
+  string info = 2;
+}
+
+message StartNavigationResponse {
+  bool success = 1;
+  string info = 2;
 }
 
 message RobotStateMsg {

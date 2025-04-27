@@ -1,25 +1,37 @@
 import os
-import time
+from time import sleep
 import base64
 import yaml
+from threading import Thread, Lock
+import sys
 
 import rclpy
 from rclpy.node import Node
-from rclpy.action import ActionServer
+from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
-from nav_msgs.msg import OccupancyGrid
 from nav2_msgs.srv import SaveMap
+from std_srvs.srv import Trigger
 from geometry_msgs.msg import Pose2D
+from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
 from kimchi_map.map_info import MapInfo
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
+from kimchi_grpc_server.robot_state import RobotState
 
 package_name = 'kimchi_map'
 
 # Node that serves as a bridge between ROS and the gRPC server.
+
+
 class KimchiMapHandler(Node):
     def __init__(self):
         super().__init__('kimchi_map_handler')
+        self._robot_state = RobotState.NO_MAP
+
+        # TODO put this in a separated class
+        self._map_saver_thread = Thread(target=self.save_map_loop)
+        self._map_saver_thread.daemon = True
+        self._keep_saving_map = False
 
         # TODO: Use ROS parameters to set frame values
         self._robot_frame = 'base_link'
@@ -31,61 +43,91 @@ class KimchiMapHandler(Node):
         # Subscribe to the map topic to get the map info
         self._map_subscription = None
         self._map_info = None
-        self.init_map_info()
-        # self.on_map_changed()
+        self._map_info_mutex = Lock()
+        self.update_map_info(self._map_file_name)
 
-        self._map_saver_client = self.create_client(SaveMap, '/map_saver/save_map')
+        self._map_saver_client = self.create_client(
+            SaveMap, '/map_saver/save_map')
 
-        self.srv = self.create_service(MapInfoSrv, '/kimchi_map/get_map_info', self.get_map_info_callback)
+        self._get_map_info_service = self.create_service(
+            MapInfoSrv, '/kimchi_map/get_map_info', self.get_map_info_callback)
 
-    # def map_info_callback(self, msg):
-    #     self.get_logger().info(f'map_info_callback called')
-    #     self.get_logger().info(f'Got map with width {msg.info.width}, height {msg.info.height}, resolution {msg.info.resolution}, origin {msg.info.origin}')
+        self._save_map_service = self.create_service(
+            Trigger, '/kimchi_map/save_map', self.save_map_callback)
 
-    #     # Get map info.
-    #     self._map_info = MapInfo(
-    #         width = msg.info.width,
-    #         height = msg.info.height,
-    #         resolution = msg.info.resolution,
-    #         origin = Pose2D(x = msg.info.origin.position.x, y = msg.info.origin.position.y, theta = 0.0),
-    #         image = None
-    #     )
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=10
+        )
+        self._robot_state_subscription = self.create_subscription(
+            RobotStateMsg,
+            '/kimchi_state_server/state',
+            self.robot_state_callback,
+            qos_profile)
 
-    #     # Unsubscribe from the map topic to avoid receiving the same map info.
-    #     self.destroy_subscription(self._map_subscription)
-    #     self._map_subscription = None
-
-
-
-    # def on_map_changed(self):
-    #     self._map_info = None
-
-    #     if self._map_subscription is None:
-    #         self._map_subscription = self.create_subscription(
-    #                     OccupancyGrid,
-    #                     '/map',
-    #                     self.map_info_callback,
-    #                     10)
-
-    def init_map_info(self):
-        map_image_bytes = self.get_map_image_bytes()
+    def update_map_info(self, file_name):
+        map_image_bytes = self.get_map_image_bytes(file_name)
         if map_image_bytes is None:
             self.get_logger().error('Failed to get map image bytes')
             return
 
-        map_data_filename = os.path.abspath(f"{self._map_file_name}.yaml")
+        map_data_filename = os.path.abspath(f"{file_name}.yaml")
         try:
             with open(map_data_filename, "r") as map_data_file:
                 values_yaml = yaml.load(map_data_file, Loader=yaml.FullLoader)
-                self._map_info = MapInfo(
-                    resolution = values_yaml['resolution'],
-                    origin = Pose2D(x = float(values_yaml['origin'][0]), y = float(values_yaml['origin'][1]), theta = float(values_yaml['origin'][2])),
-                    image = map_image_bytes
-                )
+                with self._map_info_mutex:
+                    self._map_info = MapInfo(
+                        resolution=values_yaml['resolution'],
+                        origin=Pose2D(x=float(values_yaml['origin'][0]), y=float(
+                            values_yaml['origin'][1]), theta=float(values_yaml['origin'][2])),
+                        image=map_image_bytes
+                    )
         except Exception as e:
-            self.get_logger().error(f'Failed load map data from {filename}: {e}')
+            self.get_logger().error(
+                f'Failed load map data from {filename}: {e}')
             return
         self.get_logger().info('Map info initialized')
+
+    def robot_state_callback(self, msg):
+        # self.get_logger().info(f'robot_state_callback called')
+        # self.get_logger().info(
+        #     f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
+
+        new_state = RobotState.from_kimchi_robot_state_enum(msg.state)
+        if new_state == self._robot_state:
+            return
+
+        self._robot_state = new_state
+
+        # Handle state change
+        if new_state == RobotState.NO_MAP:
+            self.get_logger().info('Robot state changed to NO_MAP')
+        elif new_state == RobotState.MAPPING_WITH_TELEOP:
+            self.get_logger().info('Robot state changed to MAPPING_WITH_TELEOP')
+            if not self._map_saver_thread.is_alive():
+                self.get_logger().info('Starting map saving thread')
+                self._map_saver_thread.start()
+                self._keep_saving_map = True
+            else:
+                self.get_logger().info('Map saving thread not started')
+        elif new_state == RobotState.MAPPING_WITH_EXPLORATION:
+            self.get_logger().info(
+                'Robot state changed to MAPPING_WITH_EXPLORATION. Not implemented!!')
+        elif new_state == RobotState.NAVIGATING:
+            if self._map_saver_thread.is_alive():
+                self._keep_saving_map = False
+                self._map_saver_thread.join()
+
+            self.get_logger().info('Robot state changed to NAVIGATING')
+        elif new_state == RobotState.TELEOP:
+            self.get_logger().info('Robot state changed to TELEOP')
+        elif new_state == RobotState.IDLE:
+            if self._map_saver_thread.is_alive():
+                self._keep_saving_map = False
+                self._map_saver_thread.join()
+            self.get_logger().info('Robot state changed to IDLE')
 
     def get_map_info_callback(self, request, response):
         self.get_logger().info('Executing goal...')
@@ -98,54 +140,108 @@ class KimchiMapHandler(Node):
 
         self.get_logger().info('Got map image')
 
-        response.map_image = self._map_info.image
-        response.resolution = self._map_info.resolution
-        response.origin = Pose2D()
-        response.origin.x = self._map_info.origin.x
-        response.origin.y = self._map_info.origin.y
-        response.origin.theta = self._map_info.origin.theta
-        response.success = True
+        with self._map_info_mutex:
+            size = sys.getsizeof(self._map_info.image)
+            self.get_logger().info(f'Image size {size}')
+
+            self.get_logger().info(f'Image len {len(self._map_info.image)}')
+
+            response.map_image = self._map_info.image
+            response.resolution = self._map_info.resolution
+            response.origin = Pose2D()
+            response.origin.x = self._map_info.origin.x
+            response.origin.y = self._map_info.origin.y
+            response.origin.theta = self._map_info.origin.theta
+            response.success = True
 
         return response
 
-    def get_map_image_bytes(self):
+    def get_map_image_bytes(self, file_name):
         # Save Map image as array of bytes (base 64).
-        filename = os.path.abspath(f"{self._map_file_name}.{self._map_file_format}")
+        filename = os.path.abspath(
+            f"{file_name}.{self._map_file_format}")
         try:
             with open(filename, "rb") as image_file:
                 self.get_logger().info('Encoding image')
                 map_bytes = base64.b64encode(image_file.read())
         except Exception as e:
-            self.get_logger().error(f'Failed to encode image from file {filename}: {e}')
+            self.get_logger().error(
+                f'Failed to encode image from file {filename}: {e}')
             return None
 
         return map_bytes
 
-    # TODO: Make this a service
-    def save_map(self):
+    # Save map in a loop until the thread is stopped
+    def save_map_loop(self):
+        self.get_logger().info('Starting map saving thread')
+        mapping_map_name = "current_mapping_map"
+        while self._keep_saving_map:
+            self.save_map_sync(mapping_map_name)
+            self.update_map_info(mapping_map_name)
+            sleep(1)
+
+    def save_map_sync(self, file_name):
         # Save Map image as file.
         self._map_saver_client.wait_for_service()
         self.get_logger().info('Calling save map service')
         request = SaveMap.Request()
         request.map_topic = self._map_topic
-        request.map_url = self._map_file_name
+        request.map_url = file_name
+#        request.map_url = self._map_file_name
         request.image_format = self._map_file_format
         request.map_mode = 'trinary'
         request.free_thresh = 0.25
         request.occupied_thresh = 0.65
 
-        self.get_logger().info(f'Saving map to {self._map_file_name}.{self._map_file_format}')
- 
-        self.future = self._map_saver_client.call_async(request)
-        rclpy.spin_until_future_complete(self, self.future)
-        response = self.future.result()
- 
+        self.get_logger().info(
+            f'Saving map to {file_name}.{self._map_file_format}')
+
+        result = self._map_saver_client.call(request)
+        if result.result is True:
+            self.get_logger().info('Map saved')
+        else:
+            self.get_logger().error('Failed to save map')
+
+    def save_map_callback(self, request, response):
+        self.save_map(self._map_file_name)
+        response.success = True
+        return response
+
+    # TODO: Make this a service
+    def save_map(self, file_name):
+        # Save Map image as file.
+        self._map_saver_client.wait_for_service()
+        self.get_logger().info('Calling save map service')
+        request = SaveMap.Request()
+        request.map_topic = self._map_topic
+        request.map_url = file_name
+#        request.map_url = self._map_file_name
+        request.image_format = self._map_file_format
+        request.map_mode = 'trinary'
+        request.free_thresh = 0.25
+        request.occupied_thresh = 0.65
+
+        self.get_logger().info(
+            f'Saving map to {file_name}.{self._map_file_format}')
+
+        future = self._map_saver_client.call_async(request)
+        self.get_logger().info('After call_async')
+        # TODO(Arilow): There's an issue with this. It blocks the thread despite de service called finishes.
+        while not future.done():
+            self.get_logger().info('Waiting for future...')
+            rclpy.spin_once(self, timeout_sec=1.0)
+
+        # self.get_logger().info('After call_async')
+        # rclpy.spin_until_future_complete(self, future)
+        # self.get_logger().info('After spin_until_future_complete')
+
+        response = future.result()
+
         self.get_logger().info('Finished saving map')
         if response.result is True:
             self.get_logger().info('Map saved')
         else:
             self.get_logger().error('Failed to save map')
-
 
 
 def main():

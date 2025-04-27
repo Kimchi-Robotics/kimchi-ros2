@@ -5,6 +5,8 @@ from kimchi_grpc_server.pose_2d import Pose2D
 import grpc
 import asyncio
 
+# Format with ctrl + shift + i
+
 # Define a class that will be used to serve the GetPose request
 # The class will have a method that will be called by the server
 # to serve the GetPose request
@@ -26,22 +28,55 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             pose = self._ros_node.protected_pose.pose
             self._logger.info(f"Sending pose {pose.x}, {pose.y}, {pose.theta}")
 
-            yield kimchi_pb2.Pose(x = pose.x, y = pose.y, theta = pose.theta)
+            yield kimchi_pb2.Pose(x=pose.x, y=pose.y, theta=pose.theta)
 
+    async def SubscribeToMap(
+        self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
+    ) -> kimchi_pb2.Map:
+        self._logger.info(f"Serving SubscribeToMap request {request}")
+
+        # Here!!!
+        # TODO: Subscribe to /map topic and use conditional to retrieve a map when it changes
+        # https://colab.research.google.com/drive/1pcEI-5QQyqWRe69PIYY2SM1ISZX3pnW8#scrollTo=O_UzvRLUYRwV
+        while True:
+            await asyncio.sleep(0.5)
+            map = self._ros_node.get_map()
+            self._logger.info(f"Sending map {map}")
+
+            yield kimchi_pb2.Map(image=map.image, origin=map.origin, resolution=map.resolution)
+
+    async def SubscribeToRobotState(
+        self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
+    ) -> kimchi_pb2.RobotStateMsg:
+        self._logger.info(f"Serving SubscribeToRobotState request {request}")
+        old_robot_state = None
+        while True:
+            await asyncio.sleep(0.5)
+            robot_state = self._ros_node.get_robot_state()
+            if robot_state != old_robot_state:
+                old_robot_state = robot_state
+                yield kimchi_pb2.RobotStateMsg(state=robot_state.to_kimchi_robot_state_enum())
+    
     def GetMap(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving GetMap request {request}")
-        try:
-            map_info = self._ros_node.get_map()
-        except Exception as e:
-            self._logger.error(f"Error getting map: {e}")
-            return kimchi_pb2.Map()
         return self._ros_node.get_map()
 
     def GetRobotState(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving GetRobotState request {request}")
         robot_state = self._ros_node.get_robot_state()
         self._logger.info(f"Sending robot state {robot_state}")
-        return kimchi_pb2.RobotStateMsg(state = robot_state.to_kimchi_robot_state_enum())
+        return kimchi_pb2.RobotStateMsg(state=robot_state.to_kimchi_robot_state_enum())
+
+    def StartMapping(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Serving StartMapping request {request}!!!!!!!!!!!!!!!!!!!!!!!")
+        [success, msg]= self._ros_node.start_mapping()
+        self._logger.info(f"Finished calling start mapping service!!!!!!!!!!!!!!!!!!!!!!!!1")
+        return kimchi_pb2.StartMappingResponse(success=success, msg=msg)
+
+    def StartNavigation(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Serving StartNavigation request {request}")
+        [success, msg] = self._ros_node.start_navigation()
+        return kimchi_pb2.StartNavigationResponse(success=success, msg=msg)
 
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")
@@ -50,11 +85,11 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
     def Move(self, request_iterator, context):
         """
         Receives a stream of Velocity messages from the client.
-        
+
         Args:
             request_iterator: An iterator that yields Velocity Ratio objects. Velocity ratios are values from -1 to 1
             context: The RPC context
-            
+
         Returns:
             An Empty response when the stream is complete
         """
@@ -62,23 +97,26 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             # Process each velocity message as it comes in
             for velocity_ratio in request_iterator:
                 # Log the received velocity for debugging
-                self._logger.info(f"Received velocity: linear={velocity_ratio.linear}, angular={velocity_ratio.angular}")
+                self._logger.info(
+                    f"Received velocity: linear={velocity_ratio.linear}, angular={velocity_ratio.angular}")
                 self._current_linear_vel = velocity_ratio.linear
                 self._current_angular_vel = velocity_ratio.angular
 
-                 # If thee velocity is close to 0, then it was probably meant to be 0.
+                # If thee velocity is close to 0, then it was probably meant to be 0.
                 if abs(velocity_ratio.linear) < 0.1:
                     self._current_linear_vel = 0.0
                 if abs(velocity_ratio.angular) < 0.1:
                     self._current_angular_vel = 0.0
 
-                self._logger.info(f"Publishing velocity: linear={self._current_linear_vel}, angular={self._current_angular_vel}")
+                self._logger.info(
+                    f"Publishing velocity: linear={self._current_linear_vel}, angular={self._current_angular_vel}")
 
-                self._ros_node.publish_velocity(self._current_linear_vel, self._current_angular_vel)
-                
+                self._ros_node.publish_velocity(
+                    self._current_linear_vel, self._current_angular_vel)
+
             # Return empty response when the stream completes
             return kimchi_pb2.Empty()
-            
+
         except Exception as e:
             self._logger.error(f"Error in Move RPC: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)

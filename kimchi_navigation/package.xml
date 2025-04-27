@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>kimchi_navigation</name>
+  <version>0.0.1</version>
+  <description>
+    Andino navigation FTW!! Thispackege has been designed for simulation but with little effort should usable with the real robot.
+  </description>
+  <maintainer email="arilow@ekumenlabs.com">Ari Lowy</maintainer>
+  <license file="LICENSE">BSD Clause 3</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>andino_bms</exec_depend>
+  <exec_depend>nav2_bringup</exec_depend>
+  <exec_depend>slam_toolbox</exec_depend>
+  <exec_depend>ros2launch</exec_depend>
+  <exec_depend>rviz2</exec_depend>
+  <exec_depend>nav2_msgs</exec_depend>
+  <exec_depend>nav2_behaviors</exec_depend>
+  <exec_depend>nav2_core</exec_depend>
+  <exec_depend>andino_interfaces</exec_depend>
+  <exec_depend>pluginlib</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+    <nav2_core plugin="${prefix}/behavior_plugin.xml" />
+  </export>
+</package>
