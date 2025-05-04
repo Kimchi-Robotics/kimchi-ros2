@@ -1,5 +1,0 @@
-<library path="nav2_dock_plugin">
-  <class name="andino_navigation/Dock" type="andino_navigation::Dock" base_class_type="nav2_core::Behavior">
-    <description>This is an example plugin which produces an SMS text message recovery.</description>
-  </class>
-</library>
