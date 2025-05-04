@@ -1,13 +1,43 @@
 #!/bin/bash
 
+# BSD 3-Clause License
+#
+# Copyright (c) 2023, Ekumen Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the copyright holder nor the names of its
+#    contributors may be used to endorse or promote products derived from
+#    this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 set +e
 
 # Prints information about usage.
 function show_help() {
   echo $'\nUsage:\t run.sh [OPTIONS] \n
   Options:\n
-  \t-i --image_name\t\t Name of the image to be run (default gazebo_ros2).\n
-  \t-c --container_name\t Name of the container(default gazebo_ros2).\n
+  \t-i --image_name\t\t Name of the image to be run (default ros2_jazzy_andino_gz).\n
+  \t-c --container_name\t Name of the container(default ros2_jazzy_andino_gz_container).\n
   \t--use_nvidia\t\t Use nvidia runtime.\n
   Examples:\n
   \trun.sh\n
@@ -48,12 +78,22 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 # Update the arguments to default values if needed.
-IMAGE_NAME=${IMAGE_NAME:-gazebo_ros2}
-CONTAINER_NAME=${CONTAINER_NAME:-gazebo_ros2}
+
+IMAGE_NAME=${IMAGE_NAME:-ros2_jazzy_andino_gz}
+CONTAINER_NAME=${CONTAINER_NAME:-ros2_jazzy_andino_gz_container}
 
 SSH_PATH=/home/$USER/.ssh
-WORKSPACE_CONTAINER=/home/$(whoami)/ws/src/$REPOSITORY_FOLDER_NAME
+WORKSPACE_SRC_CONTAINER=/home/$USER/ws/src/$REPOSITORY_FOLDER_NAME
+WORKSPACE_ROOT_CONTAINER=/home/$USER/ws
 SSH_AUTH_SOCK_USER=$SSH_AUTH_SOCK
+
+# Create cache folders to store colcon build files
+mkdir -p ${REPOSITORY_FOLDER_PATH}/.build
+mkdir -p ${REPOSITORY_FOLDER_PATH}/.install
+
+# Transfer the ownership to the user
+chown -R "$USER" ${REPOSITORY_FOLDER_PATH}/.build
+chown -R "$USER" ${REPOSITORY_FOLDER_PATH}/.install
 
 # Check if name container is already taken.
 if sudo -g docker docker container ls -a | grep "${CONTAINER_NAME}$" -c &> /dev/null; then
@@ -64,12 +104,15 @@ if sudo -g docker docker container ls -a | grep "${CONTAINER_NAME}$" -c &> /dev/
 fi
 
 xhost +
-sudo docker run -it $NVIDIA_FLAGS \
+sudo docker run -it --ipc=host --pid=host \
+        $NVIDIA_FLAGS \
        -e DISPLAY=$DISPLAY \
        -e SSH_AUTH_SOCK=$SSH_AUTH_SOCK_USER \
        -v $(dirname $SSH_AUTH_SOCK_USER):$(dirname $SSH_AUTH_SOCK_USER) \
        -v /tmp/.X11-unix:/tmp/.X11-unix \
-       -v ${REPOSITORY_FOLDER_PATH}:${WORKSPACE_CONTAINER} \
+       -v ${REPOSITORY_FOLDER_PATH}:$WORKSPACE_SRC_CONTAINER \
+       -v ${REPOSITORY_FOLDER_PATH}/.build:$WORKSPACE_ROOT_CONTAINER/build:rw \
+       -v ${REPOSITORY_FOLDER_PATH}/.install:$WORKSPACE_ROOT_CONTAINER/install:rw \
        -v $SSH_PATH:$SSH_PATH \
        -v /dev/dri:/dev/dri \
        --network host \
