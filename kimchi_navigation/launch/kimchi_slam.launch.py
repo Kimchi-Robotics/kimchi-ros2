@@ -20,11 +20,21 @@ def generate_launch_description():
         description="Full path to the RVIZ config file to use",
     )
 
+    use_sim_time_argument = DeclareLaunchArgument(
+        "use_sim_time",
+        default_value="false",
+        description="Use simulation time",
+    )
+
+
     navigation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")),
         launch_arguments={
-            'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
+            'use_sim_time': LaunchConfiguration("use_sim_time"),
         }.items(),
+        # launch_arguments={
+        #     'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
+        # }.items(),
     )
 
     slam_toolbox_launch = IncludeLaunchDescription(
@@ -49,6 +59,7 @@ def generate_launch_description():
 
     # Arguments
     ld.add_action(rviz_config_file_argunment)
+    ld.add_action(use_sim_time_argument)
 
     # Launch files.
     ld.add_action(navigation_launch)

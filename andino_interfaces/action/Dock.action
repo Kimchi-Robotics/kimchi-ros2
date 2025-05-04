@@ -1,6 +1,0 @@
-geometry_msgs/Pose2D dock_pose
----
-builtin_interfaces/Duration total_elapsed_time
-string output
----
-string feedback
