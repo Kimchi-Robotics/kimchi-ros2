@@ -18,6 +18,7 @@ find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(kimchi_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
+find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 
 add_executable(kimchi_state_server src/kimchi_state_server.cpp)
@@ -29,6 +30,7 @@ ament_target_dependencies(kimchi_state_server PUBLIC
   "geometry_msgs"
   "kimchi_interfaces"
   "std_srvs"
+  "nav2_msgs"
   "lifecycle_msgs")
 
 target_include_directories(kimchi_state_server PUBLIC

@@ -12,6 +12,7 @@
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <lifecycle_msgs/srv/change_state.hpp>
+#include <nav2_msgs/srv/save_map.hpp>
 
 #include "map_info.h"
 
@@ -40,7 +41,8 @@ class KimchiStateServer : public rclcpp::Node {
   void startNavigationCallback(
     const std_srvs::srv::Trigger::Request::SharedPtr request,
     std_srvs::srv::Trigger::Response::SharedPtr response);
-  void saveMapAndStopSlam();
+  void saveMap();
+  void stopSlam();
   void startNavigation();
 
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
@@ -51,7 +53,7 @@ class KimchiStateServer : public rclcpp::Node {
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
   rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
       active_slam_toolbox_node_client_;
-  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr save_map_client_;
+  rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
 
   // TODO Service to start navigation.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_navigation_service_;
