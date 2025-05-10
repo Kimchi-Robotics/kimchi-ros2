@@ -10,7 +10,6 @@ from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
 
 from nav2_msgs.srv import SaveMap
-from std_srvs.srv import Trigger
 from geometry_msgs.msg import Pose2D
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
@@ -21,8 +20,6 @@ from kimchi_grpc_server.robot_state import RobotState
 package_name = 'kimchi_map'
 
 # Node that serves as a bridge between ROS and the gRPC server.
-
-
 class KimchiMapHandler(Node):
     def __init__(self):
         super().__init__('kimchi_map_handler')
@@ -51,9 +48,6 @@ class KimchiMapHandler(Node):
 
         self._get_map_info_service = self.create_service(
             MapInfoSrv, '/kimchi_map/get_map_info', self.get_map_info_callback)
-
-        self._save_map_service = self.create_service(
-            Trigger, '/kimchi_map/save_map', self.save_map_callback)
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -91,15 +85,15 @@ class KimchiMapHandler(Node):
         self.get_logger().info('Map info initialized')
 
     def robot_state_callback(self, msg):
-        # self.get_logger().info(f'robot_state_callback called')
-        # self.get_logger().info(
-        #     f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
-
         new_state = RobotState.from_kimchi_robot_state_enum(msg.state)
         if new_state == self._robot_state:
             return
 
         self._robot_state = new_state
+        if self._map_saver_thread.is_alive() and self._robot_state != RobotState.MAPPING_WITH_TELEOP and self._robot_state != RobotState.MAPPING_WITH_EXPLORATION:
+            self.get_logger().info('Stopping map saving thread')
+            self._keep_saving_map = False
+            self._map_saver_thread.join()
 
         # Handle state change
         if new_state == RobotState.NO_MAP:
@@ -116,36 +110,21 @@ class KimchiMapHandler(Node):
             self.get_logger().info(
                 'Robot state changed to MAPPING_WITH_EXPLORATION. Not implemented!!')
         elif new_state == RobotState.NAVIGATING:
-            if self._map_saver_thread.is_alive():
-                self._keep_saving_map = False
-                self._map_saver_thread.join()
-
             self.get_logger().info('Robot state changed to NAVIGATING')
         elif new_state == RobotState.TELEOP:
             self.get_logger().info('Robot state changed to TELEOP')
         elif new_state == RobotState.IDLE:
-            if self._map_saver_thread.is_alive():
-                self._keep_saving_map = False
-                self._map_saver_thread.join()
             self.get_logger().info('Robot state changed to IDLE')
 
     def get_map_info_callback(self, request, response):
-        self.get_logger().info('Executing goal...')
+        self.get_logger().info('Executing get_map_info_callback')
 
-        # Maybe wait 5 secs?
         if self._map_info is None:
             self.get_logger().error('Map not yet initialized')
             response.success = False
             return response
 
-        self.get_logger().info('Got map image')
-
         with self._map_info_mutex:
-            size = sys.getsizeof(self._map_info.image)
-            self.get_logger().info(f'Image size {size}')
-
-            self.get_logger().info(f'Image len {len(self._map_info.image)}')
-
             response.map_image = self._map_info.image
             response.resolution = self._map_info.resolution
             response.origin = Pose2D()
@@ -187,7 +166,6 @@ class KimchiMapHandler(Node):
         request = SaveMap.Request()
         request.map_topic = self._map_topic
         request.map_url = file_name
-#        request.map_url = self._map_file_name
         request.image_format = self._map_file_format
         request.map_mode = 'trinary'
         request.free_thresh = 0.25
@@ -198,47 +176,6 @@ class KimchiMapHandler(Node):
 
         result = self._map_saver_client.call(request)
         if result.result is True:
-            self.get_logger().info('Map saved')
-        else:
-            self.get_logger().error('Failed to save map')
-
-    def save_map_callback(self, request, response):
-        self.save_map(self._map_file_name)
-        response.success = True
-        return response
-
-    # TODO: Make this a service
-    def save_map(self, file_name):
-        # Save Map image as file.
-        self._map_saver_client.wait_for_service()
-        self.get_logger().info('Calling save map service')
-        request = SaveMap.Request()
-        request.map_topic = self._map_topic
-        request.map_url = file_name
-#        request.map_url = self._map_file_name
-        request.image_format = self._map_file_format
-        request.map_mode = 'trinary'
-        request.free_thresh = 0.25
-        request.occupied_thresh = 0.65
-
-        self.get_logger().info(
-            f'Saving map to {file_name}.{self._map_file_format}')
-
-        future = self._map_saver_client.call_async(request)
-        self.get_logger().info('After call_async')
-        # TODO(Arilow): There's an issue with this. It blocks the thread despite de service called finishes.
-        while not future.done():
-            self.get_logger().info('Waiting for future...')
-            rclpy.spin_once(self, timeout_sec=1.0)
-
-        # self.get_logger().info('After call_async')
-        # rclpy.spin_until_future_complete(self, future)
-        # self.get_logger().info('After spin_until_future_complete')
-
-        response = future.result()
-
-        self.get_logger().info('Finished saving map')
-        if response.result is True:
             self.get_logger().info('Map saved')
         else:
             self.get_logger().error('Failed to save map')

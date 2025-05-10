@@ -27,11 +27,10 @@ KimchiStateServer::KimchiStateServer(
   // Subscribe to the map info service
   get_map_info_client_ = create_client<kimchi_interfaces::srv::MapInfo>(
       "/kimchi_map/get_map_info");
-  // Subscribe to the save map service
-  save_map_client_ = create_client<std_srvs::srv::Trigger>(
-    "/kimchi_map/save_map");
 
-
+      // Subscribe to the save map service
+  save_map_client_ = create_client<nav2_msgs::srv::SaveMap>(
+    "/map_saver/save_map");
 
   start_slam_service_ = create_service<std_srvs::srv::Trigger>("/kimchi_state_server/start_slam",
                             std::bind(&KimchiStateServer::startSlamCallback, this,
@@ -81,8 +80,10 @@ void KimchiStateServer::callGetMapInfoService() {
       map_info_ = std::make_unique<MapInfo>(result->resolution, result->origin,
                                             result->map_image);
       state_ = RobotState::IDLE;
+      startNavigation();
       RCLCPP_INFO(this->get_logger(), "MapInfo received");
     } else {
+      state_ = RobotState::NO_MAP;
       RCLCPP_INFO(this->get_logger(), "MapInfo Service returned empty map");
     }
   } else {
@@ -116,7 +117,8 @@ void KimchiStateServer::startNavigationCallback(
   }
 
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-    saveMapAndStopSlam();
+    saveMap();
+    stopSlam();
   }
 
   state_ = RobotState::IDLE;
@@ -126,23 +128,27 @@ void KimchiStateServer::startNavigationCallback(
   response->success = true;
 }
 
-void KimchiStateServer::saveMapAndStopSlam() {
+void KimchiStateServer::saveMap() {
   save_map_client_->wait_for_service();
-  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
-  auto future = save_map_client_->async_send_request(request);
-  // rclcpp::spin_until_future_complete(this->get_node_base_interface(), future);
-  if (future.get()->success) {
-    RCLCPP_INFO(this->get_logger(), "Map saved");
-  } else {
-    RCLCPP_ERROR(this->get_logger(), "Failed to save map");
-  }
+  auto request = std::make_shared<nav2_msgs::srv::SaveMap::Request>();
 
+  request->map_topic = "/map";
+  request->map_url = "kimchi_map";
+  request->image_format = "png";
+  request->map_mode = "trinary";
+  request->free_thresh = 0.25;
+  request->occupied_thresh = 0.65;
+
+  // TODO(arilow): Handle the response by passing a callback to async_send_request
+  auto future = save_map_client_->async_send_request(request);
+}
+
+void KimchiStateServer::stopSlam() {
   active_slam_toolbox_node_client_->wait_for_service();
-  RCLCPP_INFO(this->get_logger(), "Finished waiting for slam_toolbox service");
   auto new_request = std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
   new_request->transition.id = 4;  // Deactivate
+  // TODO(arilow): Handle the response by passing a callback to async_send_request
   active_slam_toolbox_node_client_->async_send_request(new_request);
-  RCLCPP_INFO(this->get_logger(), "Deactivated slam_toolbox");
 }
 
 void KimchiStateServer::startNavigation() {
@@ -152,7 +158,10 @@ void KimchiStateServer::startNavigation() {
 
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
-  rclcpp::spin(std::make_shared<KimchiStateServer>(rclcpp::NodeOptions()));
+  auto node = std::make_shared<KimchiStateServer>(rclcpp::NodeOptions());
+  rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(), 4);
+  executor.add_node(node);
+  executor.spin();
   rclcpp::shutdown();
   return 0;
 }
