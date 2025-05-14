@@ -19,6 +19,7 @@ install(
   DIRECTORY
     launch
     rviz
+    maps
     params
   DESTINATION
     share/${PROJECT_NAME}/

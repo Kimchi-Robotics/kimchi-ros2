@@ -39,28 +39,37 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    pkg_andino_nav = get_package_share_directory("andino_navigation")
+    pkg_kimchi_nav = get_package_share_directory("kimchi_navigation")
+    # pkg_andino_nav = get_package_share_directory("andino_navigation")
     pkg_nav2_bringup = get_package_share_directory("nav2_bringup")
     pkg_nav2_map_server = get_package_share_directory("nav2_map_server")
 
     rviz_config_file_argunment = DeclareLaunchArgument(
         "rviz_config_file",
-        default_value=os.path.join(pkg_nav2_bringup, "rviz", "nav2_default_view.rviz"),
+        # default_value=os.path.join(pkg_nav2_bringup, "rviz", "nav2_default_view.rviz"),
+        default_value=os.path.join(pkg_kimchi_nav, "rviz", "kimchi_navigation.rviz"),
         description="Full path to the RVIZ config file to use",
+    )
+
+    use_sim_time_argument = DeclareLaunchArgument(
+        "use_sim_time",
+        default_value="false",
+        description="Use simulation time",
     )
 
     map_argunment = DeclareLaunchArgument(
         "map",
-        default_value=os.path.join(pkg_andino_nav, "maps/hq_map", "map.yaml"),
-        description="Full path to the RVIZ config file to use",
+        # default_value="~/kimchi_map.yaml",
+        default_value=os.path.join(pkg_kimchi_nav, "maps/hq_map", "map.yaml"),
+        description="Full path to the map file to use",
     )
 
     navigation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "bringup_launch.py")),
         launch_arguments={
-            'params_file': os.path.join(pkg_andino_nav, 'params', 'nav2_params.yaml'),
-            'use_sim_time': 'false',
-            'autostart': 'true',
+            # 'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'autostart': 'false',
             'map': LaunchConfiguration('map'),
         }.items(),
     )
@@ -69,11 +78,11 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_map_server, "launch", "map_saver_server.launch.py")),
     )
 
-    # Battery observer
-    battery_observer = Node(
-        package="andino_navigation",
-        executable="battery_observer",
-    )
+    # # Battery observer
+    # battery_observer = Node(
+    #     package="andino_navigation",
+    #     executable="battery_observer",
+    # )
 
     # RViz
     rviz = Node(
@@ -86,6 +95,7 @@ def generate_launch_description():
 
     # Arguments
     ld.add_action(map_argunment)
+    ld.add_action(use_sim_time_argument)
     ld.add_action(rviz_config_file_argunment)
 
     # Launch files.
@@ -93,6 +103,6 @@ def generate_launch_description():
     ld.add_action(map_saver_launch)
 
     # Nodes
-    ld.add_action(battery_observer)
+    # ld.add_action(battery_observer)
     ld.add_action(rviz)
     return ld
