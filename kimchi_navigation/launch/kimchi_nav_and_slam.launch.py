@@ -38,7 +38,7 @@ def generate_launch_description():
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'autostart': 'false',
+            'autostart': 'true',
             'map': LaunchConfiguration('map'),
         }.items(),
     )
@@ -73,45 +73,22 @@ def generate_launch_description():
         shell=True
     )
 
-    deactivate_bt_navigator_node = ExecuteProcess(
+    deactivate_amcl = ExecuteProcess(
         cmd=[[
             'ros2',
             " service call ",
-            "/bt_navigator/change_state",
+            "/amcl/change_state",
             " lifecycle_msgs/srv/ChangeState ",
             '"{transition: {id: 4}}"',
         ]],
         shell=True
     )
 
-    # WARNING: This makes a lot of nodes dissapear
-    deactivate_controller_server_node = ExecuteProcess(
+    deactivate_map_server = ExecuteProcess(
         cmd=[[
             'ros2',
             " service call ",
-            "/controller_server/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    deactivate_local_costmap_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/local_costmap/local_costmap/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    deactivate_global_costmap_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/global_costmap/global_costmap/change_state",
+            "/map_server/change_state",
             " lifecycle_msgs/srv/ChangeState ",
             '"{transition: {id: 4}}"',
         ]],
@@ -134,4 +111,7 @@ def generate_launch_description():
 
     # Commands
     ld.add_action(deactivate_slam_toolbox_node)
+    ld.add_action(deactivate_amcl)
+    ld.add_action(deactivate_map_server)
+
     return ld
