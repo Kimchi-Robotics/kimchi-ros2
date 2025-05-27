@@ -50,6 +50,7 @@ def generate_launch_description():
         }.items(),
     )
 
+    # TODO: Add map saver node.
     map_saver_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_map_server, "launch", "map_saver_server.launch.py")),
     )
@@ -61,7 +62,7 @@ def generate_launch_description():
         arguments=["-d", LaunchConfiguration("rviz_config_file")],
     )
 
-    # TODO: Add another command to deactivate navigation
+    # Deactivate SLAM node.
     deactivate_slam_toolbox_node = ExecuteProcess(
         cmd=[[
             'ros2',
@@ -73,6 +74,7 @@ def generate_launch_description():
         shell=True
     )
 
+    # Deactivate Nav2 nodes.
     deactivate_amcl = ExecuteProcess(
         cmd=[[
             'ros2',

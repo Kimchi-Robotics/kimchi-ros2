@@ -72,7 +72,7 @@ RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/$USER/.bashrc
 # Updates
 RUN sudo apt upgrade -y
 RUN sudo apt update
-# RUN rosdep update
+RUN rosdep update
 
 # Install python dependencies
 RUN pip install grpcio-tools --break-system-packages
