@@ -93,7 +93,7 @@ After having built the repository, you can try launching Andino!
 
 ```sh
 source install/setup.bash
-ros2 launch andino_gz andino_gz.launch.py ros_bridge:=False rviz:=False world_name:=populated_office.sdf
+ros2 launch andino_gz andino_gz.launch.py nav2:=False rviz:=False world_name:=populated_office.sdf
 ```
 
 **Note**: Remember you can check all the arguments that a launch file accepts by adding `-s` to the command: `ros2 launch andino_gz andino_gz.launch.py -s`.
@@ -101,7 +101,7 @@ ros2 launch andino_gz andino_gz.launch.py ros_bridge:=False rviz:=False world_na
 ### Slam
 
 ```
-ros2 launch kimchi_navigation kimchi_slam.launch.py
+ros2 launch kimchi_navigation kimchi_slam.launch.py use_sim_time:=true
 ```
 
 ### Navigation (DEPRECATED)

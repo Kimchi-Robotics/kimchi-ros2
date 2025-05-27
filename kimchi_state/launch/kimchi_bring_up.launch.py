@@ -28,18 +28,6 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_navigation, "launch", "kimchi_slam.launch.py")),
     )
 
-    # TODO: Add another command to deactivate navigation
-    deactivate_slam_toolbox_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/slam_toolbox/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
     ld = LaunchDescription()
 
     # Nodes
@@ -47,8 +35,6 @@ def generate_launch_description():
     ld.add_action(kimchi_map_handler_node)
 
     # Launch files
-    # ld.add_action(kimchi_slam_launch)
+    ld.add_action(kimchi_slam_launch)
 
-    # Commands
-    ld.add_action(deactivate_slam_toolbox_node)
     return ld
