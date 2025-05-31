@@ -3,6 +3,7 @@
 #include <kimchi_state/map_info.h>
 
 #include <chrono>
+#include <thread>
 #include <functional>
 #include <rclcpp/rclcpp.hpp>
 
@@ -12,7 +13,10 @@ KimchiStateServer::KimchiStateServer(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
     : Node("kimchi_state_server", options), state_(RobotState::NO_MAP) {
   using namespace std::chrono_literals;
-  // Create a QoS profile with best effort for sharing the state of the robot.
+      RCLCPP_INFO(this->get_logger(),
+                   "KimchiStateServer::KimchiStateServer.");
+ 
+    // Create a QoS profile with best effort for sharing the state of the robot.
   rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
   auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 10),
                          qos_profile);
@@ -23,6 +27,7 @@ KimchiStateServer::KimchiStateServer(
       "/kimchi_state_server/state", qos);
   state_publisher_timer_ = this->create_wall_timer(
       1s, std::bind(&KimchiStateServer::statePublisherTimerCallback, this));
+
 
   // Subscribe to the map info service
   get_map_info_client_ = create_client<kimchi_interfaces::srv::MapInfo>(
@@ -110,19 +115,19 @@ void KimchiStateServer::startNavigationCallback(
   const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
   std_srvs::srv::Trigger::Response::SharedPtr response) {
 
-  if (state_ == RobotState::NO_MAP) {
-    response->success = false;
-    response->message = "There's no map available. Can't start navigation.";
-    return;
-  }
+  // if (state_ == RobotState::NO_MAP) {
+  //   response->success = false;
+  //   response->message = "There's no map available. Can't start navigation.";
+  //   return;
+  // }
 
-  if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-    saveMap();
+  // if (state_ == RobotState::MAPPING_WITH_TELEOP) {
+  //   saveMap();
     stopSlam();
-  }
+  // }
 
-  state_ = RobotState::IDLE;
-  RCLCPP_INFO(this->get_logger(), "Starting Navigation");
+  // state_ = RobotState::IDLE;
+  // RCLCPP_INFO(this->get_logger(), "Starting Navigation");
 
   startNavigation();
   response->success = true;
@@ -152,8 +157,36 @@ void KimchiStateServer::stopSlam() {
 }
 
 void KimchiStateServer::startNavigation() {
+  std::chrono::milliseconds wait_duration(100);
+
+  RCLCPP_INFO(this->get_logger(), "KimchiStateServer::KimchiStateServer. before client_nav_");
+ 
+    client_nav_ = std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
+    "lifecycle_manager_navigation", shared_from_this());
+  RCLCPP_INFO(this->get_logger(), "KimchiStateServer::KimchiStateServer. mid_");
+  client_loc_ = std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
+    "lifecycle_manager_localization", shared_from_this());
+  RCLCPP_INFO(this->get_logger(), "KimchiStateServer::KimchiStateServer. after client_loc_");
+
   // TODO: call active_navigation_node_client_
-}
+  std::thread startup_nav_thread(
+    std::bind(
+        &nav2_lifecycle_manager::LifecycleManagerClient::startup,
+        client_nav_.get(),
+        std::placeholders::_1), wait_duration  // Direct argument instead of placeholder
+    );
+
+  std::thread startup_loc_thread(
+    std::bind(
+        &nav2_lifecycle_manager::LifecycleManagerClient::startup,
+        client_loc_.get(),
+        std::placeholders::_1), wait_duration  // Direct argument instead of placeholder
+    );
+
+
+    startup_nav_thread.detach();
+    startup_loc_thread.detach();
+  }
 
 
 int main(int argc, char *argv[]) {

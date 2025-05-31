@@ -25,7 +25,7 @@ def generate_launch_description():
     )
 
     kimchi_slam_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_navigation, "launch", "kimchi_slam.launch.py")),
+        PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_navigation, "launch", "kimchi_nav_and_slam.launch.py")),
     )
 
     ld = LaunchDescription()

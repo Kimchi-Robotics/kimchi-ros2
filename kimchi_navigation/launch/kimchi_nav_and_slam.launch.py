@@ -21,6 +21,7 @@ def generate_launch_description():
         description="Full path to the RVIZ config file to use",
     )
 
+    print(os.path.join(pkg_nav2_bringup, "rviz", "nav2_default_view.rviz"))
     use_sim_time_argument = DeclareLaunchArgument(
         "use_sim_time",
         default_value="true",
@@ -33,22 +34,51 @@ def generate_launch_description():
         description="Full path to the map file to use",
     )
 
-    navigation_bring_up_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "bringup_launch.py")),
+    # navigation_bring_up_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "bringup_launch.py")),
+    #     launch_arguments={
+    #         'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
+    #         'use_sim_time': LaunchConfiguration('use_sim_time'),
+    #         'autostart': 'false',
+    #         'map': LaunchConfiguration('map'),
+    #     }.items(),
+    # )
+
+    navigation_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")),
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'true',
-            'map': LaunchConfiguration('map'),
         }.items(),
     )
+
+
+    localization_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "localization_launch.py")),
+        launch_arguments={
+            'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'autostart': 'false',
+        }.items(),
+    )
+
+
+    # slam_toolbox_launch = IncludeLaunchDescription(
+    #     PythonLaunchDescriptionSource(os.path.join(pkg_slam_toolbox, "launch", "online_async_launch.py")),
+    #     launch_arguments={
+    #         'use_sim_time': LaunchConfiguration('use_sim_time'),
+    #     }.items(),
+    # )
 
     slam_toolbox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_slam_toolbox, "launch", "online_async_launch.py")),
         launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'use_sim_time': LaunchConfiguration("use_sim_time"),
+            'slams_param_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
         }.items(),
     )
+
 
     # TODO: Add map saver node.
     map_saver_launch = IncludeLaunchDescription(
@@ -74,29 +104,6 @@ def generate_launch_description():
         shell=True
     )
 
-    # Deactivate Nav2 nodes.
-    deactivate_amcl = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/amcl/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    deactivate_map_server = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/map_server/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
     ld = LaunchDescription()
 
     # Arguments
@@ -105,15 +112,19 @@ def generate_launch_description():
     ld.add_action(rviz_config_file_argunment)
 
     # Launch files.
-    ld.add_action(navigation_bring_up_launch)
+    # ld.add_action(navigation_bring_up_launch)
     ld.add_action(slam_toolbox_launch)
+    ld.add_action(navigation_launch)
+    ld.add_action(localization_launch)
 
     # Nodes
-    ld.add_action(rviz)
+    # ld.add_action(rviz)
+    # ld.add_action(map_saver_launch)
 
     # Commands
-    ld.add_action(deactivate_slam_toolbox_node)
-    ld.add_action(deactivate_amcl)
-    ld.add_action(deactivate_map_server)
+    # ld.add_action(deactivate_slam_toolbox_node)
+
+    # ld.add_action(deactivate_amcl)
+    # ld.add_action(deactivate_map_server)
 
     return ld

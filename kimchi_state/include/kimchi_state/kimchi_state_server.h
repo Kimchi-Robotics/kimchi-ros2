@@ -16,6 +16,8 @@
 
 #include "map_info.h"
 
+#include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
+
 enum class RobotState {
   NO_MAP,
   MAPPING_WITH_EXPLORATION,
@@ -44,6 +46,10 @@ class KimchiStateServer : public rclcpp::Node {
   void saveMap();
   void stopSlam();
   void startNavigation();
+
+    // The client used to control the nav2 stack
+  std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_nav_;
+  std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient> client_loc_;
 
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr

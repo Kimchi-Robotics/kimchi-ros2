@@ -20,6 +20,7 @@ find_package(kimchi_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(nav2_lifecycle_manager REQUIRED)
 
 add_executable(kimchi_state_server src/kimchi_state_server.cpp)
 ament_target_dependencies(kimchi_state_server PUBLIC
@@ -31,7 +32,8 @@ ament_target_dependencies(kimchi_state_server PUBLIC
   "kimchi_interfaces"
   "std_srvs"
   "nav2_msgs"
-  "lifecycle_msgs")
+  "lifecycle_msgs"
+  "nav2_lifecycle_manager")
 
 target_include_directories(kimchi_state_server PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
