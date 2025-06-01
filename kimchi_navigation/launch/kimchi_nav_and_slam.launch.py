@@ -34,16 +34,6 @@ def generate_launch_description():
         description="Full path to the map file to use",
     )
 
-    # navigation_bring_up_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "bringup_launch.py")),
-    #     launch_arguments={
-    #         'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
-    #         'use_sim_time': LaunchConfiguration('use_sim_time'),
-    #         'autostart': 'false',
-    #         'map': LaunchConfiguration('map'),
-    #     }.items(),
-    # )
-
     navigation_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")),
         launch_arguments={
@@ -62,14 +52,6 @@ def generate_launch_description():
             'autostart': 'false',
         }.items(),
     )
-
-
-    # slam_toolbox_launch = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(os.path.join(pkg_slam_toolbox, "launch", "online_async_launch.py")),
-    #     launch_arguments={
-    #         'use_sim_time': LaunchConfiguration('use_sim_time'),
-    #     }.items(),
-    # )
 
     slam_toolbox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_slam_toolbox, "launch", "online_async_launch.py")),
@@ -119,10 +101,10 @@ def generate_launch_description():
 
     # Nodes
     # ld.add_action(rviz)
-    # ld.add_action(map_saver_launch)
+    ld.add_action(map_saver_launch)
 
     # Commands
-    # ld.add_action(deactivate_slam_toolbox_node)
+    ld.add_action(deactivate_slam_toolbox_node)
 
     # ld.add_action(deactivate_amcl)
     # ld.add_action(deactivate_map_server)

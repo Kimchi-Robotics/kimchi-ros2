@@ -114,20 +114,25 @@ void KimchiStateServer::startSlamCallback(
 void KimchiStateServer::startNavigationCallback(
   const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
   std_srvs::srv::Trigger::Response::SharedPtr response) {
+  RCLCPP_INFO(this->get_logger(), "KimchiStateServer::startNavigationCallback");
 
-  // if (state_ == RobotState::NO_MAP) {
-  //   response->success = false;
-  //   response->message = "There's no map available. Can't start navigation.";
-  //   return;
-  // }
+  if (state_ == RobotState::NO_MAP) {
+    RCLCPP_INFO(this->get_logger(), "KimchiStateServer::startNavigationCallback, RobotState::NO_MAP");
 
-  // if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-  //   saveMap();
+    response->success = false;
+    response->message = "There's no map available. Can't start navigation.";
+    return;
+  }
+
+  if (state_ == RobotState::MAPPING_WITH_TELEOP) {
+    RCLCPP_INFO(this->get_logger(), "KimchiStateServer::startNavigationCallback, RobotState::MAPPING_WITH_TELEOP");
+    saveMap();
     stopSlam();
-  // }
+  }
 
-  // state_ = RobotState::IDLE;
-  // RCLCPP_INFO(this->get_logger(), "Starting Navigation");
+  state_ = RobotState::IDLE;
+  RCLCPP_INFO(this->get_logger(), "KimchiStateServer::startNavigationCallback, Starting Navigation");
+  RCLCPP_INFO(this->get_logger(), "Starting Navigation");
 
   startNavigation();
   response->success = true;
@@ -169,12 +174,12 @@ void KimchiStateServer::startNavigation() {
   RCLCPP_INFO(this->get_logger(), "KimchiStateServer::KimchiStateServer. after client_loc_");
 
   // TODO: call active_navigation_node_client_
-  std::thread startup_nav_thread(
-    std::bind(
-        &nav2_lifecycle_manager::LifecycleManagerClient::startup,
-        client_nav_.get(),
-        std::placeholders::_1), wait_duration  // Direct argument instead of placeholder
-    );
+  // std::thread startup_nav_thread(
+  //   std::bind(
+  //       &nav2_lifecycle_manager::LifecycleManagerClient::startup,
+  //       client_nav_.get(),
+  //       std::placeholders::_1), wait_duration  // Direct argument instead of placeholder
+  //   );
 
   std::thread startup_loc_thread(
     std::bind(
@@ -184,7 +189,7 @@ void KimchiStateServer::startNavigation() {
     );
 
 
-    startup_nav_thread.detach();
+    // startup_nav_thread.detach();
     startup_loc_thread.detach();
   }
 
