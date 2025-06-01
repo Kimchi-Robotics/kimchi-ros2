@@ -6,12 +6,8 @@ from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.actions import ExecuteProcess
-
 
 def generate_launch_description():
-    pkg_kimchi_state = get_package_share_directory("kimchi_state")
-    pkg_kimchi_map = get_package_share_directory("kimchi_map")
     pkg_kimchi_navigation = get_package_share_directory("kimchi_navigation")
  
     use_sim_time_argument = DeclareLaunchArgument(
@@ -19,7 +15,6 @@ def generate_launch_description():
         default_value="true",
         description="Use simulation time",
     )
-
 
     kimchi_state_server_node = Node(
         package="kimchi_state",

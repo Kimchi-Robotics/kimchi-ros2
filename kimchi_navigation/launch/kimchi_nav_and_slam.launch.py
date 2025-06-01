@@ -43,7 +43,6 @@ def generate_launch_description():
         }.items(),
     )
 
-
     localization_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "localization_launch.py")),
         launch_arguments={
@@ -61,8 +60,6 @@ def generate_launch_description():
         }.items(),
     )
 
-
-    # TODO: Add map saver node.
     map_saver_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_map_server, "launch", "map_saver_server.launch.py")),
     )
@@ -100,13 +97,10 @@ def generate_launch_description():
     ld.add_action(localization_launch)
 
     # Nodes
-    # ld.add_action(rviz)
+    ld.add_action(rviz)
     ld.add_action(map_saver_launch)
 
     # Commands
     ld.add_action(deactivate_slam_toolbox_node)
-
-    # ld.add_action(deactivate_amcl)
-    # ld.add_action(deactivate_map_server)
 
     return ld
