@@ -66,7 +66,7 @@ def generate_launch_description():
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'autostart': 'false',
+            'autostart': 'true',
             'map': LaunchConfiguration('map'),
         }.items(),
     )
@@ -79,6 +79,7 @@ def generate_launch_description():
     rviz = Node(
         package="rviz2",
         executable="rviz2",
+        output='log',
         arguments=["-d", LaunchConfiguration("rviz_config_file")],
     )
 
