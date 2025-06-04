@@ -21,6 +21,7 @@ def generate_launch_description():
         description="Full path to the RVIZ config file to use",
     )
 
+    print(os.path.join(pkg_nav2_bringup, "rviz", "nav2_default_view.rviz"))
     use_sim_time_argument = DeclareLaunchArgument(
         "use_sim_time",
         default_value="true",
@@ -33,20 +34,29 @@ def generate_launch_description():
         description="Full path to the map file to use",
     )
 
-    navigation_bring_up_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "bringup_launch.py")),
+    navigation_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")),
+        launch_arguments={
+            'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'autostart': 'true',
+        }.items(),
+    )
+
+    localization_launch = IncludeLaunchDescription(
+        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "localization_launch.py")),
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'false',
-            'map': LaunchConfiguration('map'),
         }.items(),
     )
 
     slam_toolbox_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_slam_toolbox, "launch", "online_async_launch.py")),
         launch_arguments={
-            'use_sim_time': LaunchConfiguration('use_sim_time'),
+            'use_sim_time': LaunchConfiguration("use_sim_time"),
+            'slams_param_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
         }.items(),
     )
 
@@ -61,57 +71,12 @@ def generate_launch_description():
         arguments=["-d", LaunchConfiguration("rviz_config_file")],
     )
 
-    # TODO: Add another command to deactivate navigation
+    # Deactivate SLAM node.
     deactivate_slam_toolbox_node = ExecuteProcess(
         cmd=[[
             'ros2',
             " service call ",
             "/slam_toolbox/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    deactivate_bt_navigator_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/bt_navigator/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    # WARNING: This makes a lot of nodes dissapear
-    deactivate_controller_server_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/controller_server/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    deactivate_local_costmap_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/local_costmap/local_costmap/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
-    )
-
-    deactivate_global_costmap_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/global_costmap/global_costmap/change_state",
             " lifecycle_msgs/srv/ChangeState ",
             '"{transition: {id: 4}}"',
         ]],
@@ -126,12 +91,16 @@ def generate_launch_description():
     ld.add_action(rviz_config_file_argunment)
 
     # Launch files.
-    ld.add_action(navigation_bring_up_launch)
+    # ld.add_action(navigation_bring_up_launch)
     ld.add_action(slam_toolbox_launch)
+    ld.add_action(navigation_launch)
+    ld.add_action(localization_launch)
 
     # Nodes
     ld.add_action(rviz)
+    ld.add_action(map_saver_launch)
 
     # Commands
     ld.add_action(deactivate_slam_toolbox_node)
+
     return ld

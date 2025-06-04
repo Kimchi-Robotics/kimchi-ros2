@@ -66,7 +66,7 @@ def generate_launch_description():
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'autostart': 'true',
+            'autostart': 'false',
             'map': LaunchConfiguration('map'),
         }.items(),
     )
