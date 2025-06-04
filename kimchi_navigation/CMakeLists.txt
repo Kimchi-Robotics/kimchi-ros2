@@ -39,9 +39,13 @@ include_directories(include)
 add_executable(amcl_initial_pose_trigger src/amcl_initial_pose_trigger.cpp)
 ament_target_dependencies(amcl_initial_pose_trigger rclcpp geometry_msgs)
 
+add_executable(amcl_global_trigger_correct src/amcl_global_trigger_correct.cpp)
+ament_target_dependencies(amcl_global_trigger_correct rclcpp geometry_msgs tf2 tf2_ros)
+
 # Install executables
 install(TARGETS
   amcl_initial_pose_trigger
+  amcl_global_trigger_correct
   DESTINATION lib/${PROJECT_NAME}
 )
 
