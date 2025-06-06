@@ -2,7 +2,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -48,7 +48,7 @@ def generate_launch_description():
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'autostart': 'false',
+            'autostart': 'true',
         }.items(),
     )
 
@@ -64,11 +64,24 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_map_server, "launch", "map_saver_server.launch.py")),
     )
 
+    # Global Localization
+    global_localization = Node(
+        package='kimchi_navigation',
+        executable='global_localization',
+        name='global_localization',
+        output='screen',
+        parameters=[{
+            'position_covariance_threshold': 0.5,
+            'orientation_covariance_threshold': 0.5,
+        }],
+        # Launch this after AMCL is started
+        on_exit=LogInfo(msg="Initial pose estimator has completed its task")
+    )
     # RViz
     rviz = Node(
         package="rviz2",
         executable="rviz2",
-        arguments=["-d", LaunchConfiguration("rviz_config_file")],
+        arguments=["-d", LaunchConfiguration("rviz_config_file"), '--ros-args', '--log-level', 'WARN'],
     )
 
     # Deactivate SLAM node.
@@ -99,6 +112,7 @@ def generate_launch_description():
     # Nodes
     ld.add_action(rviz)
     ld.add_action(map_saver_launch)
+    ld.add_action(global_localization)
 
     # Commands
     ld.add_action(deactivate_slam_toolbox_node)
