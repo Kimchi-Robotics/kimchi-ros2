@@ -49,8 +49,6 @@ def generate_launch_description():
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'false',
-            'map': "/home/arilow/ws/kimchi_map.yaml",
-            # 'map': LaunchConfiguration('map'),
         }.items(),
     )
 
