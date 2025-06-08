@@ -24,8 +24,9 @@ enum RobotStateEnum {
   MAPPING_WITH_EXPLORATION = 1;
   MAPPING_WITH_TELEOP = 2;
   NAVIGATING = 3;
-  TELEOP = 4;
-  IDLE = 5;
+  LOCATING = 4;
+  TELEOP = 5;
+  IDLE = 6;
 }
 
 // Methods to communicate from the Kimchi App to the kimchi robot.
@@ -36,12 +37,12 @@ service KimchiApp {
   rpc GetRobotState (Empty) returns (RobotStateMsg) {}
   rpc StartMapping(Empty) returns (StartMappingResponse) {}
   rpc StartNavigation(Empty) returns (StartNavigationResponse) {}
+  rpc SendSelectedPose(Pose) returns (Empty) {}
 
   // Stream subscriptions
   rpc SubscribeToMap(Empty) returns (stream Map) {}
   rpc SubscribeToRobotState (Empty) returns (stream RobotStateMsg) {}
   rpc GetPose (Empty) returns (stream Pose) {}
-
 }
 
 message IsAliveResponse {

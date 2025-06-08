@@ -13,7 +13,6 @@ KimchiStateServer::KimchiStateServer(
     : node_(new rclcpp::Node("kimchi_state_server", options)),
       state_(RobotState::NO_MAP) {
   using namespace std::chrono_literals;
-  RCLCPP_INFO(node_->get_logger(), "KimchiStateServer::KimchiStateServer.");
 
   // Create a QoS profile with best effort for sharing the state of the robot.
   rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
