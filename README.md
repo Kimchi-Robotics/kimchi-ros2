@@ -121,7 +121,7 @@ ros2 launch kimchi_navigation kimchi_slam.launch.py use_sim_time:=true
 ### Navigation
 
 ```
-ros2 launch andino_gazebo andino_gazebo_navigation.launch.py
+ros2 launch kimchi_navigation kimchi_navigation.launch.py
 ```
 
 ### Run gRPC server
