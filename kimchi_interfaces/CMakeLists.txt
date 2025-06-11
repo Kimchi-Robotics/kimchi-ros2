@@ -28,7 +28,8 @@ find_package(rosidl_default_generators REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/RobotState.msg"
 "srv/MapInfo.srv"
-DEPENDENCIES geometry_msgs builtin_interfaces
+"action/Localizing.action"
+DEPENDENCIES geometry_msgs std_msgs builtin_interfaces
 )
 
 ament_package()
