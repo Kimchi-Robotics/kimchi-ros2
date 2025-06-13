@@ -98,16 +98,30 @@ ros2 launch andino_gz andino_gz.launch.py nav2:=False rviz:=False world_name:=po
 
 **Note**: Remember you can check all the arguments that a launch file accepts by adding `-s` to the command: `ros2 launch andino_gz andino_gz.launch.py -s`.
 
+### Bring up kimchi
+
+On real robot:
+```
+ros2 launch kimchi_state kimchi_bring_up.launch.py
+```
+
+Simulation:
+
+```
+ros2 launch kimchi_state kimchi_bring_up.launch.py use_sim_time:=true
+```
+
+
 ### Slam
 
 ```
 ros2 launch kimchi_navigation kimchi_slam.launch.py use_sim_time:=true
 ```
 
-### Navigation (DEPRECATED)
+### Navigation
 
 ```
-ros2 launch andino_gazebo andino_gazebo_navigation.launch.py
+ros2 launch kimchi_navigation kimchi_navigation.launch.py
 ```
 
 ### Run gRPC server
