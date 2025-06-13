@@ -12,7 +12,11 @@ KimchiStateServer::KimchiStateServer(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
     : node_(new rclcpp::Node("kimchi_state_server", options)),
       state_(RobotState::NO_MAP) {
+<<<<<<< HEAD
   using namespace std::chrono_literals;
+=======
+  RCLCPP_INFO(node_->get_logger(), "KimchiStateServer::KimchiStateServer.");
+>>>>>>> main
 
   // Create a QoS profile with best effort for sharing the state of the robot.
   rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
@@ -25,7 +29,11 @@ KimchiStateServer::KimchiStateServer(
       node_->create_publisher<kimchi_interfaces::msg::RobotState>(
           "/kimchi_state_server/state", qos);
   state_publisher_timer_ = node_->create_wall_timer(
+<<<<<<< HEAD
       1s, std::bind(&KimchiStateServer::statePublisherTimerCallback, this));
+=======
+      std::chrono::seconds(1), std::bind(&KimchiStateServer::statePublisherTimerCallback, this));
+>>>>>>> main
 
   // Subscribe to the map info service
   get_map_info_client_ = node_->create_client<kimchi_interfaces::srv::MapInfo>(
@@ -63,9 +71,7 @@ void KimchiStateServer::statePublisherTimerCallback() {
 }
 
 void KimchiStateServer::callGetMapInfoService() {
-  using namespace std::chrono_literals;
-
-  while (!get_map_info_client_->wait_for_service(1s)) {
+  while (!get_map_info_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(),
                    "Interrupted while waiting for the service. Exiting.");
@@ -75,7 +81,7 @@ void KimchiStateServer::callGetMapInfoService() {
   }
 
   auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
-  request->str_place_holder = "May you share the mapo info please?";
+  request->str_place_holder = "May you share the map info please?";
 
   auto future = get_map_info_client_->async_send_request(request);
 
