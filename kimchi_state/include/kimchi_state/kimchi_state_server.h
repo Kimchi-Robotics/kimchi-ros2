@@ -22,6 +22,7 @@ enum class RobotState {
   MAPPING_WITH_EXPLORATION,
   MAPPING_WITH_TELEOP,
   NAVIGATING,
+  LOCATING,
   TELEOP,
   IDLE
 };
@@ -51,9 +52,13 @@ class KimchiStateServer {
   void startNavigation();
 
   std::shared_ptr<rclcpp::Node> node_;
+<<<<<<< HEAD
+
+=======
   // The client used to control the nav2 stack
   // std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
   // client_nav_;
+>>>>>>> main
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
 
@@ -61,21 +66,16 @@ class KimchiStateServer {
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
 
-  // TODO Service to start mapping.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
   rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
       active_slam_toolbox_node_client_;
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
 
-  // TODO Service to start navigation.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_navigation_service_;
-  rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
-      active_navigation_node_client_;
 
   rclcpp::Client<kimchi_interfaces::srv::MapInfo>::SharedPtr
       get_map_info_client_;
-  rclcpp::TimerBase::SharedPtr timer_;
-  std::atomic<RobotState> state_;
 
+  std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
 };

@@ -151,6 +151,29 @@ class GrpcBridgeNode(Node):
     def get_robot_state(self):
         return self._robot_state
 
+    def process_selected_pose(self, pose: Pose2D):
+        """
+        Processes the selected pose by updating the protected pose.
+
+        Args:
+            pose: A Pose2D object representing the selected pose.
+        """
+        self.get_logger().info(f'Processing selected pose: {pose.x}, {pose.y}, {pose.theta}')
+
+        if self._robot_state == RobotState.LOCATING:
+            self.get_logger().info(
+                'Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
+        elif self._robot_state == RobotState.NAVIGATING:
+            self.get_logger().info(
+                'Robot is navigating. This pose will be added to the path of the robot.')
+        elif self._robot_state == RobotState.IDLE:
+            self.get_logger().info(
+                'Robot state is IDLE. Thes robot will be send to this pose.')
+        else:
+            self.get_logger().info(
+                'Robot is not doing anything.')
+
+
 
 def main():
     rclpy.init()

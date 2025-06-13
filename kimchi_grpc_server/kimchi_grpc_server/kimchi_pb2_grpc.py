@@ -65,6 +65,11 @@ class KimchiAppStub(object):
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.StartNavigationResponse.FromString,
                 _registered_method=True)
+        self.SendSelectedPose = channel.unary_unary(
+                '/kimchi.KimchiApp/SendSelectedPose',
+                request_serializer=kimchi__pb2.Pose.SerializeToString,
+                response_deserializer=kimchi__pb2.Empty.FromString,
+                _registered_method=True)
         self.SubscribeToMap = channel.unary_stream(
                 '/kimchi.KimchiApp/SubscribeToMap',
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
@@ -122,6 +127,12 @@ class KimchiAppServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SendSelectedPose(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SubscribeToMap(self, request, context):
         """Stream subscriptions
         """
@@ -173,6 +184,11 @@ def add_KimchiAppServicer_to_server(servicer, server):
                     servicer.StartNavigation,
                     request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.StartNavigationResponse.SerializeToString,
+            ),
+            'SendSelectedPose': grpc.unary_unary_rpc_method_handler(
+                    servicer.SendSelectedPose,
+                    request_deserializer=kimchi__pb2.Pose.FromString,
+                    response_serializer=kimchi__pb2.Empty.SerializeToString,
             ),
             'SubscribeToMap': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeToMap,
@@ -353,6 +369,33 @@ class KimchiApp(object):
             '/kimchi.KimchiApp/StartNavigation',
             kimchi__pb2.Empty.SerializeToString,
             kimchi__pb2.StartNavigationResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SendSelectedPose(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/SendSelectedPose',
+            kimchi__pb2.Pose.SerializeToString,
+            kimchi__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
