@@ -115,7 +115,7 @@ class GrpcBridgeNode(Node):
         request = Trigger.Request()
         self.get_logger().info('Calling start mapping service')
         self._start_mapping_client.call(request)
-        self.get_logger().info('Finished calling start mapping service')
+        return [True, 'Mapping started successfully']
 
     def start_navigation(self):
         self._start_navigation_client.wait_for_service()
@@ -123,6 +123,7 @@ class GrpcBridgeNode(Node):
         self.get_logger().info('Calling start navigation service')
         self._start_navigation_client.call(request)
         self.get_logger().info('Finished calling start navigation service')
+        return [True, 'Navigation started successfully']
 
     def get_map(self):
         self._map_info_client.wait_for_service()

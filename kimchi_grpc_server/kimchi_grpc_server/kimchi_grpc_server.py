@@ -71,12 +71,12 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         self._logger.info(f"Serving StartMapping request {request}!!!!!!!!!!!!!!!!!!!!!!!")
         [success, msg]= self._ros_node.start_mapping()
         self._logger.info(f"Finished calling start mapping service!!!!!!!!!!!!!!!!!!!!!!!!1")
-        return kimchi_pb2.StartMappingResponse(success=success, msg=msg)
+        return kimchi_pb2.StartMappingResponse(success=success, info=msg)
 
     def StartNavigation(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving StartNavigation request {request}")
         [success, msg] = self._ros_node.start_navigation()
-        return kimchi_pb2.StartNavigationResponse(success=success, msg=msg)
+        return kimchi_pb2.StartNavigationResponse(success=success, info=msg)
 
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")

@@ -24,7 +24,11 @@ enum class RobotState {
   NAVIGATING,
   LOCATING,
   TELEOP,
-  IDLE
+  IDLE,
+  LOST,
+  RECOVERING,
+  GOAL_REACHED,
+  CHARGING
 };
 
 /**
@@ -50,6 +54,7 @@ class KimchiStateServer {
   void saveMap();
   void stopSlam();
   void startNavigation();
+  void changeState(RobotState new_state);
 
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>

@@ -1,18 +1,35 @@
 #include "kimchi_state/kimchi_state_server.h"
-
 #include <kimchi_state/map_info.h>
-
 #include <chrono>
 #include <functional>
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <thread>
 
+namespace {
+  std::string toString(RobotState robot_state) {
+    switch (robot_state) {
+      case RobotState::NO_MAP: return "NO_MAP";
+      case RobotState::MAPPING_WITH_EXPLORATION: return "MAPPING_WITH_EXPLORATION";
+      case RobotState::MAPPING_WITH_TELEOP: return "MAPPING_WITH_TELEOP";
+      case RobotState::NAVIGATING: return "NAVIGATING";
+      case RobotState::LOCATING: return "LOCATING";
+      case RobotState::TELEOP: return "TELEOP";
+      case RobotState::IDLE: return "IDLE";
+      case RobotState::LOST: return "LOST";
+      case RobotState::RECOVERING: return "RECOVERING";
+      case RobotState::GOAL_REACHED: return "GOAL_REACHED";
+      case RobotState::CHARGING: return "CHARGING";
+    }
+    return "UNKNOWN_STATE";
+  }
+}
+
 KimchiStateServer::KimchiStateServer(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
     : node_(new rclcpp::Node("kimchi_state_server", options)),
       state_(RobotState::NO_MAP) {
-  using namespace std::chrono_literals;
+  RCLCPP_INFO(node_->get_logger(), "KimchiStateServer::KimchiStateServer.");
 
   // Create a QoS profile with best effort for sharing the state of the robot.
   rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
@@ -85,11 +102,11 @@ void KimchiStateServer::callGetMapInfoService() {
     if (result->success) {
       map_info_ = std::make_unique<MapInfo>(result->resolution, result->origin,
                                             result->map_image);
-      state_ = RobotState::IDLE;
+      changeState(RobotState::IDLE);
       startNavigation();
       RCLCPP_INFO(node_->get_logger(), "MapInfo received");
     } else {
-      state_ = RobotState::NO_MAP;
+      changeState(RobotState::NO_MAP);
       RCLCPP_INFO(node_->get_logger(), "MapInfo Service returned empty map");
     }
   } else {
@@ -101,7 +118,8 @@ void KimchiStateServer::callGetMapInfoService() {
 void KimchiStateServer::startSlamCallback(
     const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
     std_srvs::srv::Trigger::Response::SharedPtr response) {
-  state_ = RobotState::MAPPING_WITH_TELEOP;
+  changeState(RobotState::MAPPING_WITH_TELEOP);
+
   RCLCPP_INFO(node_->get_logger(), "Waiting for slam_toolbox service");
   active_slam_toolbox_node_client_->wait_for_service();
   RCLCPP_INFO(node_->get_logger(), "Finished waiting for slam_toolbox service");
@@ -122,15 +140,17 @@ void KimchiStateServer::startNavigationCallback(
     return;
   }
 
+  response->success = true;
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
     saveMap();
     stopSlam();
+    return;
   }
 
   state_ = RobotState::IDLE;
 
   startNavigation();
-  response->success = true;
+  changeState(RobotState::IDLE);
 }
 
 void KimchiStateServer::saveMap() {
@@ -146,7 +166,19 @@ void KimchiStateServer::saveMap() {
 
   // TODO(arilow): Handle the response by passing a callback to
   // async_send_request
-  auto future = save_map_client_->async_send_request(request);
+  auto future = save_map_client_->async_send_request(request, [this](std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> /*response_future*/) {
+    auto map_server_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(
+            node_, "/map_server");
+    if (map_server_param_client_->wait_for_service(std::chrono::seconds(1))) {
+            auto future = map_server_param_client_->set_parameters({
+                rclcpp::Parameter("yaml_filename", "/home/arilow/ws/kimchi_map.yaml")
+            });
+            // Handle future result...
+        }
+
+    startNavigation();
+    changeState(RobotState::IDLE);
+  });
 }
 
 void KimchiStateServer::stopSlam() {
@@ -168,6 +200,11 @@ void KimchiStateServer::startNavigation() {
   );
 
   startup_loc_thread.detach();
+}
+
+void KimchiStateServer::changeState(RobotState new_state) {
+  state_ = new_state;
+  RCLCPP_INFO(node_->get_logger(), "State changed to: %s", toString(state_).c_str());
 }
 
 int main(int argc, char *argv[]) {
