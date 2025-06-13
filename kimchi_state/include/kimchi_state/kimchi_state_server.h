@@ -52,13 +52,6 @@ class KimchiStateServer {
   void startNavigation();
 
   std::shared_ptr<rclcpp::Node> node_;
-<<<<<<< HEAD
-
-=======
-  // The client used to control the nav2 stack
-  // std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-  // client_nav_;
->>>>>>> main
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
 
