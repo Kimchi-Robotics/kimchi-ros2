@@ -53,8 +53,6 @@ class KimchiStateServer {
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
   void saveMap();
-  void stopSlam();
-  void startNavigation();
   void changeState(RobotState new_state);
 
   std::shared_ptr<rclcpp::Node> node_;
@@ -62,16 +60,11 @@ class KimchiStateServer {
   std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
 
-  // std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-  //     client_localization_;
-
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
 
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
-  // rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
-  //     active_slam_toolbox_node_client_;
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
 
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_navigation_service_;

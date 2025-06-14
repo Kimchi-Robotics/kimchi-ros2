@@ -1,11 +1,11 @@
 #include "kimchi_state/navigation_manager.h"
 
-#include <rclcpp/rclcpp.hpp>
-#include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
-#include <lifecycle_msgs/srv/change_state.hpp>
-#include <thread>
 #include <chrono>
+#include <lifecycle_msgs/srv/change_state.hpp>
 #include <memory>
+#include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <thread>
 
 NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node)
     : node_(node) {
@@ -53,5 +53,4 @@ void NavigationManager::startNavigation() {
   startup_loc_thread.detach();
 }
 
-void NavigationManager::stopNavigation() {
-}
+void NavigationManager::stopNavigation() {}

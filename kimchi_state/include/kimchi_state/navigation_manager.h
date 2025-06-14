@@ -1,9 +1,9 @@
 #pragma once
 
-#include <memory>
-#include <rclcpp/rclcpp.hpp>
 #include <lifecycle_msgs/srv/change_state.hpp>
+#include <memory>
 #include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 /**
  * Class to manage navigation-related functionalities.
@@ -30,5 +30,5 @@ class NavigationManager {
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
   rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
-    active_slam_toolbox_node_client_;
+      active_slam_toolbox_node_client_;
 };
