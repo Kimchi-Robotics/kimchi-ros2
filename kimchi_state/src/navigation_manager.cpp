@@ -7,8 +7,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include <thread>
 
-NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node)
-    : node_(node) {
+NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
+                                     std::shared_ptr<MissionObserver> observer)
+    : node_(node), mission_observer_(observer), current_goal_(nullptr) {
   RCLCPP_INFO(node_->get_logger(), "NavigationManager initialized.");
   active_slam_toolbox_node_client_ =
       node_->create_client<lifecycle_msgs::srv::ChangeState>(
@@ -17,6 +18,9 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node)
   client_localization_ =
       std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
           "lifecycle_manager_localization", node_);
+
+  navigate_to_pose_action_client_ptr_ =
+      rclcpp_action::create_client<NavigateToPose>(node_, "/navigate_to_pose");
 }
 
 void NavigationManager::startSlam() {
@@ -52,3 +56,98 @@ void NavigationManager::startNavigation() {
 }
 
 void NavigationManager::stopNavigation() {}
+
+void NavigationManager::addGoalToMission(const Point2D& point) {
+  RCLCPP_INFO(node_->get_logger(), "Adding point to path: (%f, %f)", point.x,
+              point.y);
+  goals_.push(point);
+  onNewGoal();
+}
+
+void NavigationManager::goToNextGoal() {
+  using namespace std::placeholders;
+  if (goals_.empty()) {
+    RCLCPP_INFO(node_->get_logger(), "No goals to navigate to.");
+    return;
+  }
+
+  auto navigation_goal = NavigateToPose::Goal();
+  navigation_goal.pose.header.frame_id = "map";
+  navigation_goal.pose.header.stamp = node_->now();
+  navigation_goal.pose.pose.position.x = goals_.front().x;
+  navigation_goal.pose.pose.position.y = goals_.front().y;
+  navigation_goal.pose.pose.orientation.w = 1.0;  // Default orientation
+  navigation_goal.pose.pose.orientation.x = 0.0;
+  navigation_goal.pose.pose.orientation.y = 0.0;
+  navigation_goal.pose.pose.orientation.z = 0.0;
+
+  auto send_goal_options =
+      rclcpp_action::Client<NavigateToPose>::SendGoalOptions();
+  send_goal_options.goal_response_callback = std::bind(
+      &NavigationManager::navigateToPoseGoalResponseCallback, this, _1);
+  send_goal_options.result_callback =
+      std::bind(&NavigationManager::navigateToPoseResultCallback, this, _1);
+  navigate_to_pose_action_client_ptr_->async_send_goal(navigation_goal,
+                                                       send_goal_options);
+
+  current_goal_ = std::make_unique<Point2D>(goals_.front());
+  goals_.pop();
+}
+
+void NavigationManager::onNewGoal() {
+  if (current_goal_ != nullptr) {
+    RCLCPP_INFO(node_->get_logger(), "Already navigating to a goal: (%f, %f)",
+                current_goal_->x, current_goal_->y);
+    return;
+  }
+  goToNextGoal();
+}
+
+void NavigationManager::navigateToPoseGoalResponseCallback(
+    GoalHandleNavigateToPose::SharedPtr goal_handle) {
+  RCLCPP_INFO(node_->get_logger(),
+              "NavigationManager::navigateToPoseGoalResponseCallback");
+
+  if (!goal_handle) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "Goal was rejected by navigateToPose server");
+  } else {
+    RCLCPP_INFO(node_->get_logger(),
+                "Goal accepted by navigateToPose server, waiting for result");
+    mission_observer_->onNavigatingToGoal(*current_goal_);
+  }
+}
+
+void NavigationManager::navigateToPoseResultCallback(
+    const GoalHandleNavigateToPose::WrappedResult& result) {
+  switch (result.code) {
+    case rclcpp_action::ResultCode::SUCCEEDED:
+      RCLCPP_ERROR(node_->get_logger(),
+                   "navigateToPoseResultCallback: Goal reached!");
+
+      if (goals_.empty()) {
+        mission_observer_->onMissionFinished();
+      } else {
+        mission_observer_->onGoalReached(*current_goal_);
+      }
+      current_goal_.reset();  // Clear the current goal after success
+
+      break;
+    case rclcpp_action::ResultCode::ABORTED:
+      RCLCPP_ERROR(node_->get_logger(),
+                   "navigateToPoseResultCallback: Goal was aborted. Error "
+                   "code: %i. Message: %s",
+                   result.result->error_code, result.result->error_msg.c_str());
+      return;
+    case rclcpp_action::ResultCode::CANCELED:
+      RCLCPP_ERROR(node_->get_logger(),
+                   "navigateToPoseResultCallback: Goal was canceled. Error "
+                   "code: %i. Message: %s",
+                   result.result->error_code, result.result->error_msg.c_str());
+      return;
+    default:
+      RCLCPP_ERROR(node_->get_logger(),
+                   "navigateToPoseResultCallback: Unknown result code");
+      return;
+  }
+}
