@@ -26,7 +26,7 @@ def generate_launch_description():
         executable="kimchi_map_handler",
     )
 
-    kimchi_navigation_launch = IncludeLaunchDescription(
+    kimchi_slam_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_navigation, "launch", "kimchi_nav_and_slam.launch.py")),
         launch_arguments={
             'use_sim_time': LaunchConfiguration("use_sim_time"),
@@ -43,6 +43,6 @@ def generate_launch_description():
     ld.add_action(kimchi_map_handler_node)
 
     # Launch files
-    ld.add_action(kimchi_navigation_launch)
+    ld.add_action(kimchi_slam_launch)
 
     return ld

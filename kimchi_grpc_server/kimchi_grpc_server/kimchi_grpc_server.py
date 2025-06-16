@@ -82,6 +82,27 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         self._logger.info(f"Serving IsAlive request {request}")
         return kimchi_pb2.IsAliveResponse(alive=True)
 
+    def SendSelectedPose(self, request: kimchi_pb2.Pose, context: grpc.aio.ServicerContext):
+        """
+        Receives a Pose message from the client and sends it to the ROS node.
+
+        Args:
+            request: A Pose message containing the selected pose
+            context: The RPC context
+
+        Returns:
+            An Empty response
+        """
+        try:
+            self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
+            self._ros_node.process_selected_pose(Pose2D(request.x, request.y, request.theta))
+            return kimchi_pb2.Empty()
+        except Exception as e:
+            self._logger.error(f"Error in SendSelectedPose RPC: {e}")
+            context.set_code(grpc.StatusCode.INTERNAL)
+            context.set_details(f"Internal error: {str(e)}")
+            return kimchi_pb2.Empty()
+    
     def Move(self, request_iterator, context):
         """
         Receives a stream of Velocity messages from the client.

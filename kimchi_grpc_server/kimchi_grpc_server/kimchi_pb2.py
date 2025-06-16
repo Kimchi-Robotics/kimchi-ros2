@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ckimchi.proto\x12\x06kimchi\" \n\x0fIsAliveResponse\x12\r\n\x05\x61live\x18\x01 \x01(\x08\"5\n\x14StartMappingResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0c\n\x04info\x18\x02 \x01(\t\"8\n\x17StartNavigationResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0c\n\x04info\x18\x02 \x01(\t\"6\n\rRobotStateMsg\x12%\n\x05state\x18\x01 \x01(\x0e\x32\x16.kimchi.RobotStateEnum\"+\n\x04Pose\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"+\n\x08Velocity\x12\x0e\n\x06linear\x18\x01 \x01(\x02\x12\x0f\n\x07\x61ngular\x18\x02 \x01(\x02\"F\n\x03Map\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x1c\n\x06origin\x18\x02 \x01(\x0b\x32\x0c.kimchi.Pose\x12\x12\n\nresolution\x18\x03 \x01(\x02\"\x07\n\x05\x45mpty*y\n\x0eRobotStateEnum\x12\n\n\x06NO_MAP\x10\x00\x12\x1c\n\x18MAPPING_WITH_EXPLORATION\x10\x01\x12\x17\n\x13MAPPING_WITH_TELEOP\x10\x02\x12\x0e\n\nNAVIGATING\x10\x03\x12\n\n\x06TELEOP\x10\x04\x12\x08\n\x04IDLE\x10\x05\x32\xf3\x03\n\tKimchiApp\x12\x33\n\x07IsAlive\x12\r.kimchi.Empty\x1a\x17.kimchi.IsAliveResponse\"\x00\x12+\n\x04Move\x12\x10.kimchi.Velocity\x1a\r.kimchi.Empty\"\x00(\x01\x12&\n\x06GetMap\x12\r.kimchi.Empty\x1a\x0b.kimchi.Map\"\x00\x12\x37\n\rGetRobotState\x12\r.kimchi.Empty\x1a\x15.kimchi.RobotStateMsg\"\x00\x12=\n\x0cStartMapping\x12\r.kimchi.Empty\x1a\x1c.kimchi.StartMappingResponse\"\x00\x12\x43\n\x0fStartNavigation\x12\r.kimchi.Empty\x1a\x1f.kimchi.StartNavigationResponse\"\x00\x12\x30\n\x0eSubscribeToMap\x12\r.kimchi.Empty\x1a\x0b.kimchi.Map\"\x00\x30\x01\x12\x41\n\x15SubscribeToRobotState\x12\r.kimchi.Empty\x1a\x15.kimchi.RobotStateMsg\"\x00\x30\x01\x12*\n\x07GetPose\x12\r.kimchi.Empty\x1a\x0c.kimchi.Pose\"\x00\x30\x01\x42 \n\x0f\x63om.kimchi.grpcB\x0bKimchiProtoP\x01\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0ckimchi.proto\x12\x06kimchi\" \n\x0fIsAliveResponse\x12\r\n\x05\x61live\x18\x01 \x01(\x08\"5\n\x14StartMappingResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0c\n\x04info\x18\x02 \x01(\t\"8\n\x17StartNavigationResponse\x12\x0f\n\x07success\x18\x01 \x01(\x08\x12\x0c\n\x04info\x18\x02 \x01(\t\"6\n\rRobotStateMsg\x12%\n\x05state\x18\x01 \x01(\x0e\x32\x16.kimchi.RobotStateEnum\"+\n\x04Pose\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\r\n\x05theta\x18\x03 \x01(\x02\"+\n\x08Velocity\x12\x0e\n\x06linear\x18\x01 \x01(\x02\x12\x0f\n\x07\x61ngular\x18\x02 \x01(\x02\"F\n\x03Map\x12\r\n\x05image\x18\x01 \x01(\x0c\x12\x1c\n\x06origin\x18\x02 \x01(\x0b\x32\x0c.kimchi.Pose\x12\x12\n\nresolution\x18\x03 \x01(\x02\"\x07\n\x05\x45mpty*\x87\x01\n\x0eRobotStateEnum\x12\n\n\x06NO_MAP\x10\x00\x12\x1c\n\x18MAPPING_WITH_EXPLORATION\x10\x01\x12\x17\n\x13MAPPING_WITH_TELEOP\x10\x02\x12\x0e\n\nNAVIGATING\x10\x03\x12\x0c\n\x08LOCATING\x10\x04\x12\n\n\x06TELEOP\x10\x05\x12\x08\n\x04IDLE\x10\x06\x32\xa6\x04\n\tKimchiApp\x12\x33\n\x07IsAlive\x12\r.kimchi.Empty\x1a\x17.kimchi.IsAliveResponse\"\x00\x12+\n\x04Move\x12\x10.kimchi.Velocity\x1a\r.kimchi.Empty\"\x00(\x01\x12&\n\x06GetMap\x12\r.kimchi.Empty\x1a\x0b.kimchi.Map\"\x00\x12\x37\n\rGetRobotState\x12\r.kimchi.Empty\x1a\x15.kimchi.RobotStateMsg\"\x00\x12=\n\x0cStartMapping\x12\r.kimchi.Empty\x1a\x1c.kimchi.StartMappingResponse\"\x00\x12\x43\n\x0fStartNavigation\x12\r.kimchi.Empty\x1a\x1f.kimchi.StartNavigationResponse\"\x00\x12\x31\n\x10SendSelectedPose\x12\x0c.kimchi.Pose\x1a\r.kimchi.Empty\"\x00\x12\x30\n\x0eSubscribeToMap\x12\r.kimchi.Empty\x1a\x0b.kimchi.Map\"\x00\x30\x01\x12\x41\n\x15SubscribeToRobotState\x12\r.kimchi.Empty\x1a\x15.kimchi.RobotStateMsg\"\x00\x30\x01\x12*\n\x07GetPose\x12\r.kimchi.Empty\x1a\x0c.kimchi.Pose\"\x00\x30\x01\x42 \n\x0f\x63om.kimchi.grpcB\x0bKimchiProtoP\x01\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,8 +32,8 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'kimchi_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'\n\017com.kimchi.grpcB\013KimchiProtoP\001'
-  _globals['_ROBOTSTATEENUM']._serialized_start=398
-  _globals['_ROBOTSTATEENUM']._serialized_end=519
+  _globals['_ROBOTSTATEENUM']._serialized_start=399
+  _globals['_ROBOTSTATEENUM']._serialized_end=534
   _globals['_ISALIVERESPONSE']._serialized_start=24
   _globals['_ISALIVERESPONSE']._serialized_end=56
   _globals['_STARTMAPPINGRESPONSE']._serialized_start=58
@@ -50,6 +50,6 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_MAP']._serialized_end=387
   _globals['_EMPTY']._serialized_start=389
   _globals['_EMPTY']._serialized_end=396
-  _globals['_KIMCHIAPP']._serialized_start=522
-  _globals['_KIMCHIAPP']._serialized_end=1021
+  _globals['_KIMCHIAPP']._serialized_start=537
+  _globals['_KIMCHIAPP']._serialized_end=1087
 # @@protoc_insertion_point(module_scope)

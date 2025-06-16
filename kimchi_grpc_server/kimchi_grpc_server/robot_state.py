@@ -8,8 +8,9 @@ class RobotState(Enum):
     MAPPING_WITH_EXPLORATION = 1
     MAPPING_WITH_TELEOP = 2
     NAVIGATING = 3
-    TELEOP = 4
-    IDLE = 5
+    LOCATING = 4
+    TELEOP = 5
+    IDLE = 6
 
     def to_kimchi_robot_state_enum(self):
         kimchi_robot_state = kimchi_pb2.RobotStateEnum.NO_MAP
@@ -21,6 +22,8 @@ class RobotState(Enum):
             kimchi_robot_state = kimchi_pb2.RobotStateEnum.MAPPING_WITH_TELEOP
         elif self == RobotState.NAVIGATING:
             kimchi_robot_state = kimchi_pb2.RobotStateEnum.NAVIGATING
+        elif self == RobotState.LOCATING:
+            kimchi_robot_state = kimchi_pb2.RobotStateEnum.LOCATING
         elif self == RobotState.TELEOP:
             kimchi_robot_state = kimchi_pb2.RobotStateEnum.TELEOP
         elif self == RobotState.IDLE:
@@ -37,6 +40,8 @@ class RobotState(Enum):
             robot_state = RobotState.MAPPING_WITH_TELEOP
         elif robot_state_enum is kimchi_pb2.RobotStateEnum.NAVIGATING:
             robot_state = RobotState.NAVIGATING
+        elif robot_state_enum is kimchi_pb2.RobotStateEnum.LOCATING:
+            robot_state = RobotState.LOCATING
         elif robot_state_enum is kimchi_pb2.RobotStateEnum.TELEOP:
             robot_state = RobotState.TELEOP
         elif robot_state_enum is kimchi_pb2.RobotStateEnum.IDLE:
