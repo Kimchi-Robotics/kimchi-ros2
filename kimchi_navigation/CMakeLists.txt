@@ -46,8 +46,9 @@ ament_target_dependencies(amcl_initial_pose_trigger rclcpp geometry_msgs)
 add_executable(amcl_global_trigger_correct src/amcl_global_trigger_correct.cpp)
 ament_target_dependencies(amcl_global_trigger_correct rclcpp geometry_msgs tf2 tf2_ros)
 
-
 add_executable(global_localization src/global_localization.cpp)
+target_compile_definitions(global_localization
+  PRIVATE "CUSTOM_ACTION_CPP_BUILDING_DLL")
 ament_target_dependencies(global_localization
   rclcpp
   rclcpp_action

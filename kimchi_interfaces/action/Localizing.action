@@ -1,0 +1,6 @@
+geometry_msgs/Pose pose_estimate
+---
+geometry_msgs/PoseWithCovarianceStamped localized_pose
+std_msgs/Bool localized
+---
+geometry_msgs/PoseWithCovarianceStamped pose_feedback
