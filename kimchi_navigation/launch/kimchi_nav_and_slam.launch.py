@@ -72,7 +72,7 @@ def generate_launch_description():
         output='screen',
         parameters=[{
             'position_covariance_threshold': 0.5,
-            'orientation_covariance_threshold': 0.5,
+            'orientation_covariance_threshold': 0.3,
         }],
         # Launch this after AMCL is started
         on_exit=LogInfo(msg="Initial pose estimator has completed its task")

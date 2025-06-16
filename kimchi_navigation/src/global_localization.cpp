@@ -61,6 +61,9 @@ rclcpp_action::CancelResponse GlobalLocalizationServer::handleCancel(const std::
 
     StopRobot();
 
+    amcl_pose_subscription_.reset();
+    initial_pose_publisher_.reset();
+
     return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -139,6 +142,15 @@ void GlobalLocalizationServer::RotateRobot()
     RCLCPP_INFO(this->get_logger(), "Rotating robot");
 }
 
+void GlobalLocalizationServer::StopRobot()
+{
+    geometry_msgs::msg::Twist robot_rotation;
+    robot_rotation.angular.z = 0.0;
+
+    command_robot_pub_->publish(robot_rotation);
+    RCLCPP_INFO(this->get_logger(), "Stoping robot");
+}
+
 void GlobalLocalizationServer::RobotLocalized()
 {
     robot_localized_ = true;
@@ -149,7 +161,7 @@ void GlobalLocalizationServer::RobotLocalized()
 
 void GlobalLocalizationServer::AmclPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
     {
-        RCLCPP_ERROR(this->get_logger(), "Localizing Robot ");
+        RCLCPP_DEBUG(this->get_logger(), "Localizing Robot ");
 
         if(!initial_pose_published_)
             return;

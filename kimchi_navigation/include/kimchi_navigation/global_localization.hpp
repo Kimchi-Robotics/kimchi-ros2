@@ -69,14 +69,7 @@ private:
      * Checks the pose estimate of amcl and if the covarianze is lower than a
      * threshold then the robot is considered localized
      */
-    void StopRobot()
-    {
-        geometry_msgs::msg::Twist robot_rotation;
-        robot_rotation.angular.z = 0.0;
-
-        command_robot_pub_->publish(robot_rotation);
-        RCLCPP_INFO(this->get_logger(), "Stoping robot");
-    }
+    void StopRobot();
 
     /**
      * AMCL pose callback
