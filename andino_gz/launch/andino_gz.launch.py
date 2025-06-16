@@ -101,7 +101,7 @@ def generate_launch_description():
     log_robots_by_user = LogInfo(msg="Robots provided by user.")
     if (robots_list == {}):
         log_robots_by_user = LogInfo(msg="No robots provided, using default:")
-        robots_list = {"andino": {"x": 12., "y": -2., "z": 0.1, "yaw": 0.}}
+        robots_list = {"andino": {"x": 0., "y": 0., "z": 0.1, "yaw": 0.}}
     log_number_robots = LogInfo(msg="Robots to spawn: " + str(robots_list))
     spawn_robots_group = []
     more_than_one_robot = PythonExpression([TextSubstitution(text=str(len(robots_list.keys()))), ' > 1'])
