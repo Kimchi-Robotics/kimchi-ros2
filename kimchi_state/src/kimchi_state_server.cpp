@@ -7,6 +7,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <thread>
+#include <filesystem>
 
 namespace {
 std::string toString(RobotState robot_state) {
@@ -148,8 +149,6 @@ void KimchiStateServer::startNavigationCallback(
     return;
   }
 
-  // state_ = RobotState::IDLE;
-
   navigation_manager_.startNavigation();
   changeState(RobotState::IDLE);
 }
@@ -166,7 +165,7 @@ void KimchiStateServer::saveMap() {
   request->occupied_thresh = 0.65;
 
   // TODO(arilow): Handle the response by passing a callback to
-  // async_send_request
+  // async_send_request  
   auto future = save_map_client_->async_send_request(
       request, [this](std::shared_future<nav2_msgs::srv::SaveMap::Response::
                                              SharedPtr> /*response_future*/) {
@@ -177,7 +176,7 @@ void KimchiStateServer::saveMap() {
                 std::chrono::seconds(1))) {
           auto future =
               map_server_param_client_->set_parameters({rclcpp::Parameter(
-                  "yaml_filename", "/home/arilow/ws/kimchi_map.yaml")});
+                  "yaml_filename", std::filesystem::absolute("kimchi_map.yaml").c_str())});
           // Handle future result...
         }
 
