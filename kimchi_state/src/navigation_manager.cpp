@@ -46,6 +46,14 @@ void NavigationManager::stopSlam() {
 
 void NavigationManager::startNavigation() {
   std::chrono::milliseconds wait_duration(100);
+
+  // Is is_active() returns TIMEOUT it means the lifecycle manager is not configured yet. Waiting for it to be configured is a must before calling the startup service.
+  while (client_localization_->is_active(std::chrono::nanoseconds(100000)) == nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    RCLCPP_INFO(node_->get_logger(),
+                "Waiting for lifecycle_manager_localization to be configured");
+    std::this_thread::sleep_for(wait_duration);
+  }
+
   std::thread startup_loc_thread(
       std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
                 client_localization_.get(), std::placeholders::_1),

@@ -68,8 +68,10 @@ class KimchiStateServer
 
   void statePublisherTimerCallback();
   void callGetMapInfoService();
-  void saveMap();
+  std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);
+  void SetMapFileName();
+  void startNavigation();
 
   // Callback methods for the services.
   void startSlamCallback(
