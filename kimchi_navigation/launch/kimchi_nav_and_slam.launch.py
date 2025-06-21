@@ -101,7 +101,7 @@ def generate_launch_description():
     ld.add_action(localization_launch)
 
     # Nodes
-    # ld.add_action(rviz)
+    ld.add_action(rviz)
     ld.add_action(map_saver_launch)
 
     # Event handlers

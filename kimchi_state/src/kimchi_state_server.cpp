@@ -3,11 +3,11 @@
 #include <kimchi_state/map_info.h>
 
 #include <chrono>
+#include <filesystem>
 #include <functional>
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <thread>
-#include <filesystem>
 
 namespace {
 std::string toString(RobotState robot_state) {
@@ -179,7 +179,8 @@ void KimchiStateServer::startNavigationCallback(
 
   response->success = true;
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-    std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> save_map_future = saveMap();
+    std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
+        save_map_future = saveMap();
     navigation_manager_->stopSlam();
 
     // Create a thread to wait for the map to be saved
@@ -210,7 +211,8 @@ void KimchiStateServer::addGoalToMissionCallback(
   response->success = true;
 }
 
-std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> KimchiStateServer::saveMap() {
+std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
+KimchiStateServer::saveMap() {
   save_map_client_->wait_for_service();
   auto request = std::make_shared<nav2_msgs::srv::SaveMap::Request>();
 
@@ -227,13 +229,11 @@ std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> KimchiStateServ
 
 void KimchiStateServer::SetMapFileName() {
   auto map_server_param_client_ =
-      std::make_shared<rclcpp::AsyncParametersClient>(node_,
-                                                      "/map_server");
-  if (map_server_param_client_->wait_for_service(
-          std::chrono::seconds(1))) {
-    auto future =
-        map_server_param_client_->set_parameters({rclcpp::Parameter(
-            "yaml_filename", std::filesystem::absolute("kimchi_map.yaml").c_str())});
+      std::make_shared<rclcpp::AsyncParametersClient>(node_, "/map_server");
+  if (map_server_param_client_->wait_for_service(std::chrono::seconds(1))) {
+    auto future = map_server_param_client_->set_parameters({rclcpp::Parameter(
+        "yaml_filename",
+        std::filesystem::absolute("kimchi_map.yaml").c_str())});
     // Handle future result...
   }
 }
