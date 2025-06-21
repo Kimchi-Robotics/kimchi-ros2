@@ -76,14 +76,14 @@ def generate_launch_description():
         period=2.0,  # Adjust timing as needed
         actions=[
             ExecuteProcess(
-                    cmd=[[
-                        'ros2',
-                        " service call ",
-                        "/slam_toolbox/change_state",
-                        " lifecycle_msgs/srv/ChangeState ",
-                        '"{transition: {id: 4}}"',
-                    ]],
-                    shell=True
+                cmd=[[
+                    'ros2',
+                    " service call ",
+                    "/slam_toolbox/change_state",
+                    " lifecycle_msgs/srv/ChangeState ",
+                    '"{transition: {id: 4}}"',
+                ]],
+                shell=True
             )
         ]
     )

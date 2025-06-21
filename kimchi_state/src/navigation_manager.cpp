@@ -10,8 +10,6 @@
 NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node)
     : node_(node) {
   RCLCPP_INFO(node_->get_logger(), "NavigationManager initialized.");
-  // Additional initialization if needed
-
   active_slam_toolbox_node_client_ =
       node_->create_client<lifecycle_msgs::srv::ChangeState>(
           "/slam_toolbox/change_state");
