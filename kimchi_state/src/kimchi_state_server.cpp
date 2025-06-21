@@ -184,7 +184,7 @@ void KimchiStateServer::startNavigationCallback(
     return;
   }
 
-  navigation_manager_.startNavigation();
+  navigation_manager_->startNavigation();
   changeState(RobotState::IDLE);
 }
 

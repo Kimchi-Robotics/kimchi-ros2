@@ -1,7 +1,5 @@
 from threading import Thread
 from time import sleep
-import base64
-import os
 
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -12,13 +10,11 @@ from kimchi_interfaces.srv import MapInfo as MapInfoSrv
 from kimchi_interfaces.srv import AddGoalToMission as AddGoalToMissionSrv
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
-from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger
 
 
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
-from kimchi_grpc_server.map_info import MapInfo
 from kimchi_grpc_server.robot_state import RobotState
 from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
 import kimchi_grpc_server.kimchi_pb2 as kimchi_pb2
