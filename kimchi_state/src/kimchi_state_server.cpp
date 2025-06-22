@@ -179,16 +179,13 @@ void KimchiStateServer::startNavigationCallback(
 
   response->success = true;
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-    std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
-        save_map_future = saveMap();
-    navigation_manager_->stopSlam();
-
-    // Create a thread to wait for the map to be saved
-    // and then start navigation.
-    std::thread map_saved_callback_thread([this, &save_map_future]() {
+    std::thread map_saved_callback_thread([this]() {
+      std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
+          save_map_future = saveMap();
+      navigation_manager_->stopSlam();
       SetMapFileName();
       save_map_future.wait();
-      this->startNavigation();
+      startNavigation();
     });
 
     map_saved_callback_thread.detach();
