@@ -13,7 +13,7 @@
 
   <depend>rclcpp</depend>
   <depend>rclcpp_components</depend>
-  <depend>kimchi_interfaces<depend>
+  <depend>kimchi_interfaces</depend>
   <exec_depend>nav2_bringup</exec_depend>
   <exec_depend>slam_toolbox</exec_depend>
   <exec_depend>ros2launch</exec_depend>

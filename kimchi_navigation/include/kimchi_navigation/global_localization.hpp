@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <atomic>
 #include <chrono>
 #include <memory>
 
@@ -72,6 +72,11 @@ private:
     void StopRobot();
 
     /**
+     * Handles clean up setting the node to it's initial state
+     */
+    void cleanup();
+
+    /**
      * AMCL pose callback
      * Callback method for pose published by AMCL.
      *
@@ -90,7 +95,7 @@ private:
     geometry_msgs::msg::Pose inital_pose_estimate_;geometry_msgs::msg::PoseWithCovarianceStamped current_pose_;
 
     bool initial_pose_published_{false};
-    bool robot_localized_{false};
-    double pos_uncertainty_threashold_;
+    std::atomic<bool> robot_localized_{false};
+    std::atomic<bool> pos_uncertainty_threashold_;
     double orientation_uncertainty_threashold_;
 };

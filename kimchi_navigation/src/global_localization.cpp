@@ -61,9 +61,6 @@ rclcpp_action::CancelResponse GlobalLocalizationServer::handleCancel(const std::
 
     StopRobot();
 
-    amcl_pose_subscription_.reset();
-    initial_pose_publisher_.reset();
-
     return rclcpp_action::CancelResponse::ACCEPT;
 }
 
@@ -76,61 +73,16 @@ void GlobalLocalizationServer::handleAccepted(const std::shared_ptr<GoalHandleGl
     std::thread{std::bind(&GlobalLocalizationServer::execute, this, _1), goal_handle}.detach();
 }
 
-void GlobalLocalizationServer::execute(const std::shared_ptr<GoalHandleGlobalLocalization> goal_handle)
+void GlobalLocalizationServer::cleanup()
 {
-    RCLCPP_INFO(this->get_logger(), "Executing goal");
+    RCLCPP_DEBUG(this->get_logger(), "Performing cleanup");
 
-    PublishInitialPoseWithHighVariance();
-    RotateRobot();
+    // Always stop the robot first
+    StopRobot();
 
-    // Rate of 20hz
-    rclcpp::Rate loop_rate(0.05);
-    const auto goal = goal_handle->get_goal();
-    auto feedback = std::make_shared<GlobalLocalization::Feedback>();
-    auto result = std::make_shared<GlobalLocalization::Result>();
-
-    while (!robot_localized_ && rclcpp::ok()) {
-        if (goal_handle->is_canceling()) {
-            result->localized_pose = current_pose_;
-            result->localized.data = false;
-            goal_handle->canceled(result);
-            RCLCPP_INFO(this->get_logger(), "Goal canceled");
-            return;
-        }
-
-        feedback->pose_feedback = current_pose_;
-        goal_handle->publish_feedback(feedback);
-
-        loop_rate.sleep();
-    }
-
-    // Check if goal is done
-    if (rclcpp::ok()) {
-        result->localized_pose = current_pose_;
-        result->localized.data = true;
-        goal_handle->succeed(result);
-        RCLCPP_INFO(this->get_logger(), "[Bot Controller] Goal succeeded!");
-    }
-}
-
-void GlobalLocalizationServer::PublishInitialPoseWithHighVariance()
-{
-    geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_estimate;
-    initial_pose_estimate.header.frame_id = "map";
-    // TODO(@lola): Is it necessary to take into account the orientation?
-    initial_pose_estimate.pose.pose.position.x = inital_pose_estimate_.position.x;
-    initial_pose_estimate.pose.pose.position.y = inital_pose_estimate_.position.y;
-
-    // Sets high covariance for x and y position
-    initial_pose_estimate.pose.covariance[0] = 3.0;
-    initial_pose_estimate.pose.covariance[7] = 3.0;
-    // Sets really high covariance for yaw
-    // We assume that the user is not going to point the
-    // direction of the robot
-    initial_pose_estimate.pose.covariance[35] = 99.0;
-
-    initial_pose_publisher_->publish(initial_pose_estimate);
-    initial_pose_published_ =  true;
+    // Reset state flags
+    robot_localized_ = false;
+    initial_pose_published_ = false;
 }
 
 void GlobalLocalizationServer::RotateRobot()
@@ -153,10 +105,91 @@ void GlobalLocalizationServer::StopRobot()
 
 void GlobalLocalizationServer::RobotLocalized()
 {
+    RCLCPP_INFO(this->get_logger(), "Robot localization completed");
     robot_localized_ = true;
     StopRobot();
-    amcl_pose_subscription_.reset();
-    initial_pose_publisher_.reset();
+}
+
+void GlobalLocalizationServer::execute(const std::shared_ptr<GoalHandleGlobalLocalization> goal_handle)
+{
+    RCLCPP_INFO(this->get_logger(), "Executing goal");
+
+    //  Reset state for new goal
+    robot_localized_ = false;
+    initial_pose_published_ = false;
+
+    // Initialize goal execution
+    PublishInitialPoseWithHighVariance();
+    RotateRobot();
+
+    // Rate of 20hz
+    rclcpp::Rate loop_rate(20);
+    const auto goal = goal_handle->get_goal();
+    auto feedback = std::make_shared<GlobalLocalization::Feedback>();
+    auto result = std::make_shared<GlobalLocalization::Result>();
+
+    while (!robot_localized_ && rclcpp::ok()) {
+        // Check for cancellation first
+        if (goal_handle->is_canceling()) {
+            RCLCPP_INFO(this->get_logger(), "Goal cancellation requested");
+
+            // Handles cleanup
+            cleanup();
+
+            result->localized_pose = current_pose_;
+            result->localized.data = false;
+            goal_handle->canceled(result);
+            RCLCPP_INFO(this->get_logger(), "Goal canceled");
+            return;
+        }
+
+        feedback->pose_feedback = current_pose_;
+        goal_handle->publish_feedback(feedback);
+
+        loop_rate.sleep();
+    }
+
+    // Check if we exited due to successful localization
+    if (rclcpp::ok() && robot_localized_) {
+        RCLCPP_INFO(this->get_logger(), "Robot successfully localized");
+
+        // Handles cleanup
+        cleanup();
+
+        result->localized_pose = current_pose_;
+        result->localized.data = true;
+        goal_handle->succeed(result);
+        RCLCPP_INFO(this->get_logger(), "Goal succeeded!");
+    } else {
+        RCLCPP_WARN(this->get_logger(), "Node shutting down during goal execution");
+
+        // Handles cleanup
+        cleanup();
+
+        result->localized_pose = current_pose_;
+        result->localized.data = false;
+        goal_handle->abort(result);
+    }
+}
+
+void GlobalLocalizationServer::PublishInitialPoseWithHighVariance()
+{
+    geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_estimate;
+    initial_pose_estimate.header.frame_id = "map";
+    // TODO(@lola): Is it necessary to take into account the orientation?
+    initial_pose_estimate.pose.pose.position.x = inital_pose_estimate_.position.x;
+    initial_pose_estimate.pose.pose.position.y = inital_pose_estimate_.position.y;
+
+    // Sets high covariance for x and y position
+    initial_pose_estimate.pose.covariance[0] = 3.0;
+    initial_pose_estimate.pose.covariance[7] = 3.0;
+    // Sets really high covariance for yaw
+    // We assume that the user is not going to point the
+    // direction of the robot
+    initial_pose_estimate.pose.covariance[35] = 99.0;
+
+    initial_pose_publisher_->publish(initial_pose_estimate);
+    initial_pose_published_ =  true;
 }
 
 void GlobalLocalizationServer::AmclPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
