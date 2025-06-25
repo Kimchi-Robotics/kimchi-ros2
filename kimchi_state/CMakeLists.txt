@@ -22,7 +22,7 @@ find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
 
-add_executable(kimchi_state_server src/kimchi_state_server.cpp)
+add_executable(kimchi_state_server src/kimchi_state_server.cpp src/navigation_manager.cpp)
 ament_target_dependencies(kimchi_state_server PUBLIC
   "rclcpp"
   "rclcpp_action"
