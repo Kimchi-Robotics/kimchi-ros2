@@ -1,7 +1,7 @@
 
 # Kimchi Navigation
 
-<!-- <img src="docs/andino_gazebo.png"> -->
+<img src="docs/kimchi_robot.png">
 
 This package contains launch file required to make Kimchi navigate.
 
