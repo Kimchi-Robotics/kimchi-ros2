@@ -29,7 +29,9 @@ find_package(builtin_interfaces REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
 "action/Localizing.action"
 "msg/RobotState.msg"
+"msg/Position2D.msg"
 "srv/MapInfo.srv"
+"srv/AddGoalToMission.srv"
 DEPENDENCIES geometry_msgs std_msgs builtin_interfaces
 )
 
