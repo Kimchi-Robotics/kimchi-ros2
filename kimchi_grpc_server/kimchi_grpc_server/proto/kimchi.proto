@@ -27,6 +27,10 @@ enum RobotStateEnum {
   LOCATING = 4;
   TELEOP = 5;
   IDLE = 6;
+  LOST = 7;
+  RECOVERING = 8;
+  GOAL_REACHED = 9;
+  CHARGING = 10;
 }
 
 // Methods to communicate from the Kimchi App to the kimchi robot.

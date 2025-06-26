@@ -2,7 +2,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess, TimerAction
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
@@ -30,7 +30,7 @@ def generate_launch_description():
 
     map_argunment = DeclareLaunchArgument(
         "map",
-        default_value=os.path.join(pkg_kimchi_nav, "maps/hq_map", "map.yaml"),
+        default_value="",
         description="Full path to the map file to use",
     )
 
@@ -49,6 +49,7 @@ def generate_launch_description():
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'false',
+            'map': LaunchConfiguration('map'),
         }.items(),
     )
 
@@ -71,16 +72,20 @@ def generate_launch_description():
         arguments=["-d", LaunchConfiguration("rviz_config_file")],
     )
 
-    # Deactivate SLAM node.
-    deactivate_slam_toolbox_node = ExecuteProcess(
-        cmd=[[
-            'ros2',
-            " service call ",
-            "/slam_toolbox/change_state",
-            " lifecycle_msgs/srv/ChangeState ",
-            '"{transition: {id: 4}}"',
-        ]],
-        shell=True
+    deactivate_slam_toolbox_node_after_2_secs = TimerAction(
+        period=2.0,  # Adjust timing as needed
+        actions=[
+            ExecuteProcess(
+                cmd=[[
+                    'ros2',
+                    " service call ",
+                    "/slam_toolbox/change_state",
+                    " lifecycle_msgs/srv/ChangeState ",
+                    '"{transition: {id: 4}}"',
+                ]],
+                shell=True
+            )
+        ]
     )
 
     ld = LaunchDescription()
@@ -91,7 +96,6 @@ def generate_launch_description():
     ld.add_action(rviz_config_file_argunment)
 
     # Launch files.
-    # ld.add_action(navigation_bring_up_launch)
     ld.add_action(slam_toolbox_launch)
     ld.add_action(navigation_launch)
     ld.add_action(localization_launch)
@@ -100,7 +104,7 @@ def generate_launch_description():
     ld.add_action(rviz)
     ld.add_action(map_saver_launch)
 
-    # Commands
-    ld.add_action(deactivate_slam_toolbox_node)
+    # Event handlers
+    ld.add_action(deactivate_slam_toolbox_node_after_2_secs)
 
     return ld
