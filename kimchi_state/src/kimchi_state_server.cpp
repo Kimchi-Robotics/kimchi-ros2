@@ -225,10 +225,11 @@ KimchiStateServer::saveMap() {
 }
 
 void KimchiStateServer::SetMapFileName() {
-  auto map_server_param_client_ =
+  // TODO(Arilow): Instead of hardcoding the map file name, we should make it a parameter.
+  auto map_server_param_client =
       std::make_shared<rclcpp::AsyncParametersClient>(node_, "/map_server");
-  if (map_server_param_client_->wait_for_service(std::chrono::seconds(1))) {
-    auto future = map_server_param_client_->set_parameters({rclcpp::Parameter(
+  if (map_server_param_client->wait_for_service(std::chrono::seconds(1))) {
+    auto future = map_server_param_client->set_parameters({rclcpp::Parameter(
         "yaml_filename",
         std::filesystem::absolute("kimchi_map.yaml").c_str())});
     // Handle future result...
