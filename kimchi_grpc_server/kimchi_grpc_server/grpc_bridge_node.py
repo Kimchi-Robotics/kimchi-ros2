@@ -1,7 +1,5 @@
 from threading import Thread
 from time import sleep
-import base64
-import os
 
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPolicy
@@ -9,23 +7,20 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
+from kimchi_interfaces.srv import AddGoalToMission as AddGoalToMissionSrv
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
-from nav_msgs.msg import OccupancyGrid
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger
 
 
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
-from kimchi_grpc_server.map_info import MapInfo
 from kimchi_grpc_server.robot_state import RobotState
 from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
 import kimchi_grpc_server.kimchi_pb2 as kimchi_pb2
 import rclpy
 
 # Node that serves as a bridge between ROS and the gRPC server.
-
-
 class GrpcBridgeNode(Node):
     def __init__(self):
         super().__init__('grpc_bridge_node')
@@ -59,6 +54,8 @@ class GrpcBridgeNode(Node):
             Trigger, '/kimchi_state_server/start_slam')
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
+        self._add_goal_to_mission_client = self.create_client(
+            AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
 
     @property
     def logger(self):
@@ -164,16 +161,20 @@ class GrpcBridgeNode(Node):
         if self._robot_state == RobotState.LOCATING:
             self.get_logger().info(
                 'Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
-        elif self._robot_state == RobotState.NAVIGATING:
+        elif self._robot_state == RobotState.IDLE or self._robot_state == RobotState.NAVIGATING:
             self.get_logger().info(
-                'Robot is navigating. This pose will be added to the path of the robot.')
-        elif self._robot_state == RobotState.IDLE:
-            self.get_logger().info(
-                'Robot state is IDLE. Thes robot will be send to this pose.')
+                'Robot state is IDLE. The robot will be send to this pose.')
+
+            self._add_goal_to_mission_client.wait_for_service()
+            request = AddGoalToMissionSrv.Request()
+            request.goal.x = pose.x
+            request.goal.y = pose.y
+
+            self._add_goal_to_mission_client.call(request)
+
         else:
             self.get_logger().info(
                 'Robot is not doing anything.')
-
 
 
 def main():

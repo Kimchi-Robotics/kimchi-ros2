@@ -96,7 +96,6 @@ def generate_launch_description():
     ld.add_action(rviz_config_file_argunment)
 
     # Launch files.
-    # ld.add_action(navigation_bring_up_launch)
     ld.add_action(slam_toolbox_launch)
     ld.add_action(navigation_launch)
     ld.add_action(localization_launch)

@@ -3,11 +3,11 @@
 #include <kimchi_state/map_info.h>
 
 #include <chrono>
+#include <filesystem>
 #include <functional>
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <thread>
-#include <filesystem>
 
 namespace {
 std::string toString(RobotState robot_state) {
@@ -39,13 +39,36 @@ std::string toString(RobotState robot_state) {
 }
 }  // namespace
 
-KimchiStateServer::KimchiStateServer(
-    const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
-    : node_(new rclcpp::Node("kimchi_state_server", options)),
-      navigation_manager_(node_),
-      state_(RobotState::NO_MAP) {
-  RCLCPP_INFO(node_->get_logger(), "KimchiStateServer::KimchiStateServer.");
+std::shared_ptr<KimchiStateServer> KimchiStateServer::Create(
+    const rclcpp::NodeOptions &options = rclcpp::NodeOptions()) {
+  auto output =
+      std::shared_ptr<KimchiStateServer>(new KimchiStateServer(options));
+  output->initialize();
+  return output;
+}
 
+void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
+  changeState(RobotState::NAVIGATING);
+  RCLCPP_INFO(node_->get_logger(), "Navigating to goal at point: (%f, %f)",
+              point.x, point.y);
+}
+
+void KimchiStateServer::onGoalReached(const Point2D &point) {
+  changeState(RobotState::GOAL_REACHED);
+  RCLCPP_INFO(node_->get_logger(), "Goal reached at point: (%f, %f)", point.x,
+              point.y);
+}
+
+void KimchiStateServer::onMissionFinished() {
+  changeState(RobotState::IDLE);
+  RCLCPP_INFO(node_->get_logger(), "Mission finished");
+}
+
+void KimchiStateServer::initialize() {
+  RCLCPP_INFO(node_->get_logger(), "KimchiStateServer::initialize.");
+
+  navigation_manager_ =
+      std::make_unique<NavigationManager>(node_, shared_from_this());
   // Create a QoS profile with best effort for sharing the state of the robot.
   rmw_qos_profile_t qos_profile = rmw_qos_profile_default;
   auto qos = rclcpp::QoS(rclcpp::QoSInitialization(qos_profile.history, 10),
@@ -78,9 +101,21 @@ KimchiStateServer::KimchiStateServer(
       std::bind(&KimchiStateServer::startNavigationCallback, this,
                 std::placeholders::_1, std::placeholders::_2));
 
+  add_goal_to_mission_service_ =
+      node_->create_service<kimchi_interfaces::srv::AddGoalToMission>(
+          "/kimchi_state_server/add_goal_to_mission",
+          std::bind(&KimchiStateServer::addGoalToMissionCallback, this,
+                    std::placeholders::_1, std::placeholders::_2));
+
   // Call the map info service
   callGetMapInfoService();
 }
+
+KimchiStateServer::KimchiStateServer(
+    const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
+    : node_(new rclcpp::Node("kimchi_state_server", options)),
+      navigation_manager_(nullptr),
+      state_(RobotState::NO_MAP) {}
 
 void KimchiStateServer::statePublisherTimerCallback() {
   auto message = kimchi_interfaces::msg::RobotState();
@@ -111,8 +146,8 @@ void KimchiStateServer::callGetMapInfoService() {
     if (result->success) {
       map_info_ = std::make_unique<MapInfo>(result->resolution, result->origin,
                                             result->map_image);
-      changeState(RobotState::IDLE);
-      navigation_manager_.startNavigation();
+      SetMapFileName();
+      startNavigation();
       RCLCPP_INFO(node_->get_logger(), "MapInfo received");
     } else {
       changeState(RobotState::NO_MAP);
@@ -129,7 +164,7 @@ void KimchiStateServer::startSlamCallback(
     std_srvs::srv::Trigger::Response::SharedPtr response) {
   changeState(RobotState::MAPPING_WITH_TELEOP);
 
-  navigation_manager_.startSlam();
+  navigation_manager_->startSlam();
   response->success = true;
 }
 
@@ -144,16 +179,37 @@ void KimchiStateServer::startNavigationCallback(
 
   response->success = true;
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-    saveMap();
-    navigation_manager_.stopSlam();
+    std::thread map_saved_callback_thread([this]() {
+      std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
+          save_map_future = saveMap();
+      navigation_manager_->stopSlam();
+      SetMapFileName();
+      save_map_future.wait();
+      startNavigation();
+    });
+
+    map_saved_callback_thread.detach();
     return;
   }
 
-  navigation_manager_.startNavigation();
+  startNavigation();
+}
+
+void KimchiStateServer::startNavigation() {
+  navigation_manager_->startNavigation();
   changeState(RobotState::IDLE);
 }
 
-void KimchiStateServer::saveMap() {
+void KimchiStateServer::addGoalToMissionCallback(
+    const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
+    kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response) {
+  navigation_manager_->addGoalToMission(
+      Point2D(request->goal.x, request->goal.y));
+  response->success = true;
+}
+
+std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
+KimchiStateServer::saveMap() {
   save_map_client_->wait_for_service();
   auto request = std::make_shared<nav2_msgs::srv::SaveMap::Request>();
 
@@ -164,25 +220,20 @@ void KimchiStateServer::saveMap() {
   request->free_thresh = 0.25;
   request->occupied_thresh = 0.65;
 
-  // TODO(arilow): Handle the response by passing a callback to
-  // async_send_request  
-  auto future = save_map_client_->async_send_request(
-      request, [this](std::shared_future<nav2_msgs::srv::SaveMap::Response::
-                                             SharedPtr> /*response_future*/) {
-        auto map_server_param_client_ =
-            std::make_shared<rclcpp::AsyncParametersClient>(node_,
-                                                            "/map_server");
-        if (map_server_param_client_->wait_for_service(
-                std::chrono::seconds(1))) {
-          auto future =
-              map_server_param_client_->set_parameters({rclcpp::Parameter(
-                  "yaml_filename", std::filesystem::absolute("kimchi_map.yaml").c_str())});
-          // Handle future result...
-        }
+  auto future = save_map_client_->async_send_request(request);
+  return future.share();  // Return the future to allow waiting for completion
+}
 
-        navigation_manager_.startNavigation();
-        changeState(RobotState::IDLE);
-      });
+void KimchiStateServer::SetMapFileName() {
+  // TODO(Arilow): Instead of hardcoding the map file name, we should make it a parameter.
+  auto map_server_param_client =
+      std::make_shared<rclcpp::AsyncParametersClient>(node_, "/map_server");
+  if (map_server_param_client->wait_for_service(std::chrono::seconds(1))) {
+    auto future = map_server_param_client->set_parameters({rclcpp::Parameter(
+        "yaml_filename",
+        std::filesystem::absolute("kimchi_map.yaml").c_str())});
+    // Handle future result...
+  }
 }
 
 void KimchiStateServer::changeState(RobotState new_state) {
@@ -193,10 +244,11 @@ void KimchiStateServer::changeState(RobotState new_state) {
 
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
-  auto kimchi_state_server =
-      std::make_shared<KimchiStateServer>(rclcpp::NodeOptions());
+  std::shared_ptr<KimchiStateServer> kimchi_state_server =
+      KimchiStateServer::Create(rclcpp::NodeOptions());
   rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(),
                                                     4);
+
   executor.add_node(kimchi_state_server->getNode());
   executor.spin();
   rclcpp::shutdown();
