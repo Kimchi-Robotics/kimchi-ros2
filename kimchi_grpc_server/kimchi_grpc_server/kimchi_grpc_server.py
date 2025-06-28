@@ -40,10 +40,10 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         # https://colab.research.google.com/drive/1pcEI-5QQyqWRe69PIYY2SM1ISZX3pnW8#scrollTo=O_UzvRLUYRwV
         while True:
             await asyncio.sleep(0.5)
-            map = self._ros_node.get_map()
-            self._logger.info(f"Sending map {map}")
+            map_info = self._ros_node.get_map()
+            self._logger.info(f"Sending map {map_info}")
 
-            yield kimchi_pb2.Map(image=map.image, origin=map.origin, resolution=map.resolution)
+            yield kimchi_pb2.Map(image=map_info.image, origin=map_info.origin, resolution=map_info.resolution)
 
     async def SubscribeToRobotState(
         self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
