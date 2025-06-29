@@ -16,6 +16,7 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         self._logger = ros_node.logger
         self._current_linear_vel = 0
         self._current_angular_vel = 0
+        self._robot_path = kimchi_pb2.Path()
 
     async def GetPose(
         self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
@@ -40,10 +41,12 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         # https://colab.research.google.com/drive/1pcEI-5QQyqWRe69PIYY2SM1ISZX3pnW8#scrollTo=O_UzvRLUYRwV
         while True:
             await asyncio.sleep(0.5)
-            map = self._ros_node.get_map()
-            self._logger.info(f"Sending map {map}")
-
-            yield kimchi_pb2.Map(image=map.image, origin=map.origin, resolution=map.resolution)
+            map_info = self._ros_node.get_map()
+            if len(map_info.image) == 0:
+                self._logger.warning("Received empty map image, waiting for a valid map...")
+                continue
+            self._logger.info(f"Sending map {map_info}")
+            yield kimchi_pb2.Map(image=map_info.image, origin=map_info.origin, resolution=map_info.resolution)
 
     async def SubscribeToRobotState(
         self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
@@ -56,7 +59,32 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             if robot_state != old_robot_state:
                 old_robot_state = robot_state
                 yield kimchi_pb2.RobotStateMsg(state=robot_state.to_kimchi_robot_state_enum())
-    
+
+    async def SubscribeToPath(
+        self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
+    ) -> kimchi_pb2.Path:
+        self._logger.info(f"Serving SubscribeToPath request {request}")
+
+        self._ros_node.set_path_listener(self)
+
+        # Wait for path updates and yield them
+        while True:
+            await asyncio.sleep(0.5)
+            if len(self._robot_path.points) == 0:
+                self._logger.warning("No points in the path, waiting for updates...")
+                continue
+
+            self._logger.info(f"Sending path with {len(self._robot_path.points)} points")
+            yield self._robot_path
+
+    def on_path_updated(self, path: kimchi_pb2.Path):
+        """
+        Callback function to handle path updates.
+        Converts the ROS Path message to a Kimchi Path message.
+        """
+        self._logger.info(f"Received new path with {len(path.points)} points")
+        self._robot_path = path
+
     def GetMap(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving GetMap request {request}")
         return self._ros_node.get_map()

@@ -47,7 +47,7 @@ class KimchiStateServer
     return node_->shared_from_this();
   }
 
-  // MissionObserver implementted methods.
+  // MissionObserver implemented methods.
   void onNavigatingToGoal(const Point2D& point) override;
   void onGoalReached(const Point2D& point) override;
   void onMissionFinished() override;
