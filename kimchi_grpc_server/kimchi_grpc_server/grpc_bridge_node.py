@@ -12,7 +12,7 @@ from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
 from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger
-
+from nav_msgs.msg import Path
 
 from kimchi_grpc_server.pose_2d import ProtectedPose2D, Pose2D
 from kimchi_grpc_server.robot_state import RobotState
@@ -33,7 +33,8 @@ class GrpcBridgeNode(Node):
         self._vel_topic = '/cmd_vel'
         self._max_linear_vel_ms = 0.5
         self._man_angular_vel_rad = 1
-
+        self._path_listener = None
+        
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
@@ -44,6 +45,12 @@ class GrpcBridgeNode(Node):
             RobotStateMsg,
             '/kimchi_state_server/state',
             self.robot_state_callback,
+            qos_profile)
+
+        self._robot_path_subscription = self.create_subscription(
+            Path,
+            '/plan',
+            self.path_callback,
             qos_profile)
 
         # Create velocity publisher
@@ -98,6 +105,29 @@ class GrpcBridgeNode(Node):
             f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
 
         self._robot_state = RobotState.from_kimchi_robot_state_enum(msg.state)
+
+    def path_callback(self, msg):
+        if self._path_listener is None:
+            return
+        
+        points = []
+        for pose in msg.poses:
+            point = kimchi_pb2.Point2D()
+            point.x = pose.pose.position.x
+            point.y = pose.pose.position.y
+            points.append(point)
+
+        self._path_listener.on_path_updated(kimchi_pb2.Path(points=points))
+
+    def set_path_listener(self, path_listener):
+        """
+        Sets the path listener to be used by the node.
+
+        Args:
+            path_listener: A callable that will be called with the path data.
+        """
+        self._path_listener = path_listener
+        self.get_logger().info('Path listener set')
 
     def publish_velocity(self, linear_percentage, angular_percentage):
         msg = Twist()

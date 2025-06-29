@@ -1,0 +1,6 @@
+base:
+  mass: 0.8            # Base mass in Kg
+  x_size: 0.411        # Dimension in x axis
+  y_size: 0.3          # Dimension in y axis
+  z_size: 0.134        # Dimension in z axis
+  mesh: 'chassis.stl'  # Name of the mesh files. Leave it empty ('') to have a white base.

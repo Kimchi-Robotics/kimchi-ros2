@@ -9,7 +9,7 @@ from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from xacro import process_file
 
-PKG_ANDINO_DESCRIPTION = get_package_share_directory('andino_description')
+PKG_KIMCHI_DESCRIPTION = get_package_share_directory('kimchi_description')
 PKG_ANDINO_GZ = get_package_share_directory('andino_gz')
 
 
@@ -30,13 +30,13 @@ def get_robot_description() -> str:
 
     """
     # Parse robot description from xacro
-    robot_description_file_path = os.path.join(PKG_ANDINO_GZ, 'urdf', 'andino_gz.urdf.xacro')
+    robot_description_file_path = os.path.join(PKG_ANDINO_GZ, 'urdf', 'kimchi_gz.urdf.xacro')
     mappings = {'use_fixed_caster': 'false'}
     robot_description_config = process_file(robot_description_file_path, mappings=mappings)
     robot_desc = robot_description_config.toprettyxml(indent='  ')
-    # Passing absolute path to the robot description due to Gazebo issues finding andino_description pkg path.
+    # Passing absolute path to the robot description due to Gazebo issues finding kimchi_description pkg path.
     robot_desc = robot_desc.replace(
-        'package://andino_description/', f'file://{PKG_ANDINO_DESCRIPTION}/'
+        'package://kimchi_description/', f'file://{PKG_KIMCHI_DESCRIPTION}/'
     )
     return robot_desc
 
