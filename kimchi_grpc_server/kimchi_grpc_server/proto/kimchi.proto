@@ -45,6 +45,7 @@ service KimchiApp {
 
   // Stream subscriptions
   rpc SubscribeToMap(Empty) returns (stream Map) {}
+  rpc SubscribeToPath(Empty) returns (stream Path) {}
   rpc SubscribeToRobotState (Empty) returns (stream RobotStateMsg) {}
   rpc GetPose (Empty) returns (stream Pose) {}
 }
@@ -65,6 +66,15 @@ message StartNavigationResponse {
 
 message RobotStateMsg {
   RobotStateEnum state = 1;
+}
+
+message Path {
+  repeated Point2D points = 1;
+}
+
+message Point2D {
+  float x = 1;
+  float y = 2;
 }
 
 message Pose {

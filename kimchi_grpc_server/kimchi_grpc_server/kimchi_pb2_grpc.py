@@ -75,6 +75,11 @@ class KimchiAppStub(object):
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.Map.FromString,
                 _registered_method=True)
+        self.SubscribeToPath = channel.unary_stream(
+                '/kimchi.KimchiApp/SubscribeToPath',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Path.FromString,
+                _registered_method=True)
         self.SubscribeToRobotState = channel.unary_stream(
                 '/kimchi.KimchiApp/SubscribeToRobotState',
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
@@ -140,6 +145,12 @@ class KimchiAppServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def SubscribeToPath(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SubscribeToRobotState(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -194,6 +205,11 @@ def add_KimchiAppServicer_to_server(servicer, server):
                     servicer.SubscribeToMap,
                     request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.Map.SerializeToString,
+            ),
+            'SubscribeToPath': grpc.unary_stream_rpc_method_handler(
+                    servicer.SubscribeToPath,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Path.SerializeToString,
             ),
             'SubscribeToRobotState': grpc.unary_stream_rpc_method_handler(
                     servicer.SubscribeToRobotState,
@@ -423,6 +439,33 @@ class KimchiApp(object):
             '/kimchi.KimchiApp/SubscribeToMap',
             kimchi__pb2.Empty.SerializeToString,
             kimchi__pb2.Map.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def SubscribeToPath(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/kimchi.KimchiApp/SubscribeToPath',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Path.FromString,
             options,
             channel_credentials,
             insecure,
