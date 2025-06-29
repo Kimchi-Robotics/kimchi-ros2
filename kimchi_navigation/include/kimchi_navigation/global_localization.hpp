@@ -94,6 +94,6 @@ class GlobalLocalizationServer : public rclcpp::Node {
 
   bool initial_pose_published_{false};
   std::atomic<bool> robot_localized_{false};
-  std::atomic<bool> pos_uncertainty_threashold_;
+  std::atomic<double> pos_uncertainty_threashold_;
   double orientation_uncertainty_threashold_;
 };

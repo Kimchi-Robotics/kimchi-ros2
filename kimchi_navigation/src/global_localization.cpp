@@ -212,14 +212,14 @@ void GlobalLocalizationServer::AmclPoseCallback(
   // 6: y-x, 7: y-y, ..., 11: y-yaw
   // ...
   // 30: yaw-x, ..., 35: yaw-yaw
-  double cov_xx = msg->pose.covariance[0];        // Variance in X position
-  double cov_yy = msg->pose.covariance[7];        // Variance in Y position
-  double cov_yaw_yaw = msg->pose.covariance[35];  // Variance in Yaw orientation
+  double var_x = msg->pose.covariance[0];        // Variance in X position
+  double var_y = msg->pose.covariance[7];        // Variance in Y position
+  double var_yaw = msg->pose.covariance[35];  // Variance in Yaw orientation
 
   // Calculate a combined position covariance (e.g., sum of squares)
-  double position_uncertainty = std::sqrt(cov_xx + cov_yy);
+  double position_uncertainty = std::sqrt(var_x + var_y);
   // For orientation, we directly use the yaw variance
-  double orientation_uncertainty = std::sqrt(cov_yaw_yaw);
+  double orientation_uncertainty = std::sqrt(var_yaw);
 
   current_pose_ = (*msg);
 
