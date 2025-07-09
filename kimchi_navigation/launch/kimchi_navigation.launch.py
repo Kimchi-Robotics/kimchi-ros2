@@ -105,14 +105,14 @@ def generate_launch_description():
         name='nav_planner',
         description='Planner to use for navigation',
         choices=available_planners,
-        default_value='hybrid-a',
+        default_value='navfn',
     )
 
     controller_arg = DeclareLaunchArgument(
         name='nav_controller',
         description='Controller to use for navigation',
         choices=available_controllers,
-        default_value='regulated_pure_pursuit_directional',
+        default_value='dwb',
     )
 
     rviz_config_file_argunment = DeclareLaunchArgument(
