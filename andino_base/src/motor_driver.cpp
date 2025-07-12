@@ -75,13 +75,28 @@ MotorDriver::Encoders MotorDriver::ReadEncoderValues() {
 void MotorDriver::SetMotorValues(int val_1, int val_2) {
   std::stringstream ss;
   ss << "m " << val_1 << " " << val_2;
+  // if (val_1 > 0 && val_2 > 0) {
+  //   ss << "o 200 200";
+  // } else if (val_1 < 0 && val_2 < 0) {
+  //   ss << "o -200 -200";
+  // } else if (val_1 > 0 && val_2 < 0)
+  // {
+  //   ss << "o 200 -200";
+  // } else if (val_1 < 0 && val_2 > 0)
+  // {
+  //   ss << "o -200 200";
+  // } else {
+  //   ss << "o " << 0 << " " << 0;
+  // }
+  // ss << "o 200 200";
+
   SendMsg(ss.str());
 }
 
 void MotorDriver::SetPidValues(float k_p, float k_d, float k_i, float k_o) {
   std::stringstream ss;
-  // ss << "u " << k_p << ":" << k_d << ":" << k_i << ":" << k_o;
-  ss << "u " << 0 << ":" << 0 << ":" << 0 << ":" << 0;
+  ss << "u " << k_p << ":" << k_d << ":" << k_i << ":" << k_o;
+  // ss << "u " << 0 << ":" << 0 << ":" << 0 << ":" << 0;
   SendMsg(ss.str());
 }
 

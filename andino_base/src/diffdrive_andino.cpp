@@ -158,7 +158,7 @@ hardware_interface::return_type DiffDriveAndino::read(const rclcpp::Time& /* tim
   right_wheel_.pos_ = right_wheel_.Angle();
   right_wheel_.vel_ = (right_wheel_.pos_ - right_pos_prev) / delta_secs;
 
-  RCLCPP_ERROR(logger_, "AAAAA ENCODER: %d, %d", left_wheel_.enc_, right_wheel_.enc_);
+  // RCLCPP_ERROR(logger_, "AAAAA pos: %d, %d", left_wheel_.pos_, right_wheel_.pos_);
 
   return hardware_interface::return_type::OK;
 }
@@ -176,8 +176,18 @@ hardware_interface::return_type DiffDriveAndino::write(const rclcpp::Time& /* ti
 
   const int left_value_target = static_cast<int>(left_wheel_.cmd_ / left_wheel_.rads_per_tick_);
   const int right_value_target = static_cast<int>(right_wheel_.cmd_ / right_wheel_.rads_per_tick_);
+  
+  
   motor_driver_.SetMotorValues(left_value_target, right_value_target);
 
+  // k_p, k_d, k_i, k_o
+  // motor_driver_.SetPidValues(30.0, 10.0, 0.0, 10.0);
+  // RCLCPP_ERROR(logger_, "ticks: %i", config_.enc_ticks_per_rev);
+
+  RCLCPP_ERROR(logger_, "Left: %d, Right: %d", left_value_target, right_value_target);
+  // RCLCPP_ERROR(logger_, "Left cmd: %f, Right cmd: %f", left_wheel_.cmd_, right_wheel_.cmd_);
+  // RCLCPP_ERROR(logger_, "Left rad: %f, Right rad: %f", left_wheel_.rads_per_tick_, right_wheel_.rads_per_tick_);
+  
   return hardware_interface::return_type::OK;
 }
 
