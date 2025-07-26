@@ -1,0 +1,5 @@
+repositories:
+  random_walker:
+    type: git
+    url: https://github.com/glpuga/reusable_random_walker.git
+    version: 401178ab1296c5bb3d3cddb62f18ce9e338d827f

@@ -157,8 +157,9 @@ void KimchiStateServer::callGetMapInfoService() {
     if (result->success) {
       map_info_ = std::make_unique<MapInfo>(result->resolution, result->origin,
                                             result->map_image);
-      SetMapFileName();
-      // This is not longer needed here, right?
+      auto set_map_filename_future = SetMapFileName();
+      rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
+                                         set_map_filename_future);
       startNavigation();
 
       RCLCPP_INFO(node_->get_logger(), "(LOLA) MapInfo received");
@@ -218,11 +219,11 @@ void KimchiStateServer::startNavigationCallback(
     RCLCPP_ERROR(node_->get_logger(),
                 "(LOLA) Saving map and changing state to lost");
     std::thread map_saved_callback_thread([this]() {
-      std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
-          save_map_future = saveMap();
+      auto save_map_future = saveMap();
       navigation_manager_->stopSlam();
-      SetMapFileName();
+      auto set_map_filename_future = SetMapFileName();
       save_map_future.wait();
+      set_map_filename_future.wait();
       startNavigation();
     });
     map_saved_callback_thread.detach();
@@ -263,8 +264,10 @@ KimchiStateServer::saveMap() {
   return future.share();  // Return the future to allow waiting for completion
 }
 
-void KimchiStateServer::SetMapFileName() {
-  // TODO(Arilow): Instead of hardcoding the map file name, we should make it a parameter.
+std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>
+KimchiStateServer::SetMapFileName() {
+  // TODO(Arilow): Instead of hardcoding the map file name, we should make it a
+  // parameter.
   auto map_server_param_client =
       std::make_shared<rclcpp::AsyncParametersClient>(node_, "/map_server");
   if (map_server_param_client->wait_for_service(std::chrono::seconds(1))) {
@@ -272,7 +275,12 @@ void KimchiStateServer::SetMapFileName() {
         "yaml_filename",
         std::filesystem::absolute("kimchi_map.yaml").c_str())});
     // Handle future result...
+    return future;
   }
+  RCLCPP_ERROR(node_->get_logger(),
+               "Failed to set map file name, map_server service not available");
+  return std::shared_future<
+      std::vector<rcl_interfaces::msg::SetParametersResult>>{};
 }
 
 void KimchiStateServer::changeState(RobotState new_state) {

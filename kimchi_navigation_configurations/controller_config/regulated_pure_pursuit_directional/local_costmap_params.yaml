@@ -1,0 +1,44 @@
+local_costmap:
+  local_costmap:
+    ros__parameters:
+      update_frequency: 2.0
+      publish_frequency: 2.0
+      global_frame: odom
+      robot_base_frame: base_footprint
+      rolling_window: true
+      width: 8
+      height: 8
+      resolution: 0.025
+      always_send_full_costmap: false
+      footprint: "[[0.11, 0.15],[0.11, -0.15],[-0.31, -0.15],[-0.31, 0.15]]"
+      plugins: ["obstacle_layer", "inflation_layer"]
+      obstacle_layer:
+        plugin: "nav2_costmap_2d::ObstacleLayer"
+        enabled: True
+        max_obstacle_height: 1.0
+        mark_threshold: 0
+        observation_sources: scan_front scan_back
+        scan_front:
+          topic: /f_scan
+          max_obstacle_height: 1.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 12.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 12.5
+          obstacle_min_range: 0.0
+        scan_back:
+          topic: /b_scan
+          max_obstacle_height: 1.0
+          clearing: True
+          marking: True
+          data_type: "LaserScan"
+          raytrace_max_range: 12.0
+          raytrace_min_range: 0.0
+          obstacle_max_range: 12.5
+          obstacle_min_range: 0.0
+      inflation_layer:
+        plugin: "nav2_costmap_2d::InflationLayer"
+        cost_scaling_factor: 10.0
+        inflation_radius: 1.0

@@ -80,6 +80,14 @@ RUN pip install grpcio-tools --break-system-packages
 # Defines a workspace folder.
 WORKDIR /home/$USER/ws
 
+#
+# Install base system external dependencies
+COPY docker/files/external_source_dependencies.repos /tmp/external_source_dependencies.repos
+RUN cd src/ \
+ && mkdir -p external \
+ && cd external \
+ && vcs import < /tmp/external_source_dependencies.repos
+
 # Use fixuid as the entrypoint in quiet mode
 ENTRYPOINT ["fixuid", "-q"]
 
