@@ -51,6 +51,7 @@ class NavigationManager {
 
   void startSlam();
   void stopSlam();
+  void startLocating(const Point2D& point);
   void startNavigation();
   void stopNavigation();
 

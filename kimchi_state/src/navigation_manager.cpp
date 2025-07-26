@@ -46,7 +46,6 @@ void NavigationManager::stopSlam() {
 
 void NavigationManager::startNavigation() {
   std::chrono::milliseconds wait_duration(100);
-
   // Is is_active() returns TIMEOUT it means the lifecycle manager is not
   // configured yet. Waiting for it to be configured is a must before calling
   // the startup service.
@@ -67,6 +66,11 @@ void NavigationManager::startNavigation() {
 }
 
 void NavigationManager::stopNavigation() {}
+
+void NavigationManager::startLocating(const Point2D& point)
+{
+  RCLCPP_INFO(node_->get_logger(), "(LOLA) Goal received: (%f, %f)", point.x, point.y);
+}
 
 void NavigationManager::addGoalToMission(const Point2D& point) {
   RCLCPP_INFO(node_->get_logger(), "Adding point to path: (%f, %f)", point.x,

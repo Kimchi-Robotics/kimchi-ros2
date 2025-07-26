@@ -55,12 +55,15 @@ class GrpcBridgeNode(Node):
 
         # Create velocity publisher
         self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
+
         self._map_info_client = self.create_client(
             MapInfoSrv, '/kimchi_map/get_map_info')
         self._start_mapping_client = self.create_client(
             Trigger, '/kimchi_state_server/start_slam')
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
+        self._start_locating_client = self.create_client(
+            Trigger, '/kimchi_state_server/localize')
         self._add_goal_to_mission_client = self.create_client(
             AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
 
@@ -186,11 +189,18 @@ class GrpcBridgeNode(Node):
         Args:
             pose: A Pose2D object representing the selected pose.
         """
-        self.get_logger().info(f'Processing selected pose: {pose.x}, {pose.y}, {pose.theta}')
+        self.get_logger().info(f'(LOLA) Processing selected pose: {pose.x}, {pose.y}, {pose.theta}')
 
-        if self._robot_state == RobotState.LOCATING:
+        if self._robot_state == RobotState.LOST:
             self.get_logger().info(
-                'Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
+                '(LOLA) Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
+            self._start_locating_client.wait_for_service()
+            request = AddGoalToMissionSrv.Request()
+            request.goal.x = pose.x
+            request.goal.y = pose.y
+
+            self._start_locating_client.call(request)
+
         elif self._robot_state == RobotState.IDLE or self._robot_state == RobotState.NAVIGATING:
             self.get_logger().info(
                 'Robot state is IDLE. The robot will be send to this pose.')
@@ -204,7 +214,7 @@ class GrpcBridgeNode(Node):
 
         else:
             self.get_logger().info(
-                'Robot is not doing anything.')
+                '(LOLA) Robot is not doing anything.')
 
 
 def main():

@@ -4,18 +4,25 @@
 #pragma once
 
 #include <atomic>
-#include <kimchi_interfaces/msg/robot_state.hpp>
-#include <kimchi_interfaces/srv/add_goal_to_mission.hpp>
-#include <kimchi_interfaces/srv/map_info.hpp>
-#include <lifecycle_msgs/srv/change_state.hpp>
+#include <future> // For std::promise and std::future
 #include <memory>
+
+#include <lifecycle_msgs/srv/change_state.hpp>
 #include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
 #include <nav2_msgs/srv/save_map.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <std_msgs/msg/empty.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
+#include "kimchi_interfaces/action/localizing.hpp"
+#include <kimchi_interfaces/msg/robot_state.hpp>
+#include <kimchi_interfaces/srv/add_goal_to_mission.hpp>
+#include <kimchi_interfaces/srv/map_info.hpp>
+#include "kimchi_navigation/global_localization.hpp"
 #include "map_info.h"
 #include "navigation_manager.h"
 
@@ -71,12 +78,16 @@ class KimchiStateServer
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);
   void SetMapFileName();
+  void startLocating();
   void startNavigation();
 
   // Callback methods for the services.
   void startSlamCallback(
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
+  void initialPoseCallback(const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr
+          request,
+      kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response);
   void startNavigationCallback(
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
@@ -85,10 +96,13 @@ class KimchiStateServer
           request,
       kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response);
 
+
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<NavigationManager> navigation_manager_;
   std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
+
+  std::optional<geometry_msgs::msg::Pose> inital_pose_estimate_;
 
   // Topics.
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
@@ -99,10 +113,17 @@ class KimchiStateServer
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_navigation_service_;
   rclcpp::Service<kimchi_interfaces::srv::AddGoalToMission>::SharedPtr
+      start_locating_service_;
+  rclcpp::Service<kimchi_interfaces::srv::AddGoalToMission>::SharedPtr
       add_goal_to_mission_service_;
 
   // Service clients.
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
   rclcpp::Client<kimchi_interfaces::srv::MapInfo>::SharedPtr
       get_map_info_client_;
+
+  // Action client.
+  rclcpp_action::Client<GlobalLocalizationServer::GlobalLocalization>::SharedPtr localization_action_client_;
+
+
 };

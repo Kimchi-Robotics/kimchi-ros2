@@ -106,6 +106,11 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         [success, msg] = self._ros_node.start_navigation()
         return kimchi_pb2.StartNavigationResponse(success=success, info=msg)
 
+    def StartLocating(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Serving StartLocating request {request}")
+        [success, msg] = self._ros_node.start_locating()
+        return kimchi_pb2.StartLocatingResponse(success=success, info=msg)
+
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")
         return kimchi_pb2.IsAliveResponse(alive=True)
@@ -122,11 +127,11 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             An Empty response
         """
         try:
-            self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
+            self._logger.info(f"(LOLA) Received selected pose: {request.x}, {request.y}, {request.theta}")
             self._ros_node.process_selected_pose(Pose2D(request.x, request.y, request.theta))
             return kimchi_pb2.Empty()
         except Exception as e:
-            self._logger.error(f"Error in SendSelectedPose RPC: {e}")
+            self._logger.error(f"(LOLA) Error in SendSelectedPose RPC: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Internal error: {str(e)}")
             return kimchi_pb2.Empty()

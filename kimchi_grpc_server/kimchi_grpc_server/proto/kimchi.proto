@@ -41,6 +41,7 @@ service KimchiApp {
   rpc GetRobotState (Empty) returns (RobotStateMsg) {}
   rpc StartMapping(Empty) returns (StartMappingResponse) {}
   rpc StartNavigation(Empty) returns (StartNavigationResponse) {}
+  rpc StartLocating(Empty) returns (StartLocatingResponse) {}
   rpc SendSelectedPose(Pose) returns (Empty) {}
 
   // Stream subscriptions
@@ -60,6 +61,11 @@ message StartMappingResponse {
 }
 
 message StartNavigationResponse {
+  bool success = 1;
+  string info = 2;
+}
+
+message StartLocatingResponse {
   bool success = 1;
   string info = 2;
 }

@@ -16,11 +16,13 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(kimchi_interfaces REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(nav2_lifecycle_manager REQUIRED)
+
+find_package(kimchi_interfaces REQUIRED)
+find_package(kimchi_navigation REQUIRED)
 
 add_executable(kimchi_state_server src/kimchi_state_server.cpp src/navigation_manager.cpp)
 ament_target_dependencies(kimchi_state_server PUBLIC
@@ -33,11 +35,15 @@ ament_target_dependencies(kimchi_state_server PUBLIC
   "std_srvs"
   "nav2_msgs"
   "lifecycle_msgs"
-  "nav2_lifecycle_manager")
-
+  "nav2_lifecycle_manager"
+  "kimchi_navigation")
 target_include_directories(kimchi_state_server PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+
+install(TARGETS
+  kimchi_state_server
+  DESTINATION lib/${PROJECT_NAME})
 
 install(
   DIRECTORY
@@ -46,8 +52,5 @@ install(
     share/${PROJECT_NAME}/
 )
 
- install(TARGETS
- kimchi_state_server
-  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
