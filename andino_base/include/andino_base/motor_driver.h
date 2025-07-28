@@ -31,6 +31,8 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
+#include <mutex>
 
 #include <libserial/SerialPort.h>
 
@@ -59,10 +61,12 @@ class MotorDriver {
   ///       ensure that the motor driver is ready to receive a new command.
   void SendEmptyMsg();
 
+  // std::string GetEncodersString();
   /// @brief Read the encoder values from the motor driver.
   ///       First value is the left encoder, second value is the right encoder.
   /// @returns The encoder values.
-  Encoders ReadEncoderValues();
+  // Encoders ReadEncoderValues();
+  std::optional<Encoders> ReadEncoderValues();
 
   /// @brief Set the motor values.
   ///        The unit of the values is in encoder ticks per revolution.
@@ -88,6 +92,7 @@ class MotorDriver {
   std::string SendMsg(const std::string& msg_to_send);
 
  private:
+  std::mutex mutex_;
   // Underlying serial connection.
   LibSerial::SerialPort serial_port_;
 
