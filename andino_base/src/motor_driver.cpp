@@ -101,7 +101,6 @@ std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
 
   output = Encoders{left_encoder_value, right_encoder_value};
   return output;
-  // return {std::strtol(token_1.c_str(), nullptr, 10), std::strtol(token_2.c_str(), nullptr, 10)};
 }
 
 
@@ -109,21 +108,6 @@ std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
 void MotorDriver::SetMotorValues(int val_1, int val_2) {
   std::stringstream ss;
   ss << "m " << val_1 << " " << val_2;
-  // if (val_1 > 0 && val_2 > 0) {
-  //   ss << "o 200 200";
-  // } else if (val_1 < 0 && val_2 < 0) {
-  //   ss << "o -200 -200";
-  // } else if (val_1 > 0 && val_2 < 0)
-  // {
-  //   ss << "o 200 -200";
-  // } else if (val_1 < 0 && val_2 > 0)
-  // {
-  //   ss << "o -200 200";
-  // } else {
-  //   ss << "o " << 0 << " " << 0;
-  // }
-  // ss << "o 200 200";
-
   SendMsg(ss.str());
 }
 
@@ -140,15 +124,12 @@ std::string MotorDriver::SendMsg(const std::string& msg) {
   const std::string msg_to_send = msg + '\r';
 
   // Send the message.
-  std::cerr << "SendMsg: " << msg_to_send << std::endl;
   serial_port_.Write(msg_to_send);
 
   // Get response from the motor driver.
   std::string response;
   try {
     serial_port_.ReadLine(response, '\n', timeout_ms_);
-    std::cerr << "SendMsg, response: " << response << std::endl;
-
   } catch (LibSerial::ReadTimeout&) {
     std::cerr << "Response to " << msg << " timed out." << std::endl;
   }

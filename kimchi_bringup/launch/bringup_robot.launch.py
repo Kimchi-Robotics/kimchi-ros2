@@ -46,12 +46,6 @@ pkg_kimchi_state = get_package_share_directory("kimchi_state")
 pkg_kimchi_grpc_server = get_package_share_directory("kimchi_grpc_server")
 
 def generate_launch_description():
-    # Declares launch arguments
-    # camera_arg = DeclareLaunchArgument(
-    #         'include_camera',
-    #         default_value='True',
-    #         description='Indicates whether to include camera launch.')
-    # camera =  LaunchConfiguration('include_camera')
     rplidar_arg = DeclareLaunchArgument(
             'include_rplidar',
             default_value='True',
@@ -88,20 +82,11 @@ def generate_launch_description():
         }.items(),
                 condition=IfCondition(rplidar)
     )
-    # # Include camera launch file
-    # include_camera = IncludeLaunchDescription(
-    #     PythonLaunchDescriptionSource(
-    #         os.path.join(pkg_kimchi_bringup, 'launch', 'camera.launch.py'),
-    #     ),
-    #     launch_arguments={
-    #     }.items(),
-    #             condition=IfCondition(camera)
-    # )
 
     kimchi_state_server_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_state, "launch", "kimchi_state_server.launch.py")),
         launch_arguments={
-            'use_sim_time': use_sim_time,
+            'use_sim_time': use_sim_time
         }.items(),
     )
 
@@ -109,8 +94,6 @@ def generate_launch_description():
         PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_grpc_server, "launch", "kimchi_grpc_server.launch.py")),
     )
 
-    # TODO(francocipollone): Improve concatenation of launch files.
-    #
     # Waits for kimchi_description to set up robot_state_publisher.
     kimchi_control_timer = TimerAction(period=5.0, actions=[include_kimchi_control])
     # Defer sensors launch to avoid overhead while robot_state_publisher is setting up.
