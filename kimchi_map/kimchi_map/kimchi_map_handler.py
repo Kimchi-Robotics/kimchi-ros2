@@ -117,8 +117,6 @@ class KimchiMapHandler(Node):
             self.get_logger().info('Robot state changed to IDLE')
 
     def get_map_info_callback(self, request, response):
-        self.get_logger().info('Executing get_map_info_callback')
-
         if self._map_info is None:
             self.get_logger().error('Map not yet initialized')
             response.success = False
@@ -141,7 +139,6 @@ class KimchiMapHandler(Node):
             f"{file_name}.{self._map_file_format}")
         try:
             with open(filename, "rb") as image_file:
-                self.get_logger().info('Encoding image')
                 map_bytes = base64.b64encode(image_file.read())
         except Exception as e:
             self.get_logger().error(
@@ -152,7 +149,6 @@ class KimchiMapHandler(Node):
 
     # Save map in a loop until the thread is stopped
     def save_map_loop(self):
-        self.get_logger().info('Starting map saving thread')
         mapping_map_name = "current_mapping_map"
         while self._keep_saving_map:
             self.save_map_sync(mapping_map_name)
@@ -162,7 +158,6 @@ class KimchiMapHandler(Node):
     def save_map_sync(self, file_name):
         # Save Map image as file.
         self._map_saver_client.wait_for_service()
-        self.get_logger().info('Calling save map service')
         request = SaveMap.Request()
         request.map_topic = self._map_topic
         request.map_url = file_name
@@ -171,13 +166,8 @@ class KimchiMapHandler(Node):
         request.free_thresh = 0.25
         request.occupied_thresh = 0.65
 
-        self.get_logger().info(
-            f'Saving map to {file_name}.{self._map_file_format}')
-
         result = self._map_saver_client.call(request)
-        if result.result is True:
-            self.get_logger().info('Map saved')
-        else:
+        if result.result is False:
             self.get_logger().error('Failed to save map')
 
 
