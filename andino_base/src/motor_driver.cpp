@@ -62,17 +62,6 @@ bool MotorDriver::is_connected() const { return serial_port_.IsOpen(); }
 
 void MotorDriver::SendEmptyMsg() { std::string response = SendMsg(""); }
 
-// MotorDriver::Encoders MotorDriver::ReadEncoderValues() {
-//   static const std::string delimiter = " ";
-
-//   const std::string response = SendMsg("e");
-
-//   const size_t del_pos = response.find(delimiter);
-//   const std::string token_1 = response.substr(0, del_pos).c_str();
-//   const std::string token_2 = response.substr(del_pos + delimiter.length()).c_str();
-//   return {std::atoi(token_1.c_str()), std::atoi(token_2.c_str())};
-// }
-
 std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
   std::optional<Encoders> output;
 
@@ -92,7 +81,7 @@ std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
   } 
 
   int right_encoder_value = std::stoi(token_2, &pos2);
-  // -2 baucause of /r/n
+  // -2 because of /r/n
   if(pos2 != token_2.length() - 2) {
     std::cerr << "Error parsing token_2: " << token_2 << std::endl;
     std::cerr << "pos2: " << pos2 << "token_2.length(): " << token_2.length() << std::endl;
@@ -114,7 +103,6 @@ void MotorDriver::SetMotorValues(int val_1, int val_2) {
 void MotorDriver::SetPidValues(float k_p, float k_d, float k_i, float k_o) {
   std::stringstream ss;
   ss << "u " << k_p << ":" << k_d << ":" << k_i << ":" << k_o;
-  // ss << "u " << 0 << ":" << 0 << ":" << 0 << ":" << 0;
   SendMsg(ss.str());
 }
 
