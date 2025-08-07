@@ -71,12 +71,13 @@ def generate_launch_description():
         executable='global_localization',
         name='global_localization',
         output='screen',
+        arguments=['--ros-args', '--log-level', 'DEBUG'],
         parameters=[{
             'position_covariance_threshold': 0.5,
             'orientation_covariance_threshold': 0.3,
         }],
         # Launch this after AMCL is started
-        on_exit=LogInfo(msg="Initial pose estimator has completed its task")
+        on_exit=LogInfo(msg="Initial pose estimator has completed its task"),
     )
     # RViz
     rviz = Node(

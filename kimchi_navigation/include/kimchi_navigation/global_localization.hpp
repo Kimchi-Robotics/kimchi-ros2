@@ -11,6 +11,7 @@
 #include "kimchi_interfaces/action/localizing.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
+
 /**
  * Node to obtain the global localization of the robot.
  *
@@ -89,7 +90,8 @@ class GlobalLocalizationServer : public rclcpp::Node {
 
   rclcpp_action::Server<GlobalLocalization>::SharedPtr action_server_;
 
-  geometry_msgs::msg::Pose inital_pose_estimate_;
+  float inital_pose_estimate_x_;
+  float inital_pose_estimate_y_;
   geometry_msgs::msg::PoseWithCovarianceStamped current_pose_;
 
   bool initial_pose_published_{false};

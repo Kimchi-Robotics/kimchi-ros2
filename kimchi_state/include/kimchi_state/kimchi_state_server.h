@@ -18,11 +18,9 @@
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
-#include "kimchi_interfaces/action/localizing.hpp"
 #include <kimchi_interfaces/msg/robot_state.hpp>
 #include <kimchi_interfaces/srv/add_goal_to_mission.hpp>
 #include <kimchi_interfaces/srv/map_info.hpp>
-#include "kimchi_navigation/global_localization.hpp"
 #include "map_info.h"
 #include "navigation_manager.h"
 
@@ -124,6 +122,4 @@ class KimchiStateServer
 
   // Action client.
   rclcpp_action::Client<GlobalLocalizationServer::GlobalLocalization>::SharedPtr localization_action_client_;
-
-
 };

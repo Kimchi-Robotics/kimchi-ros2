@@ -1,4 +1,4 @@
-geometry_msgs/Pose pose_estimate
+kimchi_interfaces/Position2D pose_estimate
 ---
 geometry_msgs/PoseWithCovarianceStamped localized_pose
 bool localized

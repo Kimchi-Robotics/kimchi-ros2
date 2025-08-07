@@ -63,7 +63,7 @@ class GrpcBridgeNode(Node):
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
         self._start_locating_client = self.create_client(
-            Trigger, '/kimchi_state_server/localize')
+            AddGoalToMissionSrv, '/kimchi_state_server/localize')
         self._add_goal_to_mission_client = self.create_client(
             AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
 
@@ -189,11 +189,10 @@ class GrpcBridgeNode(Node):
         Args:
             pose: A Pose2D object representing the selected pose.
         """
-        self.get_logger().info(f'(LOLA) Processing selected pose: {pose.x}, {pose.y}, {pose.theta}')
 
         if self._robot_state == RobotState.LOST:
             self.get_logger().info(
-                '(LOLA) Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
+                'Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
             self._start_locating_client.wait_for_service()
             request = AddGoalToMissionSrv.Request()
             request.goal.x = pose.x
@@ -214,7 +213,7 @@ class GrpcBridgeNode(Node):
 
         else:
             self.get_logger().info(
-                '(LOLA) Robot is not doing anything.')
+                'Robot is not doing anything.')
 
 
 def main():

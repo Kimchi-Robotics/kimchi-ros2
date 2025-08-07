@@ -52,24 +52,22 @@ std::shared_ptr<KimchiStateServer> KimchiStateServer::Create(
 
 void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
   changeState(RobotState::NAVIGATING);
-  RCLCPP_INFO(node_->get_logger(), "(LOLA) Navigating to goal at point: (%f, %f)",
+  RCLCPP_INFO(node_->get_logger(), "Navigating to goal at point: (%f, %f)",
               point.x, point.y);
 }
 
 void KimchiStateServer::onGoalReached(const Point2D &point) {
   changeState(RobotState::GOAL_REACHED);
-  RCLCPP_INFO(node_->get_logger(), "(LOLA) Goal reached at point: (%f, %f)", point.x,
+  RCLCPP_DEBUG(node_->get_logger(), "[KimchiStateServer] Goal reached at point: (%f, %f)", point.x,
               point.y);
 }
 
 void KimchiStateServer::onMissionFinished() {
   changeState(RobotState::IDLE);
-  RCLCPP_INFO(node_->get_logger(), "(LOLA) Mission finished");
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission finished");
 }
 
 void KimchiStateServer::initialize() {
-  RCLCPP_INFO(node_->get_logger(), "(LOLA) KimchiStateServer::initialize.");
-
   navigation_manager_ =
       std::make_unique<NavigationManager>(node_, shared_from_this());
   // Create a QoS profile with best effort for sharing the state of the robot.
@@ -138,10 +136,10 @@ void KimchiStateServer::callGetMapInfoService() {
   while (!get_map_info_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(),
-                   "Interrupted while waiting for the service. Exiting.");
+                   "[KimchiStateServer] Interrupted while waiting for the service. Exiting.");
       return;
     }
-    RCLCPP_INFO(node_->get_logger(), "(LOLA) service not available, waiting again...");
+    RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Service not available, waiting again...");
   }
 
   auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
@@ -162,10 +160,8 @@ void KimchiStateServer::callGetMapInfoService() {
                                          set_map_filename_future);
       startNavigation();
 
-      RCLCPP_INFO(node_->get_logger(), "(LOLA) MapInfo received");
     } else {
       changeState(RobotState::NO_MAP);
-      RCLCPP_INFO(node_->get_logger(), "(LOLA) MapInfo Service returned empty map");
     }
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
@@ -186,27 +182,27 @@ void KimchiStateServer::initialPoseCallback(
   const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
   kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response)
 {
-  RCLCPP_ERROR(node_->get_logger(), "(LOLA) Initial pose Callback");
-
   if(state_ == RobotState::LOST)
   {
     changeState(RobotState::LOCATING);
-    navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+    std::thread locate_thread([this, request](){
+      navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+    });
+    locate_thread.detach();
     response->success = true;
+
+    changeState(RobotState::IDLE);
+
     return;
   }
 
   response->success = false;
-
   return;
 }
 
 void KimchiStateServer::startNavigationCallback(
     const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
     std_srvs::srv::Trigger::Response::SharedPtr response) {
-  RCLCPP_INFO(node_->get_logger(),
-                "(LOLA) Navigation Callback");
-
   if (state_ == RobotState::NO_MAP) {
     response->success = false;
     response->message = "There's no map available. Can't start navigation.";
@@ -216,8 +212,6 @@ void KimchiStateServer::startNavigationCallback(
   response->success = true;
 
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
-    RCLCPP_ERROR(node_->get_logger(),
-                "(LOLA) Saving map and changing state to lost");
     std::thread map_saved_callback_thread([this]() {
       auto save_map_future = saveMap();
       navigation_manager_->stopSlam();
@@ -233,10 +227,8 @@ void KimchiStateServer::startNavigationCallback(
   startNavigation();
 }
 
-
 void KimchiStateServer::startNavigation() {
   navigation_manager_->startNavigation();
-  // changeState(RobotState::IDLE);
   changeState(RobotState::LOST);
 }
 

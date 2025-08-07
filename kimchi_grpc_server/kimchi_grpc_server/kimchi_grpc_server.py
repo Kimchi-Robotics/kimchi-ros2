@@ -18,6 +18,7 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         self._current_angular_vel = 0
         self._robot_path = kimchi_pb2.Path()
 
+
     async def GetPose(
         self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
     ) -> kimchi_pb2.Pose:
@@ -126,12 +127,13 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         Returns:
             An Empty response
         """
+        self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
         try:
-            self._logger.info(f"(LOLA) Received selected pose: {request.x}, {request.y}, {request.theta}")
+            self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
             self._ros_node.process_selected_pose(Pose2D(request.x, request.y, request.theta))
             return kimchi_pb2.Empty()
         except Exception as e:
-            self._logger.error(f"(LOLA) Error in SendSelectedPose RPC: {e}")
+            self._logger.error(f"Error in SendSelectedPose RPC: {e}")
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Internal error: {str(e)}")
             return kimchi_pb2.Empty()
