@@ -5,7 +5,6 @@
 #include <functional>
 #include <thread>
 
-// #include <rclcpp/executors.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include "rclcpp/wait_for_message.hpp"
 #include <std_srvs/srv/trigger.hpp>
@@ -114,8 +113,6 @@ void KimchiStateServer::initialize() {
         std::bind(&KimchiStateServer::initialPoseCallback, this,
                   std::placeholders::_1, std::placeholders::_2));
 
-  localization_action_client_ = rclcpp_action::create_client<GlobalLocalizationServer::GlobalLocalization>(node_, "global_localization");
-
   // Call the map info service
   callGetMapInfoService();
 }
@@ -182,21 +179,21 @@ void KimchiStateServer::initialPoseCallback(
   const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
   kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response)
 {
-  if(state_ == RobotState::LOST)
+  if(state_ != RobotState::LOST)
   {
-    changeState(RobotState::LOCATING);
-    std::thread locate_thread([this, request](){
-      navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
-    });
-    locate_thread.detach();
-    response->success = true;
-
-    changeState(RobotState::IDLE);
+    response->success = false;
 
     return;
   }
 
-  response->success = false;
+  changeState(RobotState::LOCATING);
+  std::thread locate_thread([this, request](){
+    navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+  });
+  locate_thread.detach();
+  response->success = true;
+
+  changeState(RobotState::IDLE);
   return;
 }
 
@@ -285,13 +282,10 @@ int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
   std::shared_ptr<KimchiStateServer> kimchi_state_server =
       KimchiStateServer::Create(rclcpp::NodeOptions());
-
   rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(),
                                                     4);
   executor.add_node(kimchi_state_server->getNode());
-
   executor.spin();
-
   rclcpp::shutdown();
   return 0;
 }

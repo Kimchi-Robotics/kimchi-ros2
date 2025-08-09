@@ -94,7 +94,6 @@ class KimchiStateServer
           request,
       kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response);
 
-
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<NavigationManager> navigation_manager_;
   std::atomic<RobotState> state_;
@@ -119,7 +118,4 @@ class KimchiStateServer
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
   rclcpp::Client<kimchi_interfaces::srv::MapInfo>::SharedPtr
       get_map_info_client_;
-
-  // Action client.
-  rclcpp_action::Client<GlobalLocalizationServer::GlobalLocalization>::SharedPtr localization_action_client_;
 };
