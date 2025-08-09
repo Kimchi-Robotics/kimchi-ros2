@@ -11,7 +11,6 @@
 #include "kimchi_interfaces/action/localizing.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
 
-
 /**
  * Node to obtain the global localization of the robot.
  *

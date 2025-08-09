@@ -55,7 +55,6 @@ class GrpcBridgeNode(Node):
 
         # Create velocity publisher
         self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
-
         self._map_info_client = self.create_client(
             MapInfoSrv, '/kimchi_map/get_map_info')
         self._start_mapping_client = self.create_client(

@@ -18,7 +18,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         self._current_angular_vel = 0
         self._robot_path = kimchi_pb2.Path()
 
-
     async def GetPose(
         self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext
     ) -> kimchi_pb2.Pose:
@@ -129,7 +128,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         """
         self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
         try:
-            self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
             self._ros_node.process_selected_pose(Pose2D(request.x, request.y, request.theta))
             return kimchi_pb2.Empty()
         except Exception as e:
