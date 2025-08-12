@@ -27,7 +27,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         while True:
             await asyncio.sleep(0.5)
             pose = self._ros_node.protected_pose.pose
-            self._logger.info(f"Sending pose {pose.x}, {pose.y}, {pose.theta}")
 
             yield kimchi_pb2.Pose(x=pose.x, y=pose.y, theta=pose.theta)
 
@@ -45,7 +44,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             if len(map_info.image) == 0:
                 self._logger.warning("Received empty map image, waiting for a valid map...")
                 continue
-            self._logger.info(f"Sending map {map_info}")
             yield kimchi_pb2.Map(image=map_info.image, origin=map_info.origin, resolution=map_info.resolution)
 
     async def SubscribeToRobotState(
@@ -74,7 +72,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
                 self._logger.warning("No points in the path, waiting for updates...")
                 continue
 
-            self._logger.info(f"Sending path with {len(self._robot_path.points)} points")
             yield self._robot_path
 
     def on_path_updated(self, path: kimchi_pb2.Path):
@@ -90,7 +87,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         return self._ros_node.get_map()
 
     def GetRobotState(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
-        self._logger.info(f"Serving GetRobotState request {request}")
         robot_state = self._ros_node.get_robot_state()
         self._logger.info(f"Sending robot state {robot_state}")
         return kimchi_pb2.RobotStateMsg(state=robot_state.to_kimchi_robot_state_enum())
@@ -146,8 +142,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             # Process each velocity message as it comes in
             for velocity_ratio in request_iterator:
                 # Log the received velocity for debugging
-                self._logger.info(
-                    f"Received velocity: linear={velocity_ratio.linear}, angular={velocity_ratio.angular}")
                 self._current_linear_vel = velocity_ratio.linear
                 self._current_angular_vel = velocity_ratio.angular
 
@@ -156,9 +150,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
                     self._current_linear_vel = 0.0
                 if abs(velocity_ratio.angular) < 0.1:
                     self._current_angular_vel = 0.0
-
-                self._logger.info(
-                    f"Publishing velocity: linear={self._current_linear_vel}, angular={self._current_angular_vel}")
 
                 self._ros_node.publish_velocity(
                     self._current_linear_vel, self._current_angular_vel)

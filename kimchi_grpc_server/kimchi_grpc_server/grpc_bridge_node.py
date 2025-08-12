@@ -100,7 +100,6 @@ class GrpcBridgeNode(Node):
             sleep(0.5)
 
     def robot_state_callback(self, msg):
-        self.get_logger().info(f'robot_state_callback called')
         self.get_logger().info(
             f'Got robot state {msg.state} converted to {RobotState.from_kimchi_robot_state_enum(msg.state)}')
 
@@ -133,8 +132,6 @@ class GrpcBridgeNode(Node):
         msg = Twist()
         msg.linear.x = self._max_linear_vel_ms * linear_percentage
         msg.angular.z = self._man_angular_vel_rad * angular_percentage
-        self.get_logger().info(
-            f'Publishing velocity. linear: {msg.linear.x}, angular {msg.angular.z}')
         self._vel_publisher.publish(msg)
 
     def start_mapping(self):
