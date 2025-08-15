@@ -59,6 +59,12 @@ void KimchiStateServer::onGoalReached(const Point2D &point) {
               point.y);
 }
 
+void KimchiStateServer::onGoalCancelled(const Point2D& point) {
+  changeState(RobotState::GOAL_REACHED);
+  RCLCPP_INFO(node_->get_logger(), "Goal cancelled: (%f, %f)", point.x,
+              point.y);
+}
+
 void KimchiStateServer::onMissionFinished() {
   changeState(RobotState::IDLE);
   RCLCPP_INFO(node_->get_logger(), "Mission finished");
@@ -107,6 +113,16 @@ void KimchiStateServer::initialize() {
           std::bind(&KimchiStateServer::addGoalToMissionCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
 
+  // cancel_goal_service_ = node_->create_service<std_srvs::srv::Trigger>(
+  //     "/kimchi_state_server/cancel_navigation_goal", std::bind(
+  //         &KimchiStateServer::cancelGoalCallback, this,
+  //         std::placeholders::_1, std::placeholders::_2));
+
+  send_command_service_ = node_->create_service<
+      kimchi_interfaces::srv::KimchiStateServerCommand>(
+      "/kimchi_state_server/send_command",
+      std::bind(&KimchiStateServer::sendCommandCallback, this,
+                std::placeholders::_1, std::placeholders::_2));
   // Call the map info service
   callGetMapInfoService();
 }
@@ -200,6 +216,43 @@ void KimchiStateServer::startNavigationCallback(
 void KimchiStateServer::startNavigation() {
   navigation_manager_->startNavigation();
   changeState(RobotState::IDLE);
+}
+
+// void KimchiStateServer::cancelGoalCallback(
+//     const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
+//     std_srvs::srv::Trigger::Response::SharedPtr /*response*/) {
+//   navigation_manager_->cancelCurrentGoal();
+// }
+
+void KimchiStateServer::sendCommandCallback(
+    const kimchi_interfaces::srv::KimchiStateServerCommand::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
+        response) {
+  // if (request->command == "start_mapping") {
+  //   startSlamCallback(nullptr, response);
+  // } else if (request->command == "start_navigation") {
+  //   startNavigationCallback(nullptr, response);
+  // } else if (request->command == "stop_mapping") {
+  //   navigation_manager_->stopSlam();
+  //   changeState(RobotState::IDLE);
+  //   response->success = true;
+  // } else if (request->command == "stop_navigation") {
+  //   navigation_manager_->stopNavigation();
+  //   changeState(RobotState::IDLE);
+  //   response->success = true;
+  if (request->command == "continue_path") {
+    navigation_manager_->goToNextGoal();
+    response->success = true;
+  } else if (request->command == "cancel_navigation_goal") {
+    navigation_manager_->cancelCurrentGoal();
+    response->success = true;
+  } else if (request->command == "cancel_navigation_mission") {
+    navigation_manager_->cancelMission();
+  } else {
+    response->success = false;
+    response->msg = "Unknown command: " + request->command;
+  }
 }
 
 void KimchiStateServer::addGoalToMissionCallback(

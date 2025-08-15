@@ -32,6 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/Position2D.msg"
 "srv/MapInfo.srv"
 "srv/AddGoalToMission.srv"
+"srv/KimchiStateServerCommand.srv"
 DEPENDENCIES geometry_msgs builtin_interfaces
 )
 

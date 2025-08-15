@@ -102,6 +102,25 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         [success, msg] = self._ros_node.start_navigation()
         return kimchi_pb2.StartNavigationResponse(success=success, info=msg)
 
+    def NavigationCancelGoalService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Cancelling navigation goal")
+        self._ros_node.send_command("cancel_navigation_goal")
+
+        return kimchi_pb2.Empty()
+
+    def NavigationContinuePathService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Cancelling navigation goal")
+        self._ros_node.send_command("continue_path")
+
+        return kimchi_pb2.Empty()
+
+    def NavigationCancelMissionService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Cancelling navigation goal")
+        self._ros_node.send_command("cancel_navigation_mission")
+
+        return kimchi_pb2.Empty()
+
+
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")
         return kimchi_pb2.IsAliveResponse(alive=True)

@@ -8,6 +8,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
 from kimchi_interfaces.srv import AddGoalToMission as AddGoalToMissionSrv
+from kimchi_interfaces.srv import KimchiStateServerCommand as KimchiStateServerCommandSrv
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
 from geometry_msgs.msg import Twist
@@ -57,12 +58,21 @@ class GrpcBridgeNode(Node):
         self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
         self._map_info_client = self.create_client(
             MapInfoSrv, '/kimchi_map/get_map_info')
+        self._add_goal_to_mission_client = self.create_client(
+            AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
+
+        self._send_command_client = self.create_client(
+            KimchiStateServerCommandSrv, '/kimchi_state_server/send_command')
         self._start_mapping_client = self.create_client(
             Trigger, '/kimchi_state_server/start_slam')
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
-        self._add_goal_to_mission_client = self.create_client(
-            AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
+        # self._cancel_navigation_goal_client = self.create_client(
+        #     Trigger, '/kimchi_state_server/cancel_navigation_goal')
+        # self._cancel_navigation_mission_client = self.create_client(
+        #     Trigger, '/kimchi_state_server/cancel_navigation_mission')
+        # self._continue_path_client = self.create_client(
+        #     Trigger, '/kimchi_state_server/continue_path')
 
     @property
     def logger(self):
@@ -134,6 +144,23 @@ class GrpcBridgeNode(Node):
         msg.angular.z = self._man_angular_vel_rad * angular_percentage
         self._vel_publisher.publish(msg)
 
+    def send_command(self, command):
+        """
+        Sends a command to the KimchiStateServer.
+
+        Args:
+            command: A string representing the command to be sent.
+        """
+        self._send_command_client.wait_for_service()
+        request = KimchiStateServerCommandSrv.Request()
+        request.command = command
+        self.get_logger().info(f'Sending command: {command}')
+        response = self._send_command_client.call(request)
+        if response.success:
+            self.get_logger().info('Command sent successfully')
+        else:
+            self.get_logger().error(f'Failed to send command: {response.msg}')
+
     def start_mapping(self):
         self._start_mapping_client.wait_for_service()
         request = Trigger.Request()
@@ -148,6 +175,19 @@ class GrpcBridgeNode(Node):
         self._start_navigation_client.call(request)
         self.get_logger().info('Finished calling start navigation service')
         return [True, 'Navigation started successfully']
+
+    # def cancel_navigation_goal(self):
+    #     if self._robot_state != RobotState.NAVIGATING:
+    #         self.get_logger().info('Robot is not navigating, nothing to cancel')
+    #         return
+    #     self._cancel_navigation_goal_client.wait_for_service()
+    #     request = Trigger.Request()
+    #     self.get_logger().info('Calling cancel navigation goal service')
+    #     self._cancel_navigation_goal_client.call(request)
+    #     self.get_logger().info('Finished calling cancel navigation goal service')
+
+    # def navigation_go_to_next_goal(self):
+    # def cancel_navigation_mission(self):
 
     def get_map(self):
         self._map_info_client.wait_for_service()
