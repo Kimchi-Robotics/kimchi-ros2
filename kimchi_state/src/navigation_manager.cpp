@@ -147,6 +147,29 @@ void NavigationManager::addGoalToMission(const Point2D& point) {
   onNewGoal();
 }
 
+void NavigationManager::cancelMission() {
+  RCLCPP_INFO(node_->get_logger(), "Cancelling current mission.");
+  while (!goals_.empty()) {
+    goals_.pop();
+  }
+
+  if (current_goal_ != nullptr) {
+    cancelCurrentGoal();
+  }
+  mission_observer_->onMissionFinished();
+}
+
+void NavigationManager::cancelCurrentGoal() {
+  if (current_goal_ == nullptr) {
+    RCLCPP_INFO(node_->get_logger(), "No current goal to cancel.");
+    return;
+  }
+
+  RCLCPP_INFO(node_->get_logger(), "Cancelling current goal at point: (%f, %f)",
+              current_goal_->x, current_goal_->y);
+  navigate_to_pose_action_client_ptr_->async_cancel_all_goals();
+}
+
 void NavigationManager::goToNextGoal() {
   using namespace std::placeholders;
   if (goals_.empty()) {
@@ -231,6 +254,13 @@ void NavigationManager::navigateToPoseResultCallback(
                    "canceled. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+      if (goals_.empty()) {
+        mission_observer_->onMissionFinished();
+      } else {
+        mission_observer_->onGoalCancelled(*current_goal_);
+      }
+      current_goal_.reset();  // Clear the current goal after success
+
       return;
     default:
       RCLCPP_DEBUG(node_->get_logger(),

@@ -5,7 +5,7 @@ import warnings
 
 import kimchi_grpc_server.kimchi_pb2 as kimchi__pb2
 
-GRPC_GENERATED_VERSION = '1.71.0'
+GRPC_GENERATED_VERSION = '1.73.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -68,6 +68,26 @@ class KimchiAppStub(object):
         self.SendSelectedPose = channel.unary_unary(
                 '/kimchi.KimchiApp/SendSelectedPose',
                 request_serializer=kimchi__pb2.Pose.SerializeToString,
+                response_deserializer=kimchi__pb2.Empty.FromString,
+                _registered_method=True)
+        self.ContinuePath = channel.unary_unary(
+                '/kimchi.KimchiApp/ContinuePath',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Empty.FromString,
+                _registered_method=True)
+        self.NavigationCancelGoalService = channel.unary_unary(
+                '/kimchi.KimchiApp/NavigationCancelGoalService',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Empty.FromString,
+                _registered_method=True)
+        self.NavigationContinuePathService = channel.unary_unary(
+                '/kimchi.KimchiApp/NavigationContinuePathService',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Empty.FromString,
+                _registered_method=True)
+        self.NavigationCancelMissionService = channel.unary_unary(
+                '/kimchi.KimchiApp/NavigationCancelMissionService',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.Empty.FromString,
                 _registered_method=True)
         self.SubscribeToMap = channel.unary_stream(
@@ -138,6 +158,30 @@ class KimchiAppServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ContinuePath(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NavigationCancelGoalService(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NavigationContinuePathService(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NavigationCancelMissionService(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def SubscribeToMap(self, request, context):
         """Stream subscriptions
         """
@@ -199,6 +243,26 @@ def add_KimchiAppServicer_to_server(servicer, server):
             'SendSelectedPose': grpc.unary_unary_rpc_method_handler(
                     servicer.SendSelectedPose,
                     request_deserializer=kimchi__pb2.Pose.FromString,
+                    response_serializer=kimchi__pb2.Empty.SerializeToString,
+            ),
+            'ContinuePath': grpc.unary_unary_rpc_method_handler(
+                    servicer.ContinuePath,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Empty.SerializeToString,
+            ),
+            'NavigationCancelGoalService': grpc.unary_unary_rpc_method_handler(
+                    servicer.NavigationCancelGoalService,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Empty.SerializeToString,
+            ),
+            'NavigationContinuePathService': grpc.unary_unary_rpc_method_handler(
+                    servicer.NavigationContinuePathService,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Empty.SerializeToString,
+            ),
+            'NavigationCancelMissionService': grpc.unary_unary_rpc_method_handler(
+                    servicer.NavigationCancelMissionService,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.Empty.SerializeToString,
             ),
             'SubscribeToMap': grpc.unary_stream_rpc_method_handler(
@@ -411,6 +475,114 @@ class KimchiApp(object):
             target,
             '/kimchi.KimchiApp/SendSelectedPose',
             kimchi__pb2.Pose.SerializeToString,
+            kimchi__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ContinuePath(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/ContinuePath',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NavigationCancelGoalService(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/NavigationCancelGoalService',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NavigationContinuePathService(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/NavigationContinuePathService',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Empty.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NavigationCancelMissionService(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/NavigationCancelMissionService',
+            kimchi__pb2.Empty.SerializeToString,
             kimchi__pb2.Empty.FromString,
             options,
             channel_credentials,
