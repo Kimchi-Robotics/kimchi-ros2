@@ -93,9 +93,8 @@ void NavigationManager::cancelCurrentGoal() {
     return;
   }
 
-  RCLCPP_INFO(node_->get_logger(),
-              "Cancelling current goal at point: (%f, %f)", current_goal_->x,
-              current_goal_->y);
+  RCLCPP_INFO(node_->get_logger(), "Cancelling current goal at point: (%f, %f)",
+              current_goal_->x, current_goal_->y);
   navigate_to_pose_action_client_ptr_->async_cancel_all_goals();
 }
 

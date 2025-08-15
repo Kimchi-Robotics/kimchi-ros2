@@ -21,6 +21,7 @@ from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
 import kimchi_grpc_server.kimchi_pb2 as kimchi_pb2
 import rclpy
 
+
 # Node that serves as a bridge between ROS and the gRPC server.
 class GrpcBridgeNode(Node):
     def __init__(self):
@@ -35,7 +36,7 @@ class GrpcBridgeNode(Node):
         self._max_linear_vel_ms = 0.5
         self._man_angular_vel_rad = 1
         self._path_listener = None
-        
+
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
@@ -67,12 +68,6 @@ class GrpcBridgeNode(Node):
             Trigger, '/kimchi_state_server/start_slam')
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
-        # self._cancel_navigation_goal_client = self.create_client(
-        #     Trigger, '/kimchi_state_server/cancel_navigation_goal')
-        # self._cancel_navigation_mission_client = self.create_client(
-        #     Trigger, '/kimchi_state_server/cancel_navigation_mission')
-        # self._continue_path_client = self.create_client(
-        #     Trigger, '/kimchi_state_server/continue_path')
 
     @property
     def logger(self):
@@ -118,7 +113,7 @@ class GrpcBridgeNode(Node):
     def path_callback(self, msg):
         if self._path_listener is None:
             return
-        
+
         points = []
         for pose in msg.poses:
             point = kimchi_pb2.Point2D()
@@ -176,19 +171,6 @@ class GrpcBridgeNode(Node):
         self.get_logger().info('Finished calling start navigation service')
         return [True, 'Navigation started successfully']
 
-    # def cancel_navigation_goal(self):
-    #     if self._robot_state != RobotState.NAVIGATING:
-    #         self.get_logger().info('Robot is not navigating, nothing to cancel')
-    #         return
-    #     self._cancel_navigation_goal_client.wait_for_service()
-    #     request = Trigger.Request()
-    #     self.get_logger().info('Calling cancel navigation goal service')
-    #     self._cancel_navigation_goal_client.call(request)
-    #     self.get_logger().info('Finished calling cancel navigation goal service')
-
-    # def navigation_go_to_next_goal(self):
-    # def cancel_navigation_mission(self):
-
     def get_map(self):
         self._map_info_client.wait_for_service()
         self.get_logger().info('Calling map info service')
@@ -223,7 +205,8 @@ class GrpcBridgeNode(Node):
         Args:
             pose: A Pose2D object representing the selected pose.
         """
-        self.get_logger().info(f'Processing selected pose: {pose.x}, {pose.y}, {pose.theta}')
+        self.get_logger().info(
+            f'Processing selected pose: {pose.x}, {pose.y}, {pose.theta}')
 
         if self._robot_state == RobotState.LOCATING:
             self.get_logger().info(
