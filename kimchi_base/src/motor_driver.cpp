@@ -63,18 +63,36 @@ bool MotorDriver::is_connected() const { return serial_port_.IsOpen(); }
 
 void MotorDriver::SendEmptyMsg() { std::string response = SendMsg(""); }
 
-std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
-  std::optional<Encoders> output;
+std::optional<MotorDriver::HardwareData> MotorDriver::ReadHardwareData() {
+  std::optional<HardwareData> output;
 
   static const std::string delimiter = " ";
 
-  const std::string response = SendMsg("e");
+  // Send the command to read the hardware data.
+  const std::string response = SendMsg("h");
 
-  const size_t del_pos = response.find(delimiter);
-  const std::string token_1 = response.substr(0, del_pos).c_str();
-  const std::string token_2 = response.substr(del_pos + delimiter.length()).c_str();
+  const size_t del_pos_1 = response.find(delimiter);
+  const size_t del_pos_2 = response.find(delimiter, del_pos_1 + delimiter.length());
+  const size_t del_pos_3 = response.find(delimiter, del_pos_2 + delimiter.length());
+  const size_t del_pos_4 = response.find(delimiter, del_pos_3 + delimiter.length());
+  
+  // Check if all delimiters were found
+  if (del_pos_1 == std::string::npos || del_pos_2 == std::string::npos || del_pos_3 == std::string::npos ||
+      del_pos_4 == std::string::npos) {
+      std::cerr << "Error: Not enough delimiters found in response" << std::endl;
+      return std::nullopt;
+  }
 
-  size_t pos1, pos2;
+  const std::string token_1 = response.substr(0, del_pos_1);
+  const std::string token_2 = response.substr(del_pos_1 + delimiter.length(), 
+                                            del_pos_2 - del_pos_1 - delimiter.length());
+  const std::string token_3 = response.substr(del_pos_2 + delimiter.length(), 
+                                            del_pos_3 - del_pos_2 - delimiter.length());
+  const std::string token_4 = response.substr(del_pos_3 + delimiter.length(), 
+                                            del_pos_4 - del_pos_3 - delimiter.length());
+  const std::string token_5 = response.substr(del_pos_4 + delimiter.length());
+
+  size_t pos1, pos2, pos3, pos4, pos5;
   int left_encoder_value = std::stoi(token_1, &pos1);
   if (pos1 != token_1.length()) {
     std::cerr << "Error parsing token_1: " << token_1 << std::endl;
@@ -82,14 +100,35 @@ std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
   }
 
   int right_encoder_value = std::stoi(token_2, &pos2);
-  // -2 because of /r/n
-  if (pos2 != token_2.length() - 2) {
+  if(pos2 != token_2.length()) {
     std::cerr << "Error parsing token_2: " << token_2 << std::endl;
     std::cerr << "pos2: " << pos2 << "token_2.length(): " << token_2.length() << std::endl;
     return std::nullopt;
   }
 
-  output = Encoders{left_encoder_value, right_encoder_value};
+  int left_bumper_value = std::stoi(token_3, &pos3);
+  if(pos3 != token_3.length()) {
+    std::cerr << "Error parsing token_3: " << token_3 << std::endl;
+    std::cerr << "pos3: " << pos3 << "token_3.length(): " << token_3.length() << std::endl;
+    return std::nullopt;
+  }
+
+  int right_bumper_value = std::stoi(token_4, &pos4);
+  if(pos4 != token_4.length()) {
+    std::cerr << "Error parsing token_4: " << token_4 << std::endl;
+    std::cerr << "pos4: " << pos4 << "token_4.length(): " << token_4.length() << std::endl;
+    return std::nullopt;
+  } 
+
+  int button_value = std::stoi(token_5, &pos5);
+  // -2 because of /r/n
+  if(pos5 != token_5.length() - 2) {
+    std::cerr << "Error parsing token_5: " << token_5 << std::endl;
+    std::cerr << "pos5: " << pos5 << "token_5.length(): " << token_5.length() << std::endl;
+    return std::nullopt;
+  } 
+
+  output = HardwareData{left_encoder_value, right_encoder_value, left_bumper_value, right_bumper_value, button_value};
   return output;
 }
 

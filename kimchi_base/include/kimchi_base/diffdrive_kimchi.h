@@ -72,6 +72,9 @@ class DiffDriveKimchi : public hardware_interface::SystemInterface {
  private:
   const std::string kLeftWheelNameParam{"left_wheel_name"};
   const std::string kRightWheelNameParam{"right_wheel_name"};
+  const std::string kLeftBumperNameParam{"left_bumper_name"};
+  const std::string kRightBumperNameParam{"right_bumper_name"};
+  const std::string kButtonNameParam{"button_name"};
   const std::string kSerialDeviceParam{"serial_device"};
   const std::string kBaudRateParam{"baud_rate"};
   const std::string kTimeoutParam{"timeout"};
@@ -82,6 +85,10 @@ class DiffDriveKimchi : public hardware_interface::SystemInterface {
     // Name of the left and right wheels.
     std::string left_wheel_name = "left_wheel";
     std::string right_wheel_name = "right_wheel";
+    // Name of the left and right bumpers and button.
+    std::string left_bumper_name = "left_bumper";
+    std::string right_bumper_name = "right_bumper";
+    std::string button_name = "button";
     // Encoder parameters.
     int enc_ticks_per_rev = 960;
     // Communication parameters.
@@ -98,6 +105,10 @@ class DiffDriveKimchi : public hardware_interface::SystemInterface {
   Wheel left_wheel_;
   // Right wheel of the robot.
   Wheel right_wheel_;
+  // Bumper and button values.
+  double left_bumper_{0.0}
+  double right_bumper_{0.0}
+  double button_{0.0}
   // Logger.
   rclcpp::Logger logger_{rclcpp::get_logger("DiffDriveKimchi")};
 };

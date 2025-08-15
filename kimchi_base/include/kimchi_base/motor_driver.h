@@ -46,8 +46,9 @@ namespace kimchi_base {
 /// 3. Use api to send commands to the motor driver.
 class MotorDriver {
  public:
-  /// @brief Type to store the encoder values.
-  using Encoders = std::array<int, 2>;
+  /// @brief Type to store the hardware data read from the Arduino.
+  /// It contains the left encoder value, right encoder value, left bumper value, right bumper values and button value.
+  using HardwareData = std::array<int, 5>;
 
   /// @brief Default constructor.
   MotorDriver() = default;
@@ -65,8 +66,8 @@ class MotorDriver {
   /// @brief Read the encoder values from the motor driver.
   ///       First value is the left encoder, second value is the right encoder.
   /// @returns The encoder values.
-  // Encoders ReadEncoderValues();
-  std::optional<Encoders> ReadEncoderValues();
+  // HardwareData ReadHardwareData();
+  std::optional<HardwareData> ReadHardwareData();
 
   /// @brief Set the motor values.
   ///        The unit of the values is in encoder ticks per revolution.
