@@ -1,0 +1,9 @@
+<library path="diffdrive_kimchi">
+
+  <class name="kimchi_base/DiffDriveKimchi" type="kimchi_base::DiffDriveKimchi" base_class_type="hardware_interface::SystemInterface">
+    <description>
+      Hardware interface implementation for the Kimchi robot.
+    </description>
+  </class>
+
+</library>

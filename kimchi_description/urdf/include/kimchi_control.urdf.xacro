@@ -13,7 +13,7 @@
     It is needed for the kimchi control that will be added later-->
     <ros2_control name="RealRobot" type="system">
       <hardware>
-        <plugin>andino_base/DiffDriveAndino</plugin>
+        <plugin>kimchi_base/DiffDriveKimchi</plugin>
         <param name="left_wheel_name">${hardware_props['left_wheel_name']}</param>
         <param name="right_wheel_name">${hardware_props['right_wheel_name']}</param>
         <param name="serial_device">${hardware_props['serial_device']}</param>

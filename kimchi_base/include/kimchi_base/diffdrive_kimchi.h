@@ -40,18 +40,18 @@
 #include <rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp>
 #include <rclcpp_lifecycle/state.hpp>
 
-#include "andino_base/motor_driver.h"
-#include "andino_base/wheel.h"
+#include "kimchi_base/motor_driver.h"
+#include "kimchi_base/wheel.h"
 
-namespace andino_base {
+namespace kimchi_base {
 
-/// @brief Hardware interface for andino robot.
-/// This class is a hardware interface implementation for the andino robot. It is responsible for
+/// @brief Hardware interface for kimchi robot.
+/// This class is a hardware interface implementation for the kimchi robot. It is responsible for
 /// abstracting away the specifics of the hardware and exposing interfaces that are easy to work with.
-class DiffDriveAndino : public hardware_interface::SystemInterface {
+class DiffDriveKimchi : public hardware_interface::SystemInterface {
  public:
-  /// @brief Default constructor for the DiffDriveAndino class.
-  DiffDriveAndino() = default;
+  /// @brief Default constructor for the DiffDriveKimchi class.
+  DiffDriveKimchi() = default;
 
   hardware_interface::CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
 
@@ -77,7 +77,7 @@ class DiffDriveAndino : public hardware_interface::SystemInterface {
   const std::string kTimeoutParam{"timeout"};
   const std::string kEncTicksPerRevParam{"enc_ticks_per_rev"};
 
-  // Configuration parameters for the DiffDriveAndino class.
+  // Configuration parameters for the DiffDriveKimchi class.
   struct Config {
     // Name of the left and right wheels.
     std::string left_wheel_name = "left_wheel";
@@ -99,7 +99,7 @@ class DiffDriveAndino : public hardware_interface::SystemInterface {
   // Right wheel of the robot.
   Wheel right_wheel_;
   // Logger.
-  rclcpp::Logger logger_{rclcpp::get_logger("DiffDriveAndino")};
+  rclcpp::Logger logger_{rclcpp::get_logger("DiffDriveKimchi")};
 };
 
-}  // namespace andino_base
+}  // namespace kimchi_base

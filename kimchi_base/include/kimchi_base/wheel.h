@@ -31,12 +31,12 @@
 
 #include <string>
 
-namespace andino_base {
+namespace kimchi_base {
 
 /// Represents a wheel on the robot.
 /// TODO(francocipollone): Use better practices
 ///    1 - Make it a struct
-///    2 - Move Angle method to DiffDriveAndino class or implementation.
+///    2 - Move Angle method to DiffDriveKimchi class or implementation.
 ///
 class Wheel {
  public:
@@ -62,4 +62,4 @@ class Wheel {
   double rads_per_tick_ = 0;
 };
 
-}  // namespace andino_base
+}  // namespace kimchi_base

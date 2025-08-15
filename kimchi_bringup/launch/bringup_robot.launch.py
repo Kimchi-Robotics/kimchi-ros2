@@ -40,7 +40,7 @@ from launch.substitutions import LaunchConfiguration
 
 # Obtains share directory paths.
 pkg_kimchi_bringup = get_package_share_directory('kimchi_bringup')
-pkg_kimchi_control = get_package_share_directory('andino_control')
+pkg_kimchi_control = get_package_share_directory('kimchi_control')
 pkg_kimchi_description = get_package_share_directory('kimchi_description')
 pkg_kimchi_state = get_package_share_directory("kimchi_state")
 pkg_kimchi_grpc_server = get_package_share_directory("kimchi_grpc_server")
@@ -66,7 +66,7 @@ def generate_launch_description():
     # Include kimchi_control launch file
     include_kimchi_control =  IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
-            os.path.join(pkg_kimchi_control, 'launch', 'andino_control.launch.py'),
+            os.path.join(pkg_kimchi_control, 'launch', 'kimchi_control.launch.py'),
         ),
         launch_arguments={
         }.items()

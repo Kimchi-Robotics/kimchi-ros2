@@ -27,13 +27,13 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "andino_base/motor_driver.h"
+#include "kimchi_base/motor_driver.h"
 
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
 
-namespace andino_base {
+namespace kimchi_base {
 
 void MotorDriver::Setup(const std::string& serial_device, int32_t baud_rate, int32_t timeout_ms) {
   timeout_ms_ = timeout_ms;
@@ -124,4 +124,4 @@ std::string MotorDriver::SendMsg(const std::string& msg) {
   return response;
 }
 
-}  // namespace andino_base
+}  // namespace kimchi_base

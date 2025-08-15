@@ -27,11 +27,11 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "andino_base/wheel.h"
+#include "kimchi_base/wheel.h"
 
 #include <cmath>
 
-namespace andino_base {
+namespace kimchi_base {
 
 void Wheel::Setup(const std::string& wheel_name, int ticks_per_rev) {
   name_ = wheel_name;
@@ -40,4 +40,4 @@ void Wheel::Setup(const std::string& wheel_name, int ticks_per_rev) {
 
 double Wheel::Angle() { return enc_ * rads_per_tick_; }
 
-}  // namespace andino_base
+}  // namespace kimchi_base

@@ -36,7 +36,7 @@
 
 #include <libserial/SerialPort.h>
 
-namespace andino_base {
+namespace kimchi_base {
 
 /// \brief Class to handle serial communication with the motor driver
 /// It is used to send commands to the motor driver and read encoder values.
@@ -99,4 +99,4 @@ class MotorDriver {
   int32_t timeout_ms_{25};
 };
 
-}  // namespace andino_base
+}  // namespace kimchi_base

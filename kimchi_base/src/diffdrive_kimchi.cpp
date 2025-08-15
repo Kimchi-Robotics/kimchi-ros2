@@ -27,16 +27,16 @@
 // CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-#include "andino_base/diffdrive_andino.h"
+#include "kimchi_base/diffdrive_kimchi.h"
 
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <pluginlib/class_list_macros.hpp>
 
 #include <string>
 
-namespace andino_base {
+namespace kimchi_base {
 
-hardware_interface::CallbackReturn DiffDriveAndino::on_init(const hardware_interface::HardwareInfo& info) {
+hardware_interface::CallbackReturn DiffDriveKimchi::on_init(const hardware_interface::HardwareInfo& info) {
   if (hardware_interface::SystemInterface::on_init(info) != hardware_interface::CallbackReturn::SUCCESS) {
     return hardware_interface::CallbackReturn::ERROR;
   }
@@ -61,7 +61,7 @@ hardware_interface::CallbackReturn DiffDriveAndino::on_init(const hardware_inter
                    .c_str());
 
   for (const hardware_interface::ComponentInfo& joint : info.joints) {
-    // DiffDriveAndino has exactly two states and one command interface on each joint
+    // DiffDriveKimchi has exactly two states and one command interface on each joint
     if (joint.command_interfaces.size() != 1) {
       RCLCPP_FATAL(logger_, "Joint '%s' has %zu command interfaces found. 1 expected.", joint.name.c_str(),
                    joint.command_interfaces.size());
@@ -83,7 +83,7 @@ hardware_interface::CallbackReturn DiffDriveAndino::on_init(const hardware_inter
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn DiffDriveAndino::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
+hardware_interface::CallbackReturn DiffDriveKimchi::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
   RCLCPP_INFO(logger_, "On configure...");
 
   // Set up communication with motor driver controller.
@@ -94,7 +94,7 @@ hardware_interface::CallbackReturn DiffDriveAndino::on_configure(const rclcpp_li
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-std::vector<hardware_interface::StateInterface> DiffDriveAndino::export_state_interfaces() {
+std::vector<hardware_interface::StateInterface> DiffDriveKimchi::export_state_interfaces() {
   // We need to set up a position and a velocity interface for each wheel
   std::vector<hardware_interface::StateInterface> state_interfaces;
 
@@ -112,7 +112,7 @@ std::vector<hardware_interface::StateInterface> DiffDriveAndino::export_state_in
   return state_interfaces;
 }
 
-std::vector<hardware_interface::CommandInterface> DiffDriveAndino::export_command_interfaces() {
+std::vector<hardware_interface::CommandInterface> DiffDriveKimchi::export_command_interfaces() {
   // We need to set up a velocity command interface for each wheel
 
   std::vector<hardware_interface::CommandInterface> command_interfaces;
@@ -125,21 +125,21 @@ std::vector<hardware_interface::CommandInterface> DiffDriveAndino::export_comman
   return command_interfaces;
 }
 
-hardware_interface::CallbackReturn DiffDriveAndino::on_activate(const rclcpp_lifecycle::State& /* previous_state */) {
+hardware_interface::CallbackReturn DiffDriveKimchi::on_activate(const rclcpp_lifecycle::State& /* previous_state */) {
   RCLCPP_INFO(logger_, "On activate...");
   RCLCPP_INFO(logger_, "Finished Activation");
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn DiffDriveAndino::on_deactivate(const rclcpp_lifecycle::State& /* previous_state */) {
+hardware_interface::CallbackReturn DiffDriveKimchi::on_deactivate(const rclcpp_lifecycle::State& /* previous_state */) {
   RCLCPP_INFO(logger_, "On deactivate...");
   RCLCPP_INFO(logger_, "Finished Deactivation");
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::return_type DiffDriveAndino::read(const rclcpp::Time& /* time */, const rclcpp::Duration& period) {
+hardware_interface::return_type DiffDriveKimchi::read(const rclcpp::Time& /* time */, const rclcpp::Duration& period) {
   const double delta_secs = period.seconds();
 
   if (!motor_driver_.is_connected()) {
@@ -169,7 +169,7 @@ hardware_interface::return_type DiffDriveAndino::read(const rclcpp::Time& /* tim
   return hardware_interface::return_type::OK;
 }
 
-hardware_interface::return_type DiffDriveAndino::write(const rclcpp::Time& /* time */,
+hardware_interface::return_type DiffDriveKimchi::write(const rclcpp::Time& /* time */,
                                                        const rclcpp::Duration& /* period */) {
   if (!motor_driver_.is_connected()) {
     RCLCPP_ERROR(logger_, "Motor driver is not connected.");
@@ -188,6 +188,6 @@ hardware_interface::return_type DiffDriveAndino::write(const rclcpp::Time& /* ti
   return hardware_interface::return_type::OK;
 }
 
-}  // namespace andino_base
+}  // namespace kimchi_base
 
-PLUGINLIB_EXPORT_CLASS(andino_base::DiffDriveAndino, hardware_interface::SystemInterface)
+PLUGINLIB_EXPORT_CLASS(kimchi_base::DiffDriveKimchi, hardware_interface::SystemInterface)
