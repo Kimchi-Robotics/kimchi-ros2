@@ -6,14 +6,14 @@ from launch.actions import IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 
 def generate_launch_description():
-    pkg_andino_gz = get_package_share_directory("andino_gz")
+    pkg_kimchi_gz = get_package_share_directory("kimchi_gz")
     pkg_kimchi_state = get_package_share_directory("kimchi_state")
     pkg_kimchi_grpc_server = get_package_share_directory("kimchi_grpc_server")
 
     use_sim_time = 'True'  # Set to True for simulation
 
     simulation_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_andino_gz, "launch", "andino_gz.launch.py")),
+        PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_gz, "launch", "kimchi_gz.launch.py")),
         launch_arguments={
             'nav2': 'False',
             'rviz': 'False',
