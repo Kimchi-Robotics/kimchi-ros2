@@ -53,7 +53,7 @@ class NavigationManager {
 
   void startSlam();
   void stopSlam();
-  void startLocating(const Point2D& point);
+  bool startLocating(const Point2D& point);
   void startNavigation();
   void stopNavigation();
 
@@ -98,4 +98,6 @@ class NavigationManager {
 
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
+
+  bool robot_localized_{false};
 };

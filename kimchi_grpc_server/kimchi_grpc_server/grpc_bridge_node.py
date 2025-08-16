@@ -61,7 +61,7 @@ class GrpcBridgeNode(Node):
             Trigger, '/kimchi_state_server/start_slam')
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
-        self._start_locating_client = self.create_client(
+        self._localize_client = self.create_client(
             AddGoalToMissionSrv, '/kimchi_state_server/localize')
         self._add_goal_to_mission_client = self.create_client(
             AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
@@ -192,12 +192,12 @@ class GrpcBridgeNode(Node):
         if self._robot_state == RobotState.LOST:
             self.get_logger().info(
                 'Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
-            self._start_locating_client.wait_for_service()
+            self._localize_client.wait_for_service()
             request = AddGoalToMissionSrv.Request()
             request.goal.x = pose.x
             request.goal.y = pose.y
 
-            self._start_locating_client.call(request)
+            self._localize_client.call(request)
 
         elif self._robot_state == RobotState.IDLE or self._robot_state == RobotState.NAVIGATING:
             self.get_logger().info(

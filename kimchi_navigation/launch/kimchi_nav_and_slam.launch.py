@@ -40,6 +40,7 @@ def generate_launch_description():
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'true',
+            'log_level': 'debug',
         }.items(),
     )
 
@@ -50,6 +51,7 @@ def generate_launch_description():
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'false',
             'map': LaunchConfiguration('map'),
+            'log_level': 'debug',
         }.items(),
     )
 
@@ -58,6 +60,7 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': LaunchConfiguration("use_sim_time"),
             'slams_param_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
+            'log_level': 'debug',
         }.items(),
     )
 

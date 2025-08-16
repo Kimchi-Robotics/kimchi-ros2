@@ -32,7 +32,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/Position2D.msg"
 "srv/MapInfo.srv"
 "srv/AddGoalToMission.srv"
-DEPENDENCIES geometry_msgs std_msgs builtin_interfaces
+DEPENDENCIES geometry_msgs builtin_interfaces
 )
 
 ament_export_dependencies(rosidl_default_runtime)

@@ -72,6 +72,7 @@ class KimchiStateServer
   void initialize();
 
   void statePublisherTimerCallback();
+  void checkGlobalLocalizationCallback();
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);
@@ -83,7 +84,7 @@ class KimchiStateServer
   void startSlamCallback(
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
-  void initialPoseCallback(const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr
+  void localizeCallback(const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr
           request,
       kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response);
   void startNavigationCallback(
@@ -99,10 +100,12 @@ class KimchiStateServer
   std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
 
-  std::optional<geometry_msgs::msg::Pose> inital_pose_estimate_;
+  enum class LocalizationState { PENDING, SUCCESS, FAILED };
+  std::atomic<LocalizationState> robot_localize_state_{LocalizationState::PENDING};
 
   // Topics.
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
+  rclcpp::TimerBase::SharedPtr global_localization_timer_;
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
 
@@ -110,7 +113,7 @@ class KimchiStateServer
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_navigation_service_;
   rclcpp::Service<kimchi_interfaces::srv::AddGoalToMission>::SharedPtr
-      start_locating_service_;
+      localize_service_;
   rclcpp::Service<kimchi_interfaces::srv::AddGoalToMission>::SharedPtr
       add_goal_to_mission_service_;
 

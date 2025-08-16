@@ -84,7 +84,7 @@ void NavigationManager::localizeFeedbackCallback(
   GoalHandleGlobalLocalization::SharedPtr,
   const std::shared_ptr<const GlobalLocalization::Feedback> feedback) {
     RCLCPP_DEBUG(node_->get_logger(),
-                    "[NavigationManager] Received feedback: Current pose estimate - x: %.2f, y: %.2f",
+                    " Received feedback: Current pose estimate - x: %.2f, y: %.2f",
                     feedback->pose_feedback.pose.pose.position.x,
                     feedback->pose_feedback.pose.pose.position.y);
 }
@@ -93,21 +93,25 @@ void NavigationManager::localizeResultCallback(const GoalHandleGlobalLocalizatio
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Goal succeeded!");
+      robot_localized_ = true;
       break;
     case rclcpp_action::ResultCode::ABORTED:
       RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Goal was aborted");
+      robot_localized_ = false;
       break;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_WARN(node_->get_logger(), "[NavigationManager] Goal was canceled");
+      robot_localized_ = false;
       break;
     default:
       RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Unknown result code");
+      robot_localized_ = false;
       break;
   }
 
 }
 
-void NavigationManager::startLocating(const Point2D& point)
+bool NavigationManager::startLocating(const Point2D& point)
 {
   using namespace std::placeholders;
 
@@ -125,8 +129,34 @@ void NavigationManager::startLocating(const Point2D& point)
       &NavigationManager::localizeFeedbackCallback, this, _1, _2);
   localize_options.result_callback = std::bind(
       &NavigationManager::localizeResultCallback, this, _1);
-  global_localization_action_client_ptr_->async_send_goal(localize_goal,
+
+  auto goal_handle_future = global_localization_action_client_ptr_->async_send_goal(localize_goal,
                                                        localize_options);
+  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(), goal_handle_future) !=
+      rclcpp::FutureReturnCode::SUCCESS)
+  {
+      RCLCPP_ERROR(node_->get_logger(), "Send goal call failed");
+      return robot_localized_;
+  }
+
+  GoalHandleGlobalLocalization::SharedPtr goal_handle = goal_handle_future.get();
+  if (!goal_handle) {
+      RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
+      return robot_localized_;
+  }
+
+  // **Step 2: Wait for the result**
+  RCLCPP_INFO(node_->get_logger(), "Goal accepted, waiting for result...");
+  auto result_future = global_localization_action_client_ptr_->async_get_result(goal_handle);
+
+  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(), result_future) !=
+      rclcpp::FutureReturnCode::SUCCESS)
+  {
+      RCLCPP_ERROR(node_->get_logger(), "Failed to get result");
+      return robot_localized_;
+  }
+
+  return robot_localized_;
 }
 
 void NavigationManager::addGoalToMission(const Point2D& point) {

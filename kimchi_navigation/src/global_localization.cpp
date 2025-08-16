@@ -118,16 +118,17 @@ void GlobalLocalizationServer::execute(
   PublishInitialPoseWithHighVariance();
   RotateRobot();
 
+  rclcpp::Time start_time = this->get_clock()->now();
+  rclcpp::Duration timeout = rclcpp::Duration::from_seconds(localize_timeout_);
   // Rate of 20hz
   rclcpp::Rate loop_rate(20);
   const auto goal = goal_handle->get_goal();
   auto feedback = std::make_shared<GlobalLocalization::Feedback>();
   auto result = std::make_shared<GlobalLocalization::Result>();
 
-  while (!robot_localized_ && rclcpp::ok()) {
+  while (!robot_localized_ && rclcpp::ok() && (this->get_clock()->now() - start_time) < timeout) {
     // Check for cancellation first
     if (goal_handle->is_canceling()) {
-
       // Handles cleanup
       cleanup();
 

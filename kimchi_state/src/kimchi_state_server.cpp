@@ -107,11 +107,14 @@ void KimchiStateServer::initialize() {
           std::bind(&KimchiStateServer::addGoalToMissionCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
 
-  start_locating_service_ =
+  localize_service_ =
     node_->create_service<kimchi_interfaces::srv::AddGoalToMission>(
         "/kimchi_state_server/localize",
-        std::bind(&KimchiStateServer::initialPoseCallback, this,
+        std::bind(&KimchiStateServer::localizeCallback, this,
                   std::placeholders::_1, std::placeholders::_2));
+  global_localization_timer_ = node_->create_wall_timer(
+      std::chrono::seconds(1),
+      std::bind(&KimchiStateServer::checkGlobalLocalizationCallback, this));
 
   // Call the map info service
   callGetMapInfoService();
@@ -122,6 +125,21 @@ KimchiStateServer::KimchiStateServer(
     : node_(new rclcpp::Node("kimchi_state_server", options)),
       navigation_manager_(nullptr),
       state_(RobotState::NO_MAP) {}
+
+void KimchiStateServer::checkGlobalLocalizationCallback() {
+  LocalizationState current_state = robot_localize_state_.load();
+
+  if (current_state == LocalizationState::PENDING) {
+    return;
+  }
+
+  if (current_state == LocalizationState::FAILED && state_ == RobotState::LOCATING) {
+    changeState(RobotState::LOST);
+    return;
+  }
+
+  changeState(RobotState::IDLE);
+}
 
 void KimchiStateServer::statePublisherTimerCallback() {
   auto message = kimchi_interfaces::msg::RobotState();
@@ -175,7 +193,7 @@ void KimchiStateServer::startSlamCallback(
   response->success = true;
 }
 
-void KimchiStateServer::initialPoseCallback(
+void KimchiStateServer::localizeCallback(
   const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
   kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response)
 {
@@ -187,13 +205,15 @@ void KimchiStateServer::initialPoseCallback(
   }
 
   changeState(RobotState::LOCATING);
+
   std::thread locate_thread([this, request](){
-    navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+    bool success = navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+    robot_localize_state_.store(success ? LocalizationState::SUCCESS : LocalizationState::FAILED);
   });
+
   locate_thread.detach();
   response->success = true;
 
-  changeState(RobotState::IDLE);
   return;
 }
 
