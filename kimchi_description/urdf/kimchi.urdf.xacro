@@ -62,5 +62,11 @@
   <xacro:laser prefix="rplidar" parent_link="base_link"
                    sensor_prop="${sensor_prop}">
   </xacro:laser>
+  
+  <!-- ros2_control -->
+  <xacro:if value="$(arg use_real_ros_control)">
+    <xacro:include filename="$(find ${package_name})/urdf/include/kimchi_control.urdf.xacro" />
+    <xacro:control hardware_props="${hardware_props}" />
+  </xacro:if>
 
 </robot>
