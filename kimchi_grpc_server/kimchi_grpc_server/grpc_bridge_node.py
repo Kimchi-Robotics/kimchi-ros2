@@ -6,6 +6,7 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
+from tf_transformations import euler_from_quaternion
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
 from kimchi_interfaces.srv import AddGoalToMission as AddGoalToMissionSrv
 from kimchi_interfaces.srv import KimchiStateServerCommand as KimchiStateServerCommandSrv
@@ -95,11 +96,15 @@ class GrpcBridgeNode(Node):
                 self.get_logger().info(
                     f'Could not transform {to_frame_rel} to {from_frame_rel}: {ex}')
                 continue
-
+            quat = t.transform.rotation
+            quaternion = [quat.x, quat.y, quat.z, quat.w]
+    
+            # Get yaw
+            _, _, yaw = euler_from_quaternion(quaternion)
             self._protected_pose.set(Pose2D(
                 t.transform.translation.x,
                 t.transform.translation.y,
-                0
+                yaw
             ))
 
             sleep(0.5)
