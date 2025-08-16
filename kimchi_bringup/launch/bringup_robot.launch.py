@@ -103,10 +103,6 @@ def generate_launch_description():
     return LaunchDescription([
         include_kimchi_description,
         kimchi_control_timer,
-        # camera_arg,
-        # camera_timer,
         rplidar_arg,
         rplidar_timer,
-        # kimchi_state_server_launch,
-        # kimchi_grpc_server_launch,
     ])

@@ -29,10 +29,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "kimchi_base/diffdrive_kimchi.h"
 
+#include <string>
+
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 #include <pluginlib/class_list_macros.hpp>
-
-#include <string>
 
 namespace kimchi_base {
 
@@ -157,7 +157,6 @@ hardware_interface::return_type DiffDriveKimchi::read(const rclcpp::Time& /* tim
     return hardware_interface::return_type::OK;
   }
 
-
   const double left_pos_prev = left_wheel_.pos_;
   left_wheel_.pos_ = left_wheel_.Angle();
   left_wheel_.vel_ = (left_wheel_.pos_ - left_pos_prev) / delta_secs;
@@ -181,10 +180,9 @@ hardware_interface::return_type DiffDriveKimchi::write(const rclcpp::Time& /* ti
   // Formula: ticks/sec = rads/sec / rads/tick
   const int left_value_target = static_cast<int>(left_wheel_.cmd_ / left_wheel_.rads_per_tick_);
   const int right_value_target = static_cast<int>(right_wheel_.cmd_ / right_wheel_.rads_per_tick_);
-  
-  
+
   motor_driver_.SetMotorValues(left_value_target, right_value_target);
-  
+
   return hardware_interface::return_type::OK;
 }
 

@@ -23,7 +23,6 @@ pkg_check_modules(SERIAL libserial)
 
 include(CMakePackageConfigHelpers)
 
-add_subdirectory(applications)
 add_subdirectory(src)
 
 if(BUILD_TESTING)

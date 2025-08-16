@@ -31,8 +31,8 @@
 
 #include <array>
 #include <cstdint>
-#include <optional>
 #include <mutex>
+#include <optional>
 
 #include <libserial/SerialPort.h>
 

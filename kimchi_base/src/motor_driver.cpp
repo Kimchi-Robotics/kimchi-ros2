@@ -42,6 +42,7 @@ void MotorDriver::Setup(const std::string& serial_device, int32_t baud_rate, int
   } catch (std::exception& e) {
     std::cout << e.what() << std::endl;
   }
+
   // TODO: Use baud_rate from parameter.
   if (baud_rate != 57600) {
     std::cerr << "A baudrate different than 57600 is not supported yet." << std::endl;
@@ -75,24 +76,22 @@ std::optional<MotorDriver::Encoders> MotorDriver::ReadEncoderValues() {
 
   size_t pos1, pos2;
   int left_encoder_value = std::stoi(token_1, &pos1);
-  if(pos1 != token_1.length()) {
+  if (pos1 != token_1.length()) {
     std::cerr << "Error parsing token_1: " << token_1 << std::endl;
     return std::nullopt;
-  } 
+  }
 
   int right_encoder_value = std::stoi(token_2, &pos2);
   // -2 because of /r/n
-  if(pos2 != token_2.length() - 2) {
+  if (pos2 != token_2.length() - 2) {
     std::cerr << "Error parsing token_2: " << token_2 << std::endl;
     std::cerr << "pos2: " << pos2 << "token_2.length(): " << token_2.length() << std::endl;
     return std::nullopt;
-  } 
+  }
 
   output = Encoders{left_encoder_value, right_encoder_value};
   return output;
 }
-
-
 
 void MotorDriver::SetMotorValues(int val_1, int val_2) {
   std::stringstream ss;

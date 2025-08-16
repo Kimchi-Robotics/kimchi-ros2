@@ -32,7 +32,7 @@ class GrpcBridgeNode(Node):
         self._map_frame = 'map'
         self._vel_topic = '/cmd_vel'
         self._max_linear_vel_ms = 0.5
-        self._man_angular_vel_rad = 2
+        self._man_angular_vel_rad = 1
         self._path_listener = None
         
         qos_profile = QoSProfile(

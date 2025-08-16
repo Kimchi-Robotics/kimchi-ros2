@@ -5,8 +5,8 @@
   <version>0.2.0</version>
   <description>The kimchi_control package</description>
 
-  <author email="franco.c@ekumenlabs.com">Franco Cipollone</author>
-  <maintainer email="franco.c@ekumenlabs.com">Franco Cipollone</maintainer>
+  <author email="leonardoneumarkt@ekumenlabs.com">Leonardo Neumarkt</author>
+  <maintainer email="leonardoneumarkt@ekumenlabs.com">Leonardo Neumarkt</maintainer>
   <license file="LICENSE">BSD Clause 3</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
