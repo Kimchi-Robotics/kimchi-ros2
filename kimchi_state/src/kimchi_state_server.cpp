@@ -199,7 +199,7 @@ void KimchiStateServer::startNavigationCallback(
 
 void KimchiStateServer::startNavigation() {
   navigation_manager_->startNavigation();
-  changeState(RobotState::IDLE);
+  changeState(RobotState::LOST);
 }
 
 void KimchiStateServer::addGoalToMissionCallback(
