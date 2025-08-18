@@ -138,6 +138,8 @@ void GlobalLocalizationServer::execute(
     }
 
     feedback->pose_feedback = current_pose_;
+    feedback->current_uncertainty[0] = current_position_uncertainty_;
+    feedback->current_uncertainty[1] = current_orientation_uncertainty_;
     goal_handle->publish_feedback(feedback);
 
     loop_rate.sleep();
@@ -205,15 +207,15 @@ void GlobalLocalizationServer::AmclPoseCallback(
   double var_yaw = msg->pose.covariance[35];  // Variance in Yaw orientation
 
   // Calculate a combined position covariance (e.g., sum of squares)
-  double position_uncertainty = std::sqrt(var_x + var_y);
+  current_position_uncertainty_ = std::sqrt(var_x + var_y);
   // For orientation, we directly use the yaw variance
-  double orientation_uncertainty = std::sqrt(var_yaw);
+  current_orientation_uncertainty_ = std::sqrt(var_yaw);
 
   current_pose_ = (*msg);
 
   // Check if uncertainty of the pose is lower than the threshold
-  if (position_uncertainty < pos_uncertainty_threashold_ &&
-      orientation_uncertainty < orientation_uncertainty_threashold_) {
+  if (current_position_uncertainty_ < pos_uncertainty_threashold_ &&
+      current_orientation_uncertainty_ < orientation_uncertainty_threashold_) {
     RCLCPP_INFO(this->get_logger(), "[GlobalLocalizationServer] Robot localized");
     RobotLocalized();
   }

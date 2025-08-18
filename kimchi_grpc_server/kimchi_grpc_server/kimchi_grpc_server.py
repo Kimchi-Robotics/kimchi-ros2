@@ -106,11 +106,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         [success, msg] = self._ros_node.start_navigation()
         return kimchi_pb2.StartNavigationResponse(success=success, info=msg)
 
-    def StartLocating(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
-        self._logger.info(f"Serving StartLocating request {request}")
-        [success, msg] = self._ros_node.start_locating()
-        return kimchi_pb2.StartLocatingResponse(success=success, info=msg)
-
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")
         return kimchi_pb2.IsAliveResponse(alive=True)

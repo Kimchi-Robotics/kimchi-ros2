@@ -4,3 +4,4 @@ geometry_msgs/PoseWithCovarianceStamped localized_pose
 bool localized
 ---
 geometry_msgs/PoseWithCovarianceStamped pose_feedback
+float64[2] current_uncertainty

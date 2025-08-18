@@ -84,9 +84,10 @@ void NavigationManager::localizeFeedbackCallback(
   GoalHandleGlobalLocalization::SharedPtr,
   const std::shared_ptr<const GlobalLocalization::Feedback> feedback) {
     RCLCPP_DEBUG(node_->get_logger(),
-                    "[NavigationManager] Received feedback: Current pose estimate - x: %.2f, y: %.2f",
+                    "[NavigationManager] Received feedback: Current pose estimate - x: %.2f, y: %.2f with uncertanty %f",
                     feedback->pose_feedback.pose.pose.position.x,
-                    feedback->pose_feedback.pose.pose.position.y);
+                    feedback->pose_feedback.pose.pose.position.y,
+                    feedback->current_uncertainty[0]);
 }
 
 void NavigationManager::localizeResultCallback(const GoalHandleGlobalLocalization::WrappedResult &result) {
