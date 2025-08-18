@@ -4,23 +4,22 @@
 #pragma once
 
 #include <atomic>
-#include <future> // For std::promise and std::future
-#include <memory>
-
+#include <future>  // For std::promise and std::future
+#include <geometry_msgs/msg/pose.hpp>
+#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
+#include <kimchi_interfaces/msg/robot_state.hpp>
+#include <kimchi_interfaces/srv/map_info.hpp>
+#include <kimchi_interfaces/srv/proccess_selected_position.hpp>
 #include <lifecycle_msgs/srv/change_state.hpp>
+#include <memory>
 #include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
 #include <nav2_msgs/srv/save_map.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
-#include <geometry_msgs/msg/pose.hpp>
-#include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <std_msgs/msg/empty.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
-#include <kimchi_interfaces/msg/robot_state.hpp>
-#include <kimchi_interfaces/srv/proccess_selected_position.hpp>
-#include <kimchi_interfaces/srv/map_info.hpp>
 #include "map_info.h"
 #include "navigation_manager.h"
 
@@ -83,16 +82,19 @@ class KimchiStateServer
   void startSlamCallback(
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
-  void initialPoseCallback(const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
+  void initialPoseCallback(
+      const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
           request,
-      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response);
+      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+          response);
   void startNavigationCallback(
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
   void addGoalToMissionCallback(
       const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
           request,
-      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response);
+      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+          response);
 
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<NavigationManager> navigation_manager_;

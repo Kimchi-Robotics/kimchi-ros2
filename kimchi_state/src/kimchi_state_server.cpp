@@ -1,15 +1,15 @@
 #include "kimchi_state/kimchi_state_server.h"
 
+#include <kimchi_state/map_info.h>
+
 #include <chrono>
 #include <filesystem>
 #include <functional>
+#include <rclcpp/rclcpp.hpp>
+#include <std_srvs/srv/trigger.hpp>
 #include <thread>
 
-#include <rclcpp/rclcpp.hpp>
 #include "rclcpp/wait_for_message.hpp"
-#include <std_srvs/srv/trigger.hpp>
-
-#include <kimchi_state/map_info.h>
 
 namespace {
 std::string toString(RobotState robot_state) {
@@ -57,8 +57,9 @@ void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
 
 void KimchiStateServer::onGoalReached(const Point2D &point) {
   changeState(RobotState::GOAL_REACHED);
-  RCLCPP_DEBUG(node_->get_logger(), "[KimchiStateServer] Goal reached at point: (%f, %f)", point.x,
-              point.y);
+  RCLCPP_DEBUG(node_->get_logger(),
+               "[KimchiStateServer] Goal reached at point: (%f, %f)", point.x,
+               point.y);
 }
 
 void KimchiStateServer::onMissionFinished() {
@@ -108,10 +109,10 @@ void KimchiStateServer::initialize() {
                     std::placeholders::_1, std::placeholders::_2));
 
   start_locating_service_ =
-    node_->create_service<kimchi_interfaces::srv::ProccessSelectedPosition>(
-        "/kimchi_state_server/localize",
-        std::bind(&KimchiStateServer::initialPoseCallback, this,
-                  std::placeholders::_1, std::placeholders::_2));
+      node_->create_service<kimchi_interfaces::srv::ProccessSelectedPosition>(
+          "/kimchi_state_server/localize",
+          std::bind(&KimchiStateServer::initialPoseCallback, this,
+                    std::placeholders::_1, std::placeholders::_2));
 
   // Call the map info service
   callGetMapInfoService();
@@ -133,10 +134,12 @@ void KimchiStateServer::callGetMapInfoService() {
   while (!get_map_info_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(),
-                   "[KimchiStateServer] Interrupted while waiting for the service. Exiting.");
+                   "[KimchiStateServer] Interrupted while waiting for the "
+                   "service. Exiting.");
       return;
     }
-    RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Service not available, waiting again...");
+    RCLCPP_INFO(node_->get_logger(),
+                "[KimchiStateServer] Service not available, waiting again...");
   }
 
   auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
@@ -176,19 +179,20 @@ void KimchiStateServer::startSlamCallback(
 }
 
 void KimchiStateServer::initialPoseCallback(
-  const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr request,
-  kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response)
-{
-  if(state_ != RobotState::LOST)
-  {
+    const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+        response) {
+  if (state_ != RobotState::LOST) {
     response->success = false;
 
     return;
   }
 
   changeState(RobotState::LOCATING);
-  std::thread locate_thread([this, request](){
-    navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+  std::thread locate_thread([this, request]() {
+    navigation_manager_->startLocating(
+        Point2D(request->goal.x, request->goal.y));
   });
   locate_thread.detach();
   response->success = true;
@@ -230,8 +234,10 @@ void KimchiStateServer::startNavigation() {
 }
 
 void KimchiStateServer::addGoalToMissionCallback(
-    const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr request,
-    kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response) {
+    const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+        response) {
   navigation_manager_->addGoalToMission(
       Point2D(request->goal.x, request->goal.y));
   response->success = true;

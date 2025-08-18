@@ -6,10 +6,9 @@
 #include <queue>
 #include <rclcpp/rclcpp.hpp>
 
+#include "kimchi_navigation/global_localization.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
-
-#include "kimchi_navigation/global_localization.hpp"
 
 /**
  * Class to manage navigation-related functionalities.
@@ -75,9 +74,10 @@ class NavigationManager {
   void localizeGoalResponseCallback(
       GoalHandleGlobalLocalization::SharedPtr goal_handle);
   void localizeFeedbackCallback(
-    GoalHandleGlobalLocalization::SharedPtr,
-    const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
-  void localizeResultCallback(const GoalHandleGlobalLocalization::WrappedResult& result);
+      GoalHandleGlobalLocalization::SharedPtr,
+      const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
+  void localizeResultCallback(
+      const GoalHandleGlobalLocalization::WrappedResult& result);
 
   void navigateToPoseGoalResponseCallback(
       GoalHandleNavigateToPose::SharedPtr goal_handle);

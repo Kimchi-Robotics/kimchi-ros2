@@ -79,7 +79,6 @@ void GlobalLocalizationServer::handleAccepted(
 }
 
 void GlobalLocalizationServer::cleanup() {
-
   // Always stop the robot first
   StopRobot();
 
@@ -109,7 +108,6 @@ void GlobalLocalizationServer::RobotLocalized() {
 
 void GlobalLocalizationServer::execute(
     const std::shared_ptr<GoalHandleGlobalLocalization> goal_handle) {
-
   //  Reset state for new goal
   robot_localized_ = false;
   initial_pose_published_ = false;
@@ -127,7 +125,6 @@ void GlobalLocalizationServer::execute(
   while (!robot_localized_ && rclcpp::ok()) {
     // Check for cancellation first
     if (goal_handle->is_canceling()) {
-
       // Handles cleanup
       cleanup();
 
@@ -147,7 +144,6 @@ void GlobalLocalizationServer::execute(
 
   // Check if we exited due to successful localization
   if (rclcpp::ok() && robot_localized_) {
-
     // Handles cleanup
     cleanup();
 
@@ -155,7 +151,9 @@ void GlobalLocalizationServer::execute(
     result->localized = true;
     goal_handle->succeed(result);
   } else {
-    RCLCPP_WARN(this->get_logger(), "[GlobalLocalizationServer] Node shutting down during goal execution");
+    RCLCPP_WARN(
+        this->get_logger(),
+        "[GlobalLocalizationServer] Node shutting down during goal execution");
 
     // Handles cleanup
     cleanup();
@@ -187,7 +185,6 @@ void GlobalLocalizationServer::PublishInitialPoseWithHighVariance() {
 
 void GlobalLocalizationServer::AmclPoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-
   if (!initial_pose_published_) return;
 
   // --- Convergence Detection Logic ---
@@ -202,8 +199,8 @@ void GlobalLocalizationServer::AmclPoseCallback(
   // 6: y-x, 7: y-y, ..., 11: y-yaw
   // ...
   // 30: yaw-x, ..., 35: yaw-yaw
-  double var_x = msg->pose.covariance[0];        // Variance in X position
-  double var_y = msg->pose.covariance[7];        // Variance in Y position
+  double var_x = msg->pose.covariance[0];     // Variance in X position
+  double var_y = msg->pose.covariance[7];     // Variance in Y position
   double var_yaw = msg->pose.covariance[35];  // Variance in Yaw orientation
 
   // Calculate a combined position covariance (e.g., sum of squares)
@@ -216,7 +213,8 @@ void GlobalLocalizationServer::AmclPoseCallback(
   // Check if uncertainty of the pose is lower than the threshold
   if (current_position_uncertainty_ < pos_uncertainty_threashold_ &&
       current_orientation_uncertainty_ < orientation_uncertainty_threashold_) {
-    RCLCPP_INFO(this->get_logger(), "[GlobalLocalizationServer] Robot localized");
+    RCLCPP_INFO(this->get_logger(),
+                "[GlobalLocalizationServer] Robot localized");
     RobotLocalized();
   }
 }

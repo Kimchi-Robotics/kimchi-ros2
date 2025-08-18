@@ -99,5 +99,4 @@ class GlobalLocalizationServer : public rclcpp::Node {
   double orientation_uncertainty_threashold_;
   std::atomic<double> current_position_uncertainty_;
   std::atomic<double> current_orientation_uncertainty_;
-
 };
