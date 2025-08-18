@@ -102,13 +102,13 @@ void KimchiStateServer::initialize() {
                 std::placeholders::_1, std::placeholders::_2));
 
   add_goal_to_mission_service_ =
-      node_->create_service<kimchi_interfaces::srv::AddGoalToMission>(
+      node_->create_service<kimchi_interfaces::srv::ProccessSelectedPosition>(
           "/kimchi_state_server/add_goal_to_mission",
           std::bind(&KimchiStateServer::addGoalToMissionCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
 
   start_locating_service_ =
-    node_->create_service<kimchi_interfaces::srv::AddGoalToMission>(
+    node_->create_service<kimchi_interfaces::srv::ProccessSelectedPosition>(
         "/kimchi_state_server/localize",
         std::bind(&KimchiStateServer::initialPoseCallback, this,
                   std::placeholders::_1, std::placeholders::_2));
@@ -176,8 +176,8 @@ void KimchiStateServer::startSlamCallback(
 }
 
 void KimchiStateServer::initialPoseCallback(
-  const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
-  kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response)
+  const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr request,
+  kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response)
 {
   if(state_ != RobotState::LOST)
   {
@@ -230,8 +230,8 @@ void KimchiStateServer::startNavigation() {
 }
 
 void KimchiStateServer::addGoalToMissionCallback(
-    const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
-    kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response) {
+    const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr request,
+    kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response) {
   navigation_manager_->addGoalToMission(
       Point2D(request->goal.x, request->goal.y));
   response->success = true;

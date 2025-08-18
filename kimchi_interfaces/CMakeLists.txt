@@ -31,7 +31,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 "msg/RobotState.msg"
 "msg/Position2D.msg"
 "srv/MapInfo.srv"
-"srv/AddGoalToMission.srv"
+"srv/ProccessSelectedPosition.srv"
 DEPENDENCIES geometry_msgs std_msgs builtin_interfaces
 )
 

@@ -7,7 +7,7 @@ from tf2_ros import TransformException
 from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
-from kimchi_interfaces.srv import AddGoalToMission as AddGoalToMissionSrv
+from kimchi_interfaces.srv import ProccessSelectedPosition as ProccessSelectedPosition
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
 from geometry_msgs.msg import Twist
@@ -62,9 +62,9 @@ class GrpcBridgeNode(Node):
         self._start_navigation_client = self.create_client(
             Trigger, '/kimchi_state_server/start_navigation')
         self._start_locating_client = self.create_client(
-            AddGoalToMissionSrv, '/kimchi_state_server/localize')
+            ProccessSelectedPosition, '/kimchi_state_server/localize')
         self._add_goal_to_mission_client = self.create_client(
-            AddGoalToMissionSrv, '/kimchi_state_server/add_goal_to_mission')
+            ProccessSelectedPosition, '/kimchi_state_server/add_goal_to_mission')
 
     @property
     def logger(self):
@@ -193,7 +193,7 @@ class GrpcBridgeNode(Node):
             self.get_logger().info(
                 'Robot is locating. This pose will be used to set an aprox initial pose to the robot.')
             self._start_locating_client.wait_for_service()
-            request = AddGoalToMissionSrv.Request()
+            request = ProccessSelectedPosition.Request()
             request.goal.x = pose.x
             request.goal.y = pose.y
 
@@ -204,7 +204,7 @@ class GrpcBridgeNode(Node):
                 'Robot state is IDLE. The robot will be send to this pose.')
 
             self._add_goal_to_mission_client.wait_for_service()
-            request = AddGoalToMissionSrv.Request()
+            request = ProccessSelectedPosition.Request()
             request.goal.x = pose.x
             request.goal.y = pose.y
 
