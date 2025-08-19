@@ -117,8 +117,8 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         Returns:
             An Empty response
         """
+        self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
         try:
-            self._logger.info(f"Received selected pose: {request.x}, {request.y}, {request.theta}")
             self._ros_node.process_selected_pose(Pose2D(request.x, request.y, request.theta))
             return kimchi_pb2.Empty()
         except Exception as e:

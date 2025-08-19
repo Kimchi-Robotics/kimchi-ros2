@@ -89,11 +89,14 @@ class GlobalLocalizationServer : public rclcpp::Node {
 
   rclcpp_action::Server<GlobalLocalization>::SharedPtr action_server_;
 
-  geometry_msgs::msg::Pose inital_pose_estimate_;
+  float inital_pose_estimate_x_;
+  float inital_pose_estimate_y_;
   geometry_msgs::msg::PoseWithCovarianceStamped current_pose_;
 
   bool initial_pose_published_{false};
   std::atomic<bool> robot_localized_{false};
   double pos_uncertainty_threashold_;
   double orientation_uncertainty_threashold_;
+  std::atomic<double> current_position_uncertainty_;
+  std::atomic<double> current_orientation_uncertainty_;
 };

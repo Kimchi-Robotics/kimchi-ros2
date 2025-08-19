@@ -6,6 +6,7 @@
 #include <queue>
 #include <rclcpp/rclcpp.hpp>
 
+#include "kimchi_navigation/global_localization.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
 
@@ -51,6 +52,7 @@ class NavigationManager {
 
   void startSlam();
   void stopSlam();
+  void startLocating(const Point2D& point);
   void startNavigation();
   void stopNavigation();
 
@@ -61,10 +63,21 @@ class NavigationManager {
   void localizeAround(const Point2D& point);
 
  private:
+  using GlobalLocalization = kimchi_interfaces::action::Localizing;
+  using GoalHandleGlobalLocalization =
+      rclcpp_action::ClientGoalHandle<GlobalLocalization>;
   using NavigateToPose = nav2_msgs::action::NavigateToPose;
   using GoalHandleNavigateToPose =
       rclcpp_action::ClientGoalHandle<NavigateToPose>;
   void onNewGoal();
+
+  void localizeGoalResponseCallback(
+      GoalHandleGlobalLocalization::SharedPtr goal_handle);
+  void localizeFeedbackCallback(
+      GoalHandleGlobalLocalization::SharedPtr,
+      const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
+  void localizeResultCallback(
+      const GoalHandleGlobalLocalization::WrappedResult& result);
 
   void navigateToPoseGoalResponseCallback(
       GoalHandleNavigateToPose::SharedPtr goal_handle);
@@ -76,6 +89,8 @@ class NavigationManager {
   std::unique_ptr<Point2D> current_goal_;
   std::queue<Point2D> goals_;
 
+  rclcpp_action::Client<GlobalLocalization>::SharedPtr
+      global_localization_action_client_ptr_;
   rclcpp_action::Client<NavigateToPose>::SharedPtr
       navigate_to_pose_action_client_ptr_;
   rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
