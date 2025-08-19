@@ -100,7 +100,7 @@ class KimchiStateServer
   std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
 
-  enum class LocalizationState { PENDING, SUCCESS, FAILED };
+  enum class LocalizationState { PENDING, LOCATING, SUCCESS, FAILED };
   std::atomic<LocalizationState> robot_localize_state_{LocalizationState::PENDING};
 
   // Topics.

@@ -70,47 +70,6 @@ void NavigationManager::startNavigation() {
 
 void NavigationManager::stopNavigation() {}
 
-void NavigationManager::localizeGoalResponseCallback(
-  GoalHandleGlobalLocalization::SharedPtr goal_handle) {
-    if (!goal_handle) {
-      RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Goal was rejected by server");
-    } else {
-      RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Goal accepted by server, waiting for "
-                                      "feedback and result...");
-    }
-}
-
-void NavigationManager::localizeFeedbackCallback(
-  GoalHandleGlobalLocalization::SharedPtr,
-  const std::shared_ptr<const GlobalLocalization::Feedback> feedback) {
-    RCLCPP_DEBUG(node_->get_logger(),
-                    " Received feedback: Current pose estimate - x: %.2f, y: %.2f",
-                    feedback->pose_feedback.pose.pose.position.x,
-                    feedback->pose_feedback.pose.pose.position.y);
-}
-
-void NavigationManager::localizeResultCallback(const GoalHandleGlobalLocalization::WrappedResult &result) {
-  switch (result.code) {
-    case rclcpp_action::ResultCode::SUCCEEDED:
-      RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Goal succeeded!");
-      robot_localized_ = true;
-      break;
-    case rclcpp_action::ResultCode::ABORTED:
-      RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Goal was aborted");
-      robot_localized_ = false;
-      break;
-    case rclcpp_action::ResultCode::CANCELED:
-      RCLCPP_WARN(node_->get_logger(), "[NavigationManager] Goal was canceled");
-      robot_localized_ = false;
-      break;
-    default:
-      RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Unknown result code");
-      robot_localized_ = false;
-      break;
-  }
-
-}
-
 bool NavigationManager::startLocating(const Point2D& point)
 {
   using namespace std::placeholders;
@@ -121,41 +80,47 @@ bool NavigationManager::startLocating(const Point2D& point)
   localize_goal.pose_estimate.x = point.x;
   localize_goal.pose_estimate.y = point.y;
 
-  auto localize_options =
-    rclcpp_action::Client<GlobalLocalization>::SendGoalOptions();
-  localize_options.goal_response_callback = std::bind(
-      &NavigationManager::localizeGoalResponseCallback, this, _1);
-  localize_options.feedback_callback = std::bind(
-      &NavigationManager::localizeFeedbackCallback, this, _1, _2);
-  localize_options.result_callback = std::bind(
-      &NavigationManager::localizeResultCallback, this, _1);
-
-  auto goal_handle_future = global_localization_action_client_ptr_->async_send_goal(localize_goal,
-                                                       localize_options);
-  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(), goal_handle_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
+  auto goal_handle_future = global_localization_action_client_ptr_->async_send_goal(localize_goal);
+  if (goal_handle_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
   {
-      RCLCPP_ERROR(node_->get_logger(), "Send goal call failed");
-      return robot_localized_;
+    RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was not accepted by server in time.");
+    return robot_localized_;
   }
 
-  GoalHandleGlobalLocalization::SharedPtr goal_handle = goal_handle_future.get();
+  auto goal_handle = goal_handle_future.get();
   if (!goal_handle) {
-      RCLCPP_ERROR(node_->get_logger(), "Goal was rejected by server");
-      return robot_localized_;
+    RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was rejected by server.");
+    return robot_localized_;
   }
 
-  // **Step 2: Wait for the result**
-  RCLCPP_INFO(node_->get_logger(), "Goal accepted, waiting for result...");
   auto result_future = global_localization_action_client_ptr_->async_get_result(goal_handle);
 
-  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(), result_future) !=
-      rclcpp::FutureReturnCode::SUCCESS)
-  {
-      RCLCPP_ERROR(node_->get_logger(), "Failed to get result");
-      return robot_localized_;
-  }
+  RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Goal accepted. Waiting for result for up to 60 seconds...");
 
+  // Block and wait for the result for a maximum of 60 seconds.
+  std::future_status status = result_future.wait_for(std::chrono::seconds(60));
+
+  if (status == std::future_status::ready)
+  {
+    // Result was received within the 60-second window
+    auto result = result_future.get();
+    RCLCPP_INFO(
+        node_->get_logger(),
+        "[NavigationManager] Robot localized!");
+    robot_localized_ = true;
+    return robot_localized_;
+  }
+  else
+  {
+    // The future timed out after 60 seconds
+    RCLCPP_ERROR(
+        node_->get_logger(),
+        "[ERROR NavigationManager] Robot not localized in 1 minute.");
+
+    RCLCPP_WARN(node_->get_logger(), "[Worker Thread] Sending cancel request to the server.");
+    global_localization_action_client_ptr_->async_cancel_goal(goal_handle);
+    return robot_localized_;
+  }
   return robot_localized_;
 }
 

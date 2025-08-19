@@ -99,5 +99,5 @@ class NavigationManager {
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
 
-  bool robot_localized_{false};
+  std::atomic<bool> robot_localized_{false};
 };
