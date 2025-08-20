@@ -40,9 +40,9 @@ class NavigationManager {
     virtual void onGoalReached(const Point2D& point) = 0;
 
     /**
-     * Called when the robot hasn'st reached the goal asnd the goal is
+     * Called when the robot hasn'st reached the goal and the goal is
      * cancelled.
-     * @param point The point that of the goal that was cancelled.
+     * @param point The point of the goal that was cancelled.
      */
     virtual void onGoalCancelled(const Point2D& point) = 0;
 
