@@ -8,6 +8,7 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 #include <kimchi_interfaces/msg/robot_state.hpp>
+#include <kimchi_interfaces/srv/kimchi_state_server_command.hpp>
 #include <kimchi_interfaces/srv/map_info.hpp>
 #include <kimchi_interfaces/srv/proccess_selected_position.hpp>
 #include <lifecycle_msgs/srv/change_state.hpp>
@@ -55,6 +56,7 @@ class KimchiStateServer
   void onNavigatingToGoal(const Point2D& point) override;
   void onGoalReached(const Point2D& point) override;
   void onMissionFinished() override;
+  void onGoalCancelled(const Point2D& point) override;
 
  private:
   /**
@@ -93,7 +95,11 @@ class KimchiStateServer
   void addGoalToMissionCallback(
       const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
           request,
-      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response);
+  void sendCommandCallback(
+      const kimchi_interfaces::srv::KimchiStateServerCommand::Request::SharedPtr
+          request,
+      kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
           response);
 
   std::shared_ptr<rclcpp::Node> node_;
@@ -115,6 +121,8 @@ class KimchiStateServer
       start_locating_service_;
   rclcpp::Service<kimchi_interfaces::srv::ProccessSelectedPosition>::SharedPtr
       add_goal_to_mission_service_;
+  rclcpp::Service<kimchi_interfaces::srv::KimchiStateServerCommand>::SharedPtr
+      send_command_service_;
 
   // Service clients.
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;

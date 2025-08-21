@@ -8,6 +8,7 @@ from tf2_ros.buffer import Buffer
 from tf2_ros.transform_listener import TransformListener
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
 from kimchi_interfaces.srv import ProccessSelectedPosition as ProccessSelectedPosition
+from kimchi_interfaces.srv import KimchiStateServerCommand as KimchiStateServerCommandSrv
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
 from geometry_msgs.msg import Twist
@@ -19,6 +20,7 @@ from kimchi_grpc_server.robot_state import RobotState
 from kimchi_grpc_server.kimchi_grpc_server import KimchiGrpcServer
 import kimchi_grpc_server.kimchi_pb2 as kimchi_pb2
 import rclpy
+
 
 # Node that serves as a bridge between ROS and the gRPC server.
 class GrpcBridgeNode(Node):
@@ -34,7 +36,7 @@ class GrpcBridgeNode(Node):
         self._max_linear_vel_ms = 0.5
         self._man_angular_vel_rad = 1
         self._path_listener = None
-        
+
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.VOLATILE,
@@ -57,6 +59,9 @@ class GrpcBridgeNode(Node):
         self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
         self._map_info_client = self.create_client(
             MapInfoSrv, '/kimchi_map/get_map_info')
+
+        self._send_command_client = self.create_client(
+            KimchiStateServerCommandSrv, '/kimchi_state_server/send_command')
         self._start_mapping_client = self.create_client(
             Trigger, '/kimchi_state_server/start_slam')
         self._start_navigation_client = self.create_client(
@@ -110,7 +115,7 @@ class GrpcBridgeNode(Node):
     def path_callback(self, msg):
         if self._path_listener is None:
             return
-        
+
         points = []
         for pose in msg.poses:
             point = kimchi_pb2.Point2D()
@@ -135,6 +140,23 @@ class GrpcBridgeNode(Node):
         msg.linear.x = self._max_linear_vel_ms * linear_percentage
         msg.angular.z = self._man_angular_vel_rad * angular_percentage
         self._vel_publisher.publish(msg)
+
+    def send_command(self, command):
+        """
+        Sends a command to the KimchiStateServer.
+
+        Args:
+            command: A string representing the command to be sent.
+        """
+        self._send_command_client.wait_for_service()
+        request = KimchiStateServerCommandSrv.Request()
+        request.command = command
+        self.get_logger().info(f'Sending command: {command}')
+        response = self._send_command_client.call(request)
+        if response.success:
+            self.get_logger().info('Command sent successfully')
+        else:
+            self.get_logger().error(f'Failed to send command: {response.msg}')
 
     def start_mapping(self):
         self._start_mapping_client.wait_for_service()

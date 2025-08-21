@@ -10,6 +10,8 @@ import asyncio
 # Define a class that will be used to serve the GetPose request
 # The class will have a method that will be called by the server
 # to serve the GetPose request
+
+
 class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
     def __init__(self, ros_node):
         self._ros_node = ros_node
@@ -42,7 +44,8 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             await asyncio.sleep(0.5)
             map_info = self._ros_node.get_map()
             if len(map_info.image) == 0:
-                self._logger.warning("Received empty map image, waiting for a valid map...")
+                self._logger.warning(
+                    "Received empty map image, waiting for a valid map...")
                 continue
             yield kimchi_pb2.Map(image=map_info.image, origin=map_info.origin, resolution=map_info.resolution)
 
@@ -69,7 +72,8 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         while True:
             await asyncio.sleep(0.5)
             if len(self._robot_path.points) == 0:
-                self._logger.warning("No points in the path, waiting for updates...")
+                self._logger.warning(
+                    "No points in the path, waiting for updates...")
                 continue
 
             yield self._robot_path
@@ -92,15 +96,35 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         return kimchi_pb2.RobotStateMsg(state=robot_state.to_kimchi_robot_state_enum())
 
     def StartMapping(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
-        self._logger.info(f"Serving StartMapping request {request}!!!!!!!!!!!!!!!!!!!!!!!")
-        [success, msg]= self._ros_node.start_mapping()
-        self._logger.info(f"Finished calling start mapping service!!!!!!!!!!!!!!!!!!!!!!!!1")
+        self._logger.info(
+            f"Serving StartMapping request {request}")
+        [success, msg] = self._ros_node.start_mapping()
+        self._logger.info(
+            f"Finished calling start mapping service")
         return kimchi_pb2.StartMappingResponse(success=success, info=msg)
 
     def StartNavigation(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving StartNavigation request {request}")
         [success, msg] = self._ros_node.start_navigation()
         return kimchi_pb2.StartNavigationResponse(success=success, info=msg)
+
+    def NavigationCancelGoalService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Cancelling navigation goal")
+        self._ros_node.send_command("cancel_navigation_goal")
+
+        return kimchi_pb2.Empty()
+
+    def NavigationContinuePathService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Cancelling navigation goal")
+        self._ros_node.send_command("continue_path")
+
+        return kimchi_pb2.Empty()
+
+    def NavigationCancelMissionService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
+        self._logger.info(f"Cancelling navigation goal")
+        self._ros_node.send_command("cancel_navigation_mission")
+
+        return kimchi_pb2.Empty()
 
     def IsAlive(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Serving IsAlive request {request}")
@@ -126,7 +150,7 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
             context.set_code(grpc.StatusCode.INTERNAL)
             context.set_details(f"Internal error: {str(e)}")
             return kimchi_pb2.Empty()
-    
+
     def Move(self, request_iterator, context):
         """
         Receives a stream of Velocity messages from the client.
