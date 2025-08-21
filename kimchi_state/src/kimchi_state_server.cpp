@@ -62,6 +62,12 @@ void KimchiStateServer::onGoalReached(const Point2D &point) {
                point.y);
 }
 
+void KimchiStateServer::onGoalCancelled(const Point2D &point) {
+  changeState(RobotState::GOAL_REACHED);
+  RCLCPP_INFO(node_->get_logger(), "Goal cancelled: (%f, %f)", point.x,
+              point.y);
+}
+
 void KimchiStateServer::onMissionFinished() {
   changeState(RobotState::IDLE);
   RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission finished");
@@ -114,6 +120,11 @@ void KimchiStateServer::initialize() {
           std::bind(&KimchiStateServer::initialPoseCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
 
+  send_command_service_ =
+      node_->create_service<kimchi_interfaces::srv::KimchiStateServerCommand>(
+          "/kimchi_state_server/send_command",
+          std::bind(&KimchiStateServer::sendCommandCallback, this,
+                    std::placeholders::_1, std::placeholders::_2));
   // Call the map info service
   callGetMapInfoService();
 }
@@ -231,6 +242,25 @@ void KimchiStateServer::startNavigationCallback(
 void KimchiStateServer::startNavigation() {
   navigation_manager_->startNavigation();
   changeState(RobotState::LOST);
+}
+
+void KimchiStateServer::sendCommandCallback(
+    const kimchi_interfaces::srv::KimchiStateServerCommand::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
+        response) {
+  if (request->command == "continue_path") {
+    navigation_manager_->goToNextGoal();
+    response->success = true;
+  } else if (request->command == "cancel_navigation_goal") {
+    navigation_manager_->cancelCurrentGoal();
+    response->success = true;
+  } else if (request->command == "cancel_navigation_mission") {
+    navigation_manager_->cancelMission();
+  } else {
+    response->success = false;
+    response->msg = "Unknown command: " + request->command;
+  }
 }
 
 void KimchiStateServer::addGoalToMissionCallback(
