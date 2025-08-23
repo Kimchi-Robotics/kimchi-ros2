@@ -99,4 +99,6 @@ class GlobalLocalizationServer : public rclcpp::Node {
   double orientation_uncertainty_threashold_;
 
   const float localize_timeout_{60.0};
+  std::atomic<double> current_position_uncertainty_;
+  std::atomic<double> current_orientation_uncertainty_;
 };

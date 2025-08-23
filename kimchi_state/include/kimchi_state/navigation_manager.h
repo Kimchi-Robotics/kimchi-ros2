@@ -6,6 +6,7 @@
 #include <queue>
 #include <rclcpp/rclcpp.hpp>
 
+#include "kimchi_navigation/global_localization.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
 
@@ -41,6 +42,13 @@ class NavigationManager {
     virtual void onGoalReached(const Point2D& point) = 0;
 
     /**
+     * Called when the robot hasn'st reached the goal and the goal is
+     * cancelled.
+     * @param point The point of the goal that was cancelled.
+     */
+    virtual void onGoalCancelled(const Point2D& point) = 0;
+
+    /**
      * Called when the path is finished, e.g., when the robot reaches the goal.
      */
     virtual void onMissionFinished() = 0;
@@ -59,6 +67,8 @@ class NavigationManager {
 
   void addGoalToMission(const Point2D& point);
   void goToNextGoal();
+  void cancelCurrentGoal();
+  void cancelMission();
 
   // Localizes the robot around a given pose.
   void localizeAround(const Point2D& point);

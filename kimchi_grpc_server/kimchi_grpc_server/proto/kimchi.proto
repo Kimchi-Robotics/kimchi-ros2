@@ -43,6 +43,10 @@ service KimchiApp {
   rpc StartNavigation(Empty) returns (StartNavigationResponse) {}
   rpc StartLocating(Empty) returns (StartLocatingResponse) {}
   rpc SendSelectedPose(Pose) returns (Empty) {}
+  rpc ContinuePath(Empty) returns (Empty) {}
+  rpc NavigationCancelGoalService(Empty) returns (Empty) {}
+  rpc NavigationContinuePathService(Empty) returns (Empty) {}
+  rpc NavigationCancelMissionService(Empty) returns (Empty) {}
 
   // Stream subscriptions
   rpc SubscribeToMap(Empty) returns (stream Map) {}

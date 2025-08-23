@@ -57,14 +57,20 @@ void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
 
 void KimchiStateServer::onGoalReached(const Point2D &point) {
   changeState(RobotState::GOAL_REACHED);
-  RCLCPP_DEBUG(node_->get_logger(), "[KimchiStateServer] Goal reached at point: (%f, %f)", point.x,
+  RCLCPP_DEBUG(node_->get_logger(),
+               "[KimchiStateServer] Goal reached at point: (%f, %f)", point.x,
+               point.y);
+}
+
+void KimchiStateServer::onGoalCancelled(const Point2D &point) {
+  changeState(RobotState::GOAL_REACHED);
+  RCLCPP_INFO(node_->get_logger(), "Goal cancelled: (%f, %f)", point.x,
               point.y);
 }
 
 void KimchiStateServer::onMissionFinished() {
   changeState(RobotState::IDLE);
-  // TODO: LOla change this back to KimchiStateServer
-  RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Mission finished");
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission finished");
 }
 
 void KimchiStateServer::initialize() {
@@ -103,20 +109,26 @@ void KimchiStateServer::initialize() {
                 std::placeholders::_1, std::placeholders::_2));
 
   add_goal_to_mission_service_ =
-      node_->create_service<kimchi_interfaces::srv::AddGoalToMission>(
+      node_->create_service<kimchi_interfaces::srv::ProccessSelectedPosition>(
           "/kimchi_state_server/add_goal_to_mission",
           std::bind(&KimchiStateServer::addGoalToMissionCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
 
-  localize_service_ =
-    node_->create_service<kimchi_interfaces::srv::AddGoalToMission>(
-        "/kimchi_state_server/localize",
-        std::bind(&KimchiStateServer::localizeCallback, this,
-                  std::placeholders::_1, std::placeholders::_2));
+  start_locating_service_ =
+      node_->create_service<kimchi_interfaces::srv::ProccessSelectedPosition>(
+          "/kimchi_state_server/localize",
+          std::bind(&KimchiStateServer::initialPoseCallback, this,
+                    std::placeholders::_1, std::placeholders::_2));
+
+  send_command_service_ =
+      node_->create_service<kimchi_interfaces::srv::KimchiStateServerCommand>(
+          "/kimchi_state_server/send_command",
+          std::bind(&KimchiStateServer::sendCommandCallback, this,
+                    std::placeholders::_1, std::placeholders::_2));
+
   global_localization_timer_ = node_->create_wall_timer(
       std::chrono::seconds(10),
       std::bind(&KimchiStateServer::checkGlobalLocalizationCallback, this));
-
   // Call the map info service
   callGetMapInfoService();
 }
@@ -157,10 +169,12 @@ void KimchiStateServer::callGetMapInfoService() {
   while (!get_map_info_client_->wait_for_service(std::chrono::seconds(1))) {
     if (!rclcpp::ok()) {
       RCLCPP_ERROR(node_->get_logger(),
-                   "[KimchiStateServer] Interrupted while waiting for the service. Exiting.");
+                   "[KimchiStateServer] Interrupted while waiting for the "
+                   "service. Exiting.");
       return;
     }
-    RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Service not available, waiting again...");
+    RCLCPP_INFO(node_->get_logger(),
+                "[KimchiStateServer] Service not available, waiting again...");
   }
 
   auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
@@ -199,12 +213,12 @@ void KimchiStateServer::startSlamCallback(
   response->success = true;
 }
 
-void KimchiStateServer::localizeCallback(
-  const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
-  kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response)
-{
-  if(state_ != RobotState::LOST)
-  {
+void KimchiStateServer::initialPoseCallback(
+    const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+        response) {
+  if (state_ != RobotState::LOST) {
     response->success = false;
 
     return;
@@ -256,9 +270,30 @@ void KimchiStateServer::startNavigation() {
   changeState(RobotState::LOST);
 }
 
+void KimchiStateServer::sendCommandCallback(
+    const kimchi_interfaces::srv::KimchiStateServerCommand::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
+        response) {
+  if (request->command == "continue_path") {
+    navigation_manager_->goToNextGoal();
+    response->success = true;
+  } else if (request->command == "cancel_navigation_goal") {
+    navigation_manager_->cancelCurrentGoal();
+    response->success = true;
+  } else if (request->command == "cancel_navigation_mission") {
+    navigation_manager_->cancelMission();
+  } else {
+    response->success = false;
+    response->msg = "Unknown command: " + request->command;
+  }
+}
+
 void KimchiStateServer::addGoalToMissionCallback(
-    const kimchi_interfaces::srv::AddGoalToMission::Request::SharedPtr request,
-    kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response) {
+    const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
+        request,
+    kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+        response) {
   navigation_manager_->addGoalToMission(
       Point2D(request->goal.x, request->goal.y));
   response->success = true;
