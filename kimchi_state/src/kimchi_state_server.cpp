@@ -208,7 +208,7 @@ void KimchiStateServer::initialPoseCallback(
   locate_thread.detach();
   response->success = true;
 
-  changeState(RobotState::IDLE);
+  // changeState(RobotState::IDLE);
   return;
 }
 
