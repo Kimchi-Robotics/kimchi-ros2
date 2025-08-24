@@ -19,13 +19,13 @@ def generate_launch_description():
     kimchi_state_server_node = Node(
         package="kimchi_state",
         executable="kimchi_state_server",
-        arguments=['--ros-args', '--log-level', 'DEBUG'],
+        # arguments=['--ros-args', '--log-level', 'DEBUG'],
     )
 
     kimchi_map_handler_node = Node(
         package="kimchi_map",
         executable="kimchi_map_handler",
-        arguments=['--ros-args', '--log-level', 'DEBUG'],
+        # arguments=['--ros-args', '--log-level', 'DEBUG'],
     )
 
     kimchi_nav_and_slam_launch = IncludeLaunchDescription(
