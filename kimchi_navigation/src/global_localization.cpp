@@ -1,7 +1,7 @@
 #include "kimchi_navigation/global_localization.hpp"
 
 GlobalLocalizationServer::GlobalLocalizationServer()
-    : Node("global_localization") {
+    : Node("global_localization_7") {
   using namespace std::placeholders;
 
   auto qos_profile =
@@ -114,7 +114,6 @@ void GlobalLocalizationServer::execute(
 
   // Initialize goal execution
   PublishInitialPoseWithHighVariance();
-  RotateRobot();
 
   // Rate of 20hz
   rclcpp::Rate loop_rate(20);
@@ -123,8 +122,13 @@ void GlobalLocalizationServer::execute(
   auto result = std::make_shared<GlobalLocalization::Result>();
 
   while (!robot_localized_ && rclcpp::ok()) {
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] Rotating robot to aid localization...");
+
     // Check for cancellation first
     if (goal_handle->is_canceling()) {
+      RCLCPP_INFO(this->get_logger(),"[GlobalLocalizationServer] goal_handle->is_canceling()");
       // Handles cleanup
       cleanup();
 
@@ -134,13 +138,34 @@ void GlobalLocalizationServer::execute(
       return;
     }
 
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] Before RotateRobot");
+    RotateRobot();
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] After RotateRobot");
+
     feedback->pose_feedback = current_pose_;
     feedback->current_uncertainty[0] = current_position_uncertainty_;
     feedback->current_uncertainty[1] = current_orientation_uncertainty_;
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] Before publish_feedback");
+
     goal_handle->publish_feedback(feedback);
 
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] Before sleep");
     loop_rate.sleep();
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] After sleep");
   }
+    RCLCPP_INFO(
+        this->get_logger(),
+        "[GlobalLocalizationServer] Out of the while");
 
   // Check if we exited due to successful localization
   if (rclcpp::ok() && robot_localized_) {
