@@ -1,7 +1,7 @@
 #include "kimchi_navigation/global_localization.hpp"
 
 GlobalLocalizationServer::GlobalLocalizationServer()
-    : Node("global_localization_7") {
+    : Node("global_localization") {
   using namespace std::placeholders;
 
   auto qos_profile =
@@ -134,11 +134,9 @@ void GlobalLocalizationServer::execute(
     }
 
     RotateRobot();
-
     feedback->pose_feedback = current_pose_;
     feedback->current_uncertainty[0] = current_position_uncertainty_;
     feedback->current_uncertainty[1] = current_orientation_uncertainty_;
-
     goal_handle->publish_feedback(feedback);
 
     loop_rate.sleep();
