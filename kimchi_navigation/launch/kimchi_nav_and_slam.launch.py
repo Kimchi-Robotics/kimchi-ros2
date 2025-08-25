@@ -58,8 +58,6 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': LaunchConfiguration("use_sim_time"),
             'slams_param_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
-            # 'autostart': 'false', ??????????????????????????????????????
-
         }.items(),
     )
 
@@ -73,7 +71,7 @@ def generate_launch_description():
         executable='global_localization',
         name='global_localization',
         output='screen',
-        # arguments=['--ros-args', '--log-level', 'DEBUG'],
+        arguments=['--ros-args', '--log-level', 'INFO'],
         parameters=[{
             'position_covariance_threshold': 0.5,
             'orientation_covariance_threshold': 0.3,
