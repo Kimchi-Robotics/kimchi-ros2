@@ -6,7 +6,7 @@
 #include <queue>
 #include <rclcpp/rclcpp.hpp>
 
-#include "kimchi_navigation/global_localization.hpp"
+#include "kimchi_interfaces/action/localizing.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
 
