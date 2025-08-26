@@ -106,9 +106,9 @@ class DiffDriveKimchi : public hardware_interface::SystemInterface {
   // Right wheel of the robot.
   Wheel right_wheel_;
   // Bumper and button values.
-  double left_bumper_{0.0}
-  double right_bumper_{0.0}
-  double button_{0.0}
+  double left_bumper_{0.0};
+  double right_bumper_{0.0};
+  double button_{0.0};
   // Logger.
   rclcpp::Logger logger_{rclcpp::get_logger("DiffDriveKimchi")};
 };
