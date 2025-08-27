@@ -102,7 +102,6 @@ class KimchiStateServer
           request,
       kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
           response);
-      kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response);
   void jointStatesCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
 
   std::shared_ptr<rclcpp::Node> node_;
