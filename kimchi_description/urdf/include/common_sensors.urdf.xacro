@@ -46,6 +46,34 @@
     <axis xyz="0 1 0" />
   </joint>
 
+</xacro:macro>
+
+<!-- Bumpers and button -->
+<xacro:macro name="digital_sensors" params="parent_link hardware_props">
+
+  <!-- Left Bumper -->
+  <link name="${hardware_props['left_bumper_name']}_link"/>
+
+  <joint name="${hardware_props['left_bumper_name']}" type="continuous">
+    <parent link="${parent_link}"/>
+    <child link="${hardware_props['left_bumper_name']}_link"/>
+  </joint>
+
+  <!-- Right Bumper -->
+  <link name="${hardware_props['right_bumper_name']}_link"/>
+
+  <joint name="${hardware_props['right_bumper_name']}" type="continuous">
+    <parent link="${parent_link}"/>
+    <child link="${hardware_props['right_bumper_name']}_link"/>
+  </joint>
+
+  <!-- Button -->
+  <link name="${hardware_props['button_name']}_link"/>
+
+  <joint name="${hardware_props['button_name']}" type="continuous">
+    <parent link="${parent_link}"/>
+    <child link="${hardware_props['button_name']}_link"/>
+  </joint>
 
 </xacro:macro>
 

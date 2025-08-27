@@ -125,6 +125,11 @@ void KimchiStateServer::initialize() {
           "/kimchi_state_server/send_command",
           std::bind(&KimchiStateServer::sendCommandCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
+  joint_states_subscriber_ = node_->create_subscription<sensor_msgs::msg::JointState>(
+      "/joint_states", 10,
+      std::bind(&KimchiStateServer::jointStatesCallback, this,
+                std::placeholders::_1));
+
   // Call the map info service
   callGetMapInfoService();
 }
@@ -311,6 +316,32 @@ void KimchiStateServer::changeState(RobotState new_state) {
   state_ = new_state;
   RCLCPP_INFO(node_->get_logger(), "State changed to: %s",
               toString(state_).c_str());
+}
+
+// TODO(lneumarkt): Implement behavior based on bumper and button states
+void KimchiStateServer::jointStatesCallback(
+  const sensor_msgs::msg::JointState::SharedPtr msg) {
+
+  for (size_t i = 0; i < msg->name.size(); ++i) {
+    const std::string& joint_name = msg->name[i];
+    
+    // For all three joints, we consider a position of non-zero as "pressed"
+    if (joint_name == "button_joint") {
+      button_state_ = msg->position[i] > 0.01;
+      RCLCPP_DEBUG(node_->get_logger(), "Button state: %s", 
+                  button_state_ ? "PRESSED" : "NOT_PRESSED");
+    }
+    else if (joint_name == "left_bumper_joint") {
+      left_bumper_state_ = msg->position[i] > 0.01;
+      RCLCPP_DEBUG(node_->get_logger(), "Left bumper state: %s", 
+                  left_bumper_state_ ? "PRESSED" : "NOT_PRESSED");
+    }
+    else if (joint_name == "right_bumper_joint") {
+      right_bumper_state_ = msg->position[i] > 0.01;
+      RCLCPP_DEBUG(node_->get_logger(), "Right bumper state: %s", 
+                  right_bumper_state_ ? "PRESSED" : "NOT_PRESSED");
+    }
+  }
 }
 
 int main(int argc, char *argv[]) {

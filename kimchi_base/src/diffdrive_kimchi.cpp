@@ -43,10 +43,21 @@ hardware_interface::CallbackReturn DiffDriveKimchi::on_init(const hardware_inter
 
   RCLCPP_INFO(logger_, "On init...");
 
+  // Wheel names.
   config_.left_wheel_name = info_.hardware_parameters[kLeftWheelNameParam];
   RCLCPP_DEBUG(logger_, (kLeftWheelNameParam + static_cast<std::string>(": ") + config_.left_wheel_name).c_str());
   config_.right_wheel_name = info_.hardware_parameters[kRightWheelNameParam];
   RCLCPP_DEBUG(logger_, (kRightWheelNameParam + static_cast<std::string>(": ") + config_.right_wheel_name).c_str());
+
+  // Bumper and button names.
+  config_.left_bumper_name = info_.hardware_parameters[kLeftBumperNameParam];
+  RCLCPP_DEBUG(logger_, (kLeftBumperNameParam + static_cast<std::string>(": ") + config_.left_bumper_name).c_str());
+  config_.right_bumper_name = info_.hardware_parameters[kRightBumperNameParam];
+  RCLCPP_DEBUG(logger_, (kRightBumperNameParam + static_cast<std::string>(": ") + config_.right_bumper_name).c_str());
+  config_.button_name = info_.hardware_parameters[kButtonNameParam];
+  RCLCPP_DEBUG(logger_, (kButtonNameParam + static_cast<std::string>(": ") + config_.button_name).c_str());
+
+  // Serial communication parameters.
   config_.serial_device = info_.hardware_parameters[kSerialDeviceParam];
   RCLCPP_DEBUG(logger_, (kSerialDeviceParam + static_cast<std::string>(": ") + config_.serial_device).c_str());
   config_.baud_rate = std::stoi(info_.hardware_parameters[kBaudRateParam]);
@@ -61,15 +72,25 @@ hardware_interface::CallbackReturn DiffDriveKimchi::on_init(const hardware_inter
                    .c_str());
 
   for (const hardware_interface::ComponentInfo& joint : info.joints) {
-    // DiffDriveKimchi has exactly two states and one command interface on each joint
-    if (joint.command_interfaces.size() != 1) {
-      RCLCPP_FATAL(logger_, "Joint '%s' has %zu command interfaces found. 1 expected.", joint.name.c_str(),
-                   joint.command_interfaces.size());
+    bool is_wheel = (joint.name.find("wheel") != std::string::npos);
+
+    // Set expected interface counts based on joint type.
+    // Wheels have 1 command interface (velocity) and 2 state interfaces (position and velocity).
+    // Bumpers and button have no command interfaces and only 1 state interfaces (position).
+    size_t expected_command_interfaces = is_wheel ? 1 : 0;
+    size_t expected_state_interfaces = is_wheel ? 2 : 1;
+
+    // Validate command interfaces
+    if (joint.command_interfaces.size() != expected_command_interfaces) {
+      RCLCPP_FATAL(logger_, "Joint '%s' has %zu command interfaces found. %zu expected.", joint.name.c_str(),
+                   joint.command_interfaces.size(), expected_command_interfaces);
       return hardware_interface::CallbackReturn::ERROR;
     }
-    if (joint.state_interfaces.size() != 2) {
-      RCLCPP_FATAL(logger_, "Joint '%s' has %zu state interfaces found. 1 expected.", joint.name.c_str(),
-                   joint.state_interfaces.size());
+
+    // Validate state interfaces
+    if (joint.state_interfaces.size() != expected_state_interfaces) {
+      RCLCPP_FATAL(logger_, "Joint '%s' has %zu state interfaces found. %zu expected.", joint.name.c_str(),
+                   joint.state_interfaces.size(), expected_state_interfaces);
       return hardware_interface::CallbackReturn::ERROR;
     }
   }
@@ -98,8 +119,7 @@ std::vector<hardware_interface::StateInterface> DiffDriveKimchi::export_state_in
   // We need to set up a position and a velocity interface for each wheel
   std::vector<hardware_interface::StateInterface> state_interfaces;
 
-  // TODO(francocipollone): Probably we could use the information obtained via info_ variable about the joint name
-  // directly.
+  // Add left and right wheel interfaces
   state_interfaces.emplace_back(
       hardware_interface::StateInterface(left_wheel_.name_, hardware_interface::HW_IF_VELOCITY, &left_wheel_.vel_));
   state_interfaces.emplace_back(
@@ -108,6 +128,14 @@ std::vector<hardware_interface::StateInterface> DiffDriveKimchi::export_state_in
       hardware_interface::StateInterface(right_wheel_.name_, hardware_interface::HW_IF_VELOCITY, &right_wheel_.vel_));
   state_interfaces.emplace_back(
       hardware_interface::StateInterface(right_wheel_.name_, hardware_interface::HW_IF_POSITION, &right_wheel_.pos_));
+
+  // Add bumper and button interfaces
+  state_interfaces.emplace_back(
+      hardware_interface::StateInterface(config_.left_bumper_name, hardware_interface::HW_IF_POSITION, &left_bumper_));
+  state_interfaces.emplace_back(hardware_interface::StateInterface(config_.right_bumper_name,
+                                                                   hardware_interface::HW_IF_POSITION, &right_bumper_));
+  state_interfaces.emplace_back(
+      hardware_interface::StateInterface(config_.button_name, hardware_interface::HW_IF_POSITION, &button_));
 
   return state_interfaces;
 }
@@ -147,13 +175,17 @@ hardware_interface::return_type DiffDriveKimchi::read(const rclcpp::Time& /* tim
     return hardware_interface::return_type::ERROR;
   }
 
-  // const MotorDriver::Encoders encoders = motor_driver_.ReadEncoderValues();
   try {
-    const std::optional<MotorDriver::Encoders> encoders = motor_driver_.ReadEncoderValues();
-    left_wheel_.enc_ = (*encoders)[0];
-    right_wheel_.enc_ = (*encoders)[1];
+    const std::optional<MotorDriver::HardwareData> hardware_data = motor_driver_.ReadHardwareData();
+    left_wheel_.enc_ = (*hardware_data)[0];
+    right_wheel_.enc_ = (*hardware_data)[1];
+
+    // Convert int (0/1) to double since the state interface expects a double for the position.
+    left_bumper_ = static_cast<double>((*hardware_data)[2]);
+    right_bumper_ = static_cast<double>((*hardware_data)[3]);
+    button_ = static_cast<double>((*hardware_data)[4]);
   } catch (const std::exception& e) {
-    RCLCPP_ERROR(logger_, "Exception while reading encoder values: %s", e.what());
+    RCLCPP_ERROR(logger_, "Exception while reading hardware data: %s", e.what());
     return hardware_interface::return_type::OK;
   }
 
