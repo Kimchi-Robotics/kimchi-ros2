@@ -17,6 +17,7 @@
 #include <nav2_msgs/srv/save_map.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <std_msgs/msg/empty.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
@@ -101,6 +102,8 @@ class KimchiStateServer
           request,
       kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
           response);
+      kimchi_interfaces::srv::AddGoalToMission::Response::SharedPtr response);
+  void jointStatesCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
 
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<NavigationManager> navigation_manager_;
@@ -113,6 +116,7 @@ class KimchiStateServer
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber_;
 
   // Service servers.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
@@ -128,4 +132,9 @@ class KimchiStateServer
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
   rclcpp::Client<kimchi_interfaces::srv::MapInfo>::SharedPtr
       get_map_info_client_;
+
+  // Variables for bumpers and button.
+  bool left_bumper_state_ = false;
+  bool right_bumper_state_ = false;
+  bool button_state_ = false;
 };
