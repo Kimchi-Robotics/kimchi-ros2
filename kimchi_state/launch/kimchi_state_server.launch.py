@@ -25,7 +25,7 @@ def generate_launch_description():
     kimchi_map_handler_node = Node(
         package="kimchi_map",
         executable="kimchi_map_handler",
-        arguments=['--ros-args', '--log-level', 'WARN'],
+        arguments=['--ros-args', '--log-level', 'INFO'],
     )
 
     kimchi_nav_and_slam_launch = IncludeLaunchDescription(
