@@ -58,5 +58,8 @@ Two controllers are being used from the available [ros2_controllers](https://con
     - Used state interfaces:
       - left wheel position
       - right wheel position
+      - left bumper position
+      - right bumper position
+      - button position
 
 Each controller accepts ROS 2 parameters which they are provided via [`kimchi_controllers.yaml`](config/kimchi_controllers.yaml). 
