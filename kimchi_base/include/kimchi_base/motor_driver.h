@@ -47,7 +47,12 @@ namespace kimchi_base {
 class MotorDriver {
  public:
   /// @brief Type to store the hardware data read from the Arduino.
-  /// It contains the left encoder value, right encoder value, left bumper value, right bumper values and button value.
+  /// Fixed array indices for hardware values:
+  /// Index [0]: Left encoder value
+  /// Index [1]: Right encoder value
+  /// Index [2]: Left bumper value   (0 = not pressed, 1 = pressed)
+  /// Index [3]: Right bumper value  (0 = not pressed, 1 = pressed)
+  /// Index [4]: Button value        (0 = not pressed, 1 = pressed)
   using HardwareData = std::array<int, 5>;
 
   /// @brief Default constructor.
