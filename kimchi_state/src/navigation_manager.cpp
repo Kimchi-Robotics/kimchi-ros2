@@ -117,7 +117,7 @@ void NavigationManager::localizeResultCallback(
   }
 }
 
-void NavigationManager::startLocating(const Point2D& point) {
+bool NavigationManager::startLocating(const Point2D& point) {
   using namespace std::placeholders;
 
   RCLCPP_DEBUG(node_->get_logger(),
