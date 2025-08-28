@@ -16,6 +16,7 @@ find_package(rclcpp_action REQUIRED)
 find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
@@ -31,6 +32,7 @@ ament_target_dependencies(kimchi_state_server PUBLIC
   "rclcpp_components"
   "std_msgs"
   "geometry_msgs"
+  "sensor_msgs"
   "kimchi_interfaces"
   "std_srvs"
   "nav2_msgs"
