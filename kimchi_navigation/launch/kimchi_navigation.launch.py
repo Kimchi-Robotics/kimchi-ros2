@@ -130,7 +130,8 @@ def generate_launch_description():
 
     map_argunment = DeclareLaunchArgument(
         "map",
-        default_value=os.path.join(pkg_kimchi_nav, "maps/hq_map", "map.yaml"),
+        # default_value=os.path.join(pkg_kimchi_nav, "maps/hq_map", "map.yaml"),
+        default_value=os.path.join(pkg_kimchi_nav, "maps/ari_map", "map.yaml"),
         description="Full path to the map file to use",
     )
 

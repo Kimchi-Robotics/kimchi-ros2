@@ -114,7 +114,6 @@ void GlobalLocalizationServer::execute(
 
   // Initialize goal execution
   PublishInitialPoseWithHighVariance();
-  RotateRobot();
 
   // Rate of 20hz
   rclcpp::Rate loop_rate(20);
@@ -133,6 +132,7 @@ void GlobalLocalizationServer::execute(
       return;
     }
 
+    RotateRobot();
     feedback->pose_feedback = current_pose_;
     feedback->current_uncertainty[0] = current_position_uncertainty_;
     feedback->current_uncertainty[1] = current_orientation_uncertainty_;
@@ -150,10 +150,6 @@ void GlobalLocalizationServer::execute(
     result->localized = true;
     goal_handle->succeed(result);
   } else {
-    RCLCPP_WARN(
-        this->get_logger(),
-        "[GlobalLocalizationServer] Node shutting down during goal execution");
-
     // Handles cleanup
     cleanup();
 
