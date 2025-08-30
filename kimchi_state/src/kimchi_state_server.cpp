@@ -330,6 +330,9 @@ void KimchiStateServer::jointStatesCallback(
       button_state_ = msg->position[i] > 0.01;
       RCLCPP_DEBUG(node_->get_logger(), "Button state: %s", 
                   button_state_ ? "PRESSED" : "NOT_PRESSED");
+      if (state_ == RobotState::GOAL_REACHED && button_state_) {
+        navigation_manager_->goToNextGoal();
+      }
     }
     else if (joint_name == "left_bumper_joint") {
       left_bumper_state_ = msg->position[i] > 0.01;
