@@ -71,7 +71,7 @@ def generate_launch_description():
         executable='global_localization',
         name='global_localization',
         output='screen',
-        arguments=['--ros-args', '--log-level', 'DEBUG'],
+        arguments=['--ros-args', '--log-level', 'INFO'],
         parameters=[{
             'position_covariance_threshold': 0.5,
             'orientation_covariance_threshold': 0.3,

@@ -79,10 +79,10 @@ void NavigationManager::localizeGoalResponseCallback(
     GoalHandleGlobalLocalization::SharedPtr goal_handle) {
   if (!goal_handle) {
     RCLCPP_ERROR(node_->get_logger(),
-                 "[NavigationManager] Goal was rejected by server");
+                 "[NavigationManager] Postion was rejected by localization server");
   } else {
     RCLCPP_INFO(node_->get_logger(),
-                "[NavigationManager] Goal accepted by server, waiting for "
+                "[NavigationManager] Postion accepted by localization server, waiting for "
                 "feedback and result...");
   }
 }
@@ -103,6 +103,7 @@ void NavigationManager::localizeResultCallback(
   switch (result.code) {
     case rclcpp_action::ResultCode::SUCCEEDED:
       RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Goal succeeded!");
+      mission_observer_->onMissionFinished();
       break;
     case rclcpp_action::ResultCode::ABORTED:
       RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Goal was aborted");
