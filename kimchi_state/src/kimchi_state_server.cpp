@@ -51,7 +51,7 @@ std::shared_ptr<KimchiStateServer> KimchiStateServer::Create(
 
 void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
   changeState(RobotState::NAVIGATING);
-  RCLCPP_INFO(node_->get_logger(), "Navigating to goal at point: (%f, %f)",
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Navigating to goal at point: (%f, %f)",
               point.x, point.y);
 }
 
@@ -64,7 +64,7 @@ void KimchiStateServer::onGoalReached(const Point2D &point) {
 
 void KimchiStateServer::onGoalCancelled(const Point2D &point) {
   changeState(RobotState::GOAL_REACHED);
-  RCLCPP_INFO(node_->get_logger(), "Goal cancelled: (%f, %f)", point.x,
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Goal cancelled: (%f, %f)", point.x,
               point.y);
 }
 
@@ -140,20 +140,20 @@ KimchiStateServer::KimchiStateServer(
       state_(RobotState::NO_MAP) {}
 
 void KimchiStateServer::checkGlobalLocalizationCallback() {
-  RCLCPP_ERROR(node_->get_logger(),
-                   "[NavigationManager] Checking global localization");
+  RCLCPP_DEBUG(node_->get_logger(),
+                   "[KimchiStateServer] Checking global localization");
   LocalizationState current_state = robot_localize_state_.load();
 
   if (current_state == LocalizationState::PENDING || current_state == LocalizationState::LOCATING) {
-    RCLCPP_ERROR(node_->get_logger(),
-                   "[NavigationManager] PENDING");
+    RCLCPP_INFO(node_->get_logger(),
+                   "[KimchiStateServer] Robot not localized.");
   } else if (current_state == LocalizationState::FAILED) {
-     RCLCPP_ERROR(node_->get_logger(),
-                   "[NavigationManager] FAILED OR LOCATING");
+     RCLCPP_INFO(node_->get_logger(),
+                   "[KimchiStateServer] Lozalization failed.");
     changeState(RobotState::LOST);
   } else {
-    RCLCPP_ERROR(node_->get_logger(),
-                    "[NavigationManager] IDLE");
+    RCLCPP_INFO(node_->get_logger(),
+                    "[KimchiStateServer] Robot is ready to start a mision.");
     changeState(RobotState::IDLE);
   }
 
@@ -329,7 +329,7 @@ KimchiStateServer::SetMapFileName() {
     return future;
   }
   RCLCPP_ERROR(node_->get_logger(),
-               "Failed to set map file name, map_server service not available");
+               "[KimchiStateServer] Failed to set map file name, map_server service not available");
   return std::shared_future<
       std::vector<rcl_interfaces::msg::SetParametersResult>>{};
 }

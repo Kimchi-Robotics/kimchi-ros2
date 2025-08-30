@@ -75,48 +75,6 @@ void NavigationManager::startNavigation() {
 
 void NavigationManager::stopNavigation() {}
 
-void NavigationManager::localizeGoalResponseCallback(
-    GoalHandleGlobalLocalization::SharedPtr goal_handle) {
-  if (!goal_handle) {
-    RCLCPP_ERROR(node_->get_logger(),
-                 "[NavigationManager] Goal was rejected by server");
-  } else {
-    RCLCPP_INFO(node_->get_logger(),
-                "[NavigationManager] Goal accepted by server, waiting for "
-                "feedback and result...");
-  }
-}
-
-void NavigationManager::localizeFeedbackCallback(
-    GoalHandleGlobalLocalization::SharedPtr,
-    const std::shared_ptr<const GlobalLocalization::Feedback> feedback) {
-  RCLCPP_DEBUG(node_->get_logger(),
-               "[NavigationManager] Received feedback: Current pose estimate - "
-               "x: %.2f, y: %.2f with uncertanty %f",
-               feedback->pose_feedback.pose.pose.position.x,
-               feedback->pose_feedback.pose.pose.position.y,
-               feedback->current_uncertainty[0]);
-}
-
-void NavigationManager::localizeResultCallback(
-    const GoalHandleGlobalLocalization::WrappedResult& result) {
-  switch (result.code) {
-    case rclcpp_action::ResultCode::SUCCEEDED:
-      RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Goal succeeded!");
-      break;
-    case rclcpp_action::ResultCode::ABORTED:
-      RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] Goal was aborted");
-      break;
-    case rclcpp_action::ResultCode::CANCELED:
-      RCLCPP_WARN(node_->get_logger(), "[NavigationManager] Goal was canceled");
-      break;
-    default:
-      RCLCPP_ERROR(node_->get_logger(),
-                   "[NavigationManager] Unknown result code");
-      break;
-  }
-}
-
 bool NavigationManager::startLocating(const Point2D& point) {
   using namespace std::placeholders;
 

@@ -116,8 +116,6 @@ void GlobalLocalizationServer::execute(
   PublishInitialPoseWithHighVariance();
   RotateRobot();
 
-  rclcpp::Time start_time = this->get_clock()->now();
-  rclcpp::Duration timeout = rclcpp::Duration::from_seconds(localize_timeout_);
   // Rate of 20hz
   rclcpp::Rate loop_rate(20);
   auto feedback = std::make_shared<GlobalLocalization::Feedback>();

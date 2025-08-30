@@ -61,6 +61,16 @@ class NavigationManager {
 
   void startSlam();
   void stopSlam();
+  /**
+   * Localization method.
+   *
+   * A global localization action is called with an estimate
+   * of the current position of the robot. Based on this position
+   * a movement sequence is executed for the robot to localize.
+   *
+   * The localization is expected to take less than 60 seconds, if
+   * not the action is canceled.
+   */
   bool startLocating(const Point2D& point);
   void startNavigation();
   void stopNavigation();
@@ -81,13 +91,6 @@ class NavigationManager {
   using GoalHandleNavigateToPose =
       rclcpp_action::ClientGoalHandle<NavigateToPose>;
   void onNewGoal();
-
-  void localizeGoalResponseCallback(
-      GoalHandleGlobalLocalization::SharedPtr goal_handle);
-  void localizeFeedbackCallback(
-    GoalHandleGlobalLocalization::SharedPtr,
-    const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
-  void localizeResultCallback(const GoalHandleGlobalLocalization::WrappedResult& result);
 
   void navigateToPoseGoalResponseCallback(
       GoalHandleNavigateToPose::SharedPtr goal_handle);

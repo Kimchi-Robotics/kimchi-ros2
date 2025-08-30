@@ -78,6 +78,10 @@ class KimchiStateServer
   void initialize();
 
   void statePublisherTimerCallback();
+  /**
+   * Timer callback to check the state of the localization action.
+   * It checks if the robot has been localized and sets the state in accordance
+   */
   void checkGlobalLocalizationCallback();
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
