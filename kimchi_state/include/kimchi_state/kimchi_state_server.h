@@ -25,7 +25,6 @@
 #include <std_srvs/srv/trigger.hpp>
 
 #include <kimchi_interfaces/msg/robot_state.hpp>
-#include <kimchi_interfaces/srv/add_goal_to_mission.hpp>
 #include <kimchi_interfaces/srv/map_info.hpp>
 #include "map_info.h"
 #include "navigation_manager.h"
