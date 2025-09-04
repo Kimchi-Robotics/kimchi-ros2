@@ -9,7 +9,7 @@
 
 NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
                                      std::shared_ptr<MissionObserver> observer)
-    : node_(node), mission_observer_(observer), current_goal_(nullptr) {
+    : node_(node), mission_observer_(observer), current_goal_(nullptr), paused_(false) {
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] NavigationManager initialized.");
   active_slam_toolbox_node_client_ =
@@ -171,6 +171,17 @@ void NavigationManager::cancelCurrentGoal() {
   navigate_to_pose_action_client_ptr_->async_cancel_all_goals();
 }
 
+void NavigationManager::pauseCurrentGoal() {
+  if (current_goal_ == nullptr) {
+    RCLCPP_INFO(node_->get_logger(), "No current goal to pause.");
+    return;
+  }
+
+  cancelCurrentGoal();
+  paused_ = true;
+}
+
+
 void NavigationManager::goToNextGoal() {
   using namespace std::placeholders;
   if (goals_.empty()) {
@@ -199,7 +210,6 @@ void NavigationManager::goToNextGoal() {
                                                        send_goal_options);
 
   current_goal_ = std::make_unique<Point2D>(goals_.front());
-  goals_.pop();
 }
 
 void NavigationManager::onNewGoal() {
@@ -234,6 +244,7 @@ void NavigationManager::navigateToPoseResultCallback(
           node_->get_logger(),
           "[NavigationManager] navigateToPoseResultCallback: Goal reached!");
 
+      goals_.pop();
       if (goals_.empty()) {
         mission_observer_->onMissionFinished();
       } else {
@@ -248,6 +259,8 @@ void NavigationManager::navigateToPoseResultCallback(
                    "aborted. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+
+      goals_.pop();
       return;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_DEBUG(node_->get_logger(),
@@ -255,6 +268,13 @@ void NavigationManager::navigateToPoseResultCallback(
                    "canceled. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+
+      if (!paused_) {
+        goals_.pop();
+      } else {
+        paused_ = false;  // Reset paused state
+      }
+
       if (goals_.empty()) {
         mission_observer_->onMissionFinished();
       } else {

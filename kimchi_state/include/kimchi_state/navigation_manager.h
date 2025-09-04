@@ -66,6 +66,7 @@ class NavigationManager {
   void addGoalToMission(const Point2D& point);
   void goToNextGoal();
   void cancelCurrentGoal();
+  void pauseCurrentGoal();
   void cancelMission();
 
   // Localizes the robot around a given pose.
@@ -97,6 +98,11 @@ class NavigationManager {
   std::shared_ptr<MissionObserver> mission_observer_;
   std::unique_ptr<Point2D> current_goal_;
   std::queue<Point2D> goals_;
+
+  // This is a little triquiñuela to handle the case when the navigation is paused.
+  // It is required because action don't provide a pause option. When pausing, we cancel the current goal,
+  // but we don't want to pop it from the queue. When resuming, we want to continue to the same goal.
+  bool paused_;
 
   rclcpp_action::Client<GlobalLocalization>::SharedPtr
       global_localization_action_client_ptr_;

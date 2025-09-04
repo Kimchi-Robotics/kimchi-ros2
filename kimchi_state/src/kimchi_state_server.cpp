@@ -344,6 +344,14 @@ void KimchiStateServer::jointStatesCallback(
       RCLCPP_DEBUG(node_->get_logger(), "Right bumper state: %s", 
                   right_bumper_state_ ? "PRESSED" : "NOT_PRESSED");
     }
+
+    if (left_bumper_state_ || right_bumper_state_) {
+      if (state_ == RobotState::NAVIGATING) {
+        navigation_manager_->pauseCurrentGoal();
+        changeState(RobotState::RECOVERING);
+        RCLCPP_WARN(node_->get_logger(), "Bumper pressed! Cancelling goal and entering RECOVERING state.");
+      }
+    }
   }
 }
 
