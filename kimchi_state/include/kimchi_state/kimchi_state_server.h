@@ -21,8 +21,11 @@
 #include <std_msgs/msg/empty.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
 
 #include "map_info.h"
+#include "point_2d.h"
 #include "navigation_manager.h"
 
 enum class RobotState {
@@ -54,6 +57,7 @@ class KimchiStateServer
   }
 
   // MissionObserver implemented methods.
+  void onNav2LocalizationStarted() override;
   void onNavigatingToGoal(const Point2D& point) override;
   void onGoalReached(const Point2D& point) override;
   void onMissionFinished() override;
@@ -72,6 +76,8 @@ class KimchiStateServer
    * be passed to it.
    */
   void initialize();
+
+  void startLocating(const Point2D& point);
 
   void statePublisherTimerCallback();
   void callGetMapInfoService();
@@ -103,6 +109,7 @@ class KimchiStateServer
       kimchi_interfaces::srv::KimchiStateServerCommand::Response::SharedPtr
           response);
   void jointStatesCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
+  void getRobotPositionFromTF();
 
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<NavigationManager> navigation_manager_;
@@ -132,8 +139,13 @@ class KimchiStateServer
   rclcpp::Client<kimchi_interfaces::srv::MapInfo>::SharedPtr
       get_map_info_client_;
 
+  std::unique_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  rclcpp::TimerBase::SharedPtr tf_timer_;
+
   // Variables for bumpers and button.
   bool left_bumper_state_ = false;
   bool right_bumper_state_ = false;
   bool button_state_ = false;
+  Point2D current_robot_position_;
 };

@@ -64,13 +64,23 @@ void NavigationManager::startNavigation() {
     std::this_thread::sleep_for(wait_duration);
   }
 
+  // std::thread startup_loc_thread(
+  //     std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
+  //               client_localization_.get(), std::placeholders::_1),
+  //     wait_duration  // Direct argument instead of placeholder
+  // );
   std::thread startup_loc_thread(
-      std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
-                client_localization_.get(), std::placeholders::_1),
+      std::bind(&NavigationManager::startNav2Localization,
+                this),
       wait_duration  // Direct argument instead of placeholder
   );
 
   startup_loc_thread.detach();
+}
+void NavigationManager::startNav2Localization() {
+  std::chrono::milliseconds wait_duration(100);
+  client_localization_->startup(wait_duration);
+  mission_observer_->onNav2LocalizationStarted();
 }
 
 void NavigationManager::stopNavigation() {}
