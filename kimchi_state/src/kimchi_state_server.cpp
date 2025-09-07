@@ -229,12 +229,6 @@ void KimchiStateServer::initialPoseCallback(
     return;
   }
 
-  // changeState(RobotState::LOCATING);
-  // std::thread locate_thread([this, request]() {
-  //   navigation_manager_->startLocating(
-  //       Point2D(request->goal.x, request->goal.y));
-  // });
-  // locate_thread.detach();
   startLocating(Point2D(request->goal.x, request->goal.y));
   response->success = true;
 
@@ -278,7 +272,6 @@ void KimchiStateServer::startNavigationCallback(
 
 void KimchiStateServer::startNavigation() {
   navigation_manager_->startNavigation();
-  // changeState(RobotState::LOST);
 }
 
 void KimchiStateServer::sendCommandCallback(

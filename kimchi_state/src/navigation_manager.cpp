@@ -64,11 +64,6 @@ void NavigationManager::startNavigation() {
     std::this_thread::sleep_for(wait_duration);
   }
 
-  // std::thread startup_loc_thread(
-  //     std::bind(&nav2_lifecycle_manager::LifecycleManagerClient::startup,
-  //               client_localization_.get(), std::placeholders::_1),
-  //     wait_duration  // Direct argument instead of placeholder
-  // );
   std::thread startup_loc_thread(
       std::bind(&NavigationManager::startNav2Localization,
                 this),
