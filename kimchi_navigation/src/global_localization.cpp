@@ -23,9 +23,9 @@ GlobalLocalizationServer::GlobalLocalizationServer()
 
   // Declare parameters for convergence thresholds
   this->declare_parameter<double>("position_covariance_threshold",
-                                  0.5);  // meters^2
+                                  0.25);  // meters^2
   this->declare_parameter<double>("orientation_covariance_threshold",
-                                  0.05);  // radians^2
+                                  0.025);  // radians^2
 
   // Get the configured thresholds
   pos_uncertainty_threashold_ =
