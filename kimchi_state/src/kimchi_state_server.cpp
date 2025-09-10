@@ -10,6 +10,10 @@
 #include <thread>
 
 #include "rclcpp/wait_for_message.hpp"
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/buffer.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <tf2/exceptions.h>
 
 namespace {
 std::string toString(RobotState robot_state) {
@@ -47,6 +51,16 @@ std::shared_ptr<KimchiStateServer> KimchiStateServer::Create(
       std::shared_ptr<KimchiStateServer>(new KimchiStateServer(options));
   output->initialize();
   return output;
+}
+
+void KimchiStateServer::onNav2LocalizationStarted() {
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Localization started");
+  if (state_ == RobotState::MAPPING_WITH_EXPLORATION ||
+      state_ == RobotState::MAPPING_WITH_TELEOP) {
+   startLocating(current_robot_position_);
+  } else {
+    changeState(RobotState::LOST);
+  }
 }
 
 void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
@@ -130,6 +144,15 @@ void KimchiStateServer::initialize() {
       std::bind(&KimchiStateServer::jointStatesCallback, this,
                 std::placeholders::_1));
 
+  // Initialize tf2 buffer and listener
+  tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock());
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  
+  // Create a timer to periodically check the transform
+  tf_timer_ = node_->create_wall_timer(
+      std::chrono::milliseconds(1000),
+      std::bind(&KimchiStateServer::getRobotPositionFromTF, this));
+
   // Call the map info service
   callGetMapInfoService();
 }
@@ -138,7 +161,8 @@ KimchiStateServer::KimchiStateServer(
     const rclcpp::NodeOptions &options = rclcpp::NodeOptions())
     : node_(new rclcpp::Node("kimchi_state_server", options)),
       navigation_manager_(nullptr),
-      state_(RobotState::NO_MAP) {}
+      state_(RobotState::NO_MAP),
+      current_robot_position_{0.0, 0.0} {}
 
 void KimchiStateServer::statePublisherTimerCallback() {
   auto message = kimchi_interfaces::msg::RobotState();
@@ -205,15 +229,18 @@ void KimchiStateServer::initialPoseCallback(
     return;
   }
 
-  changeState(RobotState::LOCATING);
-  std::thread locate_thread([this, request]() {
-    navigation_manager_->startLocating(
-        Point2D(request->goal.x, request->goal.y));
-  });
-  locate_thread.detach();
+  startLocating(Point2D(request->goal.x, request->goal.y));
   response->success = true;
 
   return;
+}
+
+void KimchiStateServer::startLocating(const Point2D& point) {
+  changeState(RobotState::LOCATING);
+  std::thread locate_thread([this, point]() {
+    navigation_manager_->startLocating(point);
+  });
+  locate_thread.detach();
 }
 
 void KimchiStateServer::startNavigationCallback(
@@ -245,7 +272,6 @@ void KimchiStateServer::startNavigationCallback(
 
 void KimchiStateServer::startNavigation() {
   navigation_manager_->startNavigation();
-  changeState(RobotState::LOST);
 }
 
 void KimchiStateServer::sendCommandCallback(
@@ -345,6 +371,28 @@ void KimchiStateServer::jointStatesCallback(
                   right_bumper_state_ ? "PRESSED" : "NOT_PRESSED");
     }
   }
+}
+
+void KimchiStateServer::getRobotPositionFromTF() {
+    std::string target_frame = "map";
+    std::string source_frame = "base_link";
+    
+    try {
+        // Look up the transform from base_link to map
+        geometry_msgs::msg::TransformStamped transform_stamped = 
+            tf_buffer_->lookupTransform(
+                target_frame, 
+                source_frame,
+                tf2::TimePointZero);  // Get the latest available transform
+        
+        // Extract position
+        current_robot_position_.x = transform_stamped.transform.translation.x;
+        current_robot_position_.y = transform_stamped.transform.translation.y;
+    } catch (const tf2::TransformException& ex) {
+        RCLCPP_WARN(node_->get_logger(), 
+            "Could not transform %s to %s: %s", 
+            source_frame.c_str(), target_frame.c_str(), ex.what());
+    }
 }
 
 int main(int argc, char *argv[]) {

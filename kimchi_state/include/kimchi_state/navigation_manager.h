@@ -27,7 +27,9 @@ class NavigationManager {
    */
   class MissionObserver {
    public:
-    /**
+    virtual void onNav2LocalizationStarted() = 0;
+
+   /**
      * Called when the robot starts a new mission.
      * @param path The initial path for the mission.
      */
@@ -92,6 +94,8 @@ class NavigationManager {
       GoalHandleNavigateToPose::SharedPtr goal_handle);
   void navigateToPoseResultCallback(
       const GoalHandleNavigateToPose::WrappedResult& result);
+
+  void startNav2Localization();
 
   std::shared_ptr<rclcpp::Node> node_;
   std::shared_ptr<MissionObserver> mission_observer_;
