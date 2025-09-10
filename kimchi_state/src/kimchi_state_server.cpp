@@ -374,7 +374,7 @@ void KimchiStateServer::jointStatesCallback(
 }
 
 void KimchiStateServer::getRobotPositionFromTF() {
-    std::string target_frame = "map";  // or "odom"
+    std::string target_frame = "map";
     std::string source_frame = "base_link";
     
     try {
