@@ -15,9 +15,20 @@ RUN apt-get update && apt-get install --no-install-recommends -y $(cat requireme
 RUN rm requirements.txt
 
 # Create a user with passwordless sudo
-RUN adduser --uid $USERID --gecos "ekumen developer" --disabled-password $USER
-RUN adduser $USER sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# Modify the existing user (ros, UID 1000) to match the host user.
+# This avoids conflicts with the pre-existing user in the base image
+# if it matched ros uid.
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    # Find the original username of the user with the target UID
+    ORIGINAL_USER=$(getent passwd "$USERID" | cut -d: -f1) && \
+    # Rename the original user's group to the new username
+    groupmod -n $USER $ORIGINAL_USER && \
+    # Rename the user, move their home directory, and set the new username
+    usermod -l $USER -d /home/$USER -m $ORIGINAL_USER && \
+    # Add the renamed user to the sudo group
+    adduser $USER sudo && \
+    # Allow sudo without a password
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 RUN echo "export QT_X11_NO_MITSHM=1" >> /home/$USER/.bashrc
 RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
 
