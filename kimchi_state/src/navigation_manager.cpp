@@ -80,7 +80,7 @@ void NavigationManager::startNav2Localization() {
 
 void NavigationManager::stopNavigation() {}
 
-bool NavigationManager::startLocating(const Point2D& point) {
+void NavigationManager::startLocating(const Point2D& point) {
   using namespace std::placeholders;
 
   RCLCPP_DEBUG(node_->get_logger(),
@@ -94,13 +94,13 @@ bool NavigationManager::startLocating(const Point2D& point) {
   if (goal_handle_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
   {
     RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was not accepted by server in time.");
-    return robot_localized_;
+    mission_observer_->onLocalizationCancelled();
   }
 
   auto goal_handle = goal_handle_future.get();
   if (!goal_handle) {
     RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was rejected by server.");
-    return robot_localized_;
+    mission_observer_->onLocalizationCancelled();
   }
 
   auto result_future = global_localization_action_client_ptr_->async_get_result(goal_handle);
@@ -117,8 +117,7 @@ bool NavigationManager::startLocating(const Point2D& point) {
     RCLCPP_INFO(
         node_->get_logger(),
         "[NavigationManager] Robot localized!");
-    robot_localized_ = true;
-    return robot_localized_;
+    mission_observer_->onLocalizationSucceded();
   }
   else
   {
@@ -129,9 +128,8 @@ bool NavigationManager::startLocating(const Point2D& point) {
 
     RCLCPP_WARN(node_->get_logger(), "[Worker Thread] Sending cancel request to the server.");
     global_localization_action_client_ptr_->async_cancel_goal(goal_handle);
-    return robot_localized_;
+    mission_observer_->onLocalizationCancelled();
   }
-  return robot_localized_;
 }
 
 void NavigationManager::addGoalToMission(const Point2D& point) {

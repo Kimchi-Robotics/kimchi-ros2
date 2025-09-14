@@ -54,6 +54,22 @@ class NavigationManager {
      * Called when the path is finished, e.g., when the robot reaches the goal.
      */
     virtual void onMissionFinished() = 0;
+
+    /**
+     *
+     */
+    virtual void onLocalizationStarted() = 0;
+
+    /**
+     *
+     */
+    virtual void onLocalizationCancelled() = 0;
+
+    /**
+     *
+     */
+    virtual void onLocalizationSucceded() = 0;
+
   };
 
   NavigationManager(std::shared_ptr<rclcpp::Node> node,
@@ -73,7 +89,7 @@ class NavigationManager {
    * The localization is expected to take less than 60 seconds, if
    * not the action is canceled.
    */
-  bool startLocating(const Point2D& point);
+  void startLocating(const Point2D& point);
   void startNavigation();
   void stopNavigation();
 
@@ -94,6 +110,13 @@ class NavigationManager {
       rclcpp_action::ClientGoalHandle<NavigateToPose>;
   void onNewGoal();
 
+  void GlobalLocalizationGoalResponseCallback(
+      GoalHandleGlobalLocalization::SharedPtr goal_handle);
+  void GlobalLocalizationGoalResultCallback(
+      const GoalHandleGlobalLocalization::WrappedResult& result);
+  void GlobalLocalizationFeedbackCallback(
+      GoalHandleGlobalLocalization::SharedPtr goal_handle,
+      const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
   void navigateToPoseGoalResponseCallback(
       GoalHandleNavigateToPose::SharedPtr goal_handle);
   void navigateToPoseResultCallback(
@@ -116,5 +139,4 @@ class NavigationManager {
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
 
-  std::atomic<bool> robot_localized_{false};
 };
