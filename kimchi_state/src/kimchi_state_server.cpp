@@ -63,6 +63,22 @@ void KimchiStateServer::onNav2LocalizationStarted() {
   }
 }
 
+void KimchiStateServer::onLocalizationStarted()
+{
+  RCLCPP_ERROR(node_->get_logger(), "[LOLA] state server On localization started");
+  changeState(RobotState::LOCATING);
+}
+
+void KimchiStateServer::onLocalizationCancelled() {
+  RCLCPP_ERROR(node_->get_logger(),"[LOLA] state server On localization cancelled");
+  changeState(RobotState::LOST);
+}
+
+void KimchiStateServer::onLocalizationSucceded() {
+  RCLCPP_ERROR(node_->get_logger(), "[LOLA] state server On localization succeded");
+  changeState(RobotState::IDLE);
+}
+
 void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
   changeState(RobotState::NAVIGATING);
   RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Navigating to goal at point: (%f, %f)",
@@ -140,9 +156,6 @@ void KimchiStateServer::initialize() {
           std::bind(&KimchiStateServer::sendCommandCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
 
-  global_localization_timer_ = node_->create_wall_timer(
-      std::chrono::seconds(10),
-      std::bind(&KimchiStateServer::checkGlobalLocalizationCallback, this));
   joint_states_subscriber_ = node_->create_subscription<sensor_msgs::msg::JointState>(
       "/joint_states", 10,
       std::bind(&KimchiStateServer::jointStatesCallback, this,
@@ -167,26 +180,6 @@ KimchiStateServer::KimchiStateServer(
       navigation_manager_(nullptr),
       state_(RobotState::NO_MAP),
       current_robot_position_{0.0, 0.0} {}
-
-void KimchiStateServer::checkGlobalLocalizationCallback() {
-  RCLCPP_DEBUG(node_->get_logger(),
-                   "[KimchiStateServer] Checking global localization");
-  LocalizationState current_state = robot_localize_state_.load();
-
-  if (current_state == LocalizationState::PENDING || current_state == LocalizationState::LOCATING) {
-    RCLCPP_INFO(node_->get_logger(),
-                   "[KimchiStateServer] Robot not localized.");
-  } else if (current_state == LocalizationState::FAILED) {
-     RCLCPP_INFO(node_->get_logger(),
-                   "[KimchiStateServer] Lozalization failed.");
-    changeState(RobotState::LOST);
-  } else {
-    RCLCPP_INFO(node_->get_logger(),
-                    "[KimchiStateServer] Robot is ready to start a mision.");
-    changeState(RobotState::IDLE);
-  }
-
-}
 
 void KimchiStateServer::statePublisherTimerCallback() {
   auto message = kimchi_interfaces::msg::RobotState();
@@ -253,22 +246,24 @@ void KimchiStateServer::initialPoseCallback(
     return;
   }
 
-  changeState(RobotState::LOCATING);
-  robot_localize_state_.store(LocalizationState::LOCATING);
+  // changeState(RobotState::LOCATING);
+  // robot_localize_state_.store(LocalizationState::LOCATING);
 
-  std::thread locate_thread([this, request](){
-    bool success = navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
-    robot_localize_state_.store(success ? LocalizationState::SUCCESS : LocalizationState::FAILED);
-  });
+  // std::thread locate_thread([this, request](){
+  //   bool success = navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
+  //   robot_localize_state_.store(success ? LocalizationState::SUCCESS : LocalizationState::FAILED);
+  // });
 
-  locate_thread.detach();
+  // locate_thread.detach();
+
+  startLocating(Point2D(request->goal.x, request->goal.y));
   response->success = true;
 
   return;
 }
 
 void KimchiStateServer::startLocating(const Point2D& point) {
-  changeState(RobotState::LOCATING);
+  // changeState(RobotState::LOCATING);
   std::thread locate_thread([this, point]() {
     navigation_manager_->startLocating(point);
   });

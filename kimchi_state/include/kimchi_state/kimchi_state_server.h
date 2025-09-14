@@ -62,6 +62,9 @@ class KimchiStateServer
 
   // MissionObserver implemented methods.
   void onNav2LocalizationStarted() override;
+  void onLocalizationStarted() override;
+  void onLocalizationCancelled() override;
+  void onLocalizationSucceded() override;
   void onNavigatingToGoal(const Point2D& point) override;
   void onGoalReached(const Point2D& point) override;
   void onMissionFinished() override;
@@ -88,7 +91,6 @@ class KimchiStateServer
    * Timer callback to check the state of the localization action.
    * It checks if the robot has been localized and sets the state in accordance
    */
-  void checkGlobalLocalizationCallback();
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);
@@ -125,13 +127,12 @@ class KimchiStateServer
   std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
 
-  enum class LocalizationState { PENDING, LOCATING, SUCCESS, FAILED };
-  std::atomic<LocalizationState> robot_localize_state_{LocalizationState::PENDING};
+//   enum class LocalizationState { PENDING, LOCATING, SUCCESS, FAILED };
+//   std::atomic<LocalizationState> robot_localize_state_{LocalizationState::PENDING};
   std::optional<geometry_msgs::msg::Pose> inital_pose_estimate_;
 
   // Topics.
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
-  rclcpp::TimerBase::SharedPtr global_localization_timer_;
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber_;
