@@ -51,7 +51,7 @@ def generate_launch_description():
             'use_sim_time': LaunchConfiguration('use_sim_time'),
             'autostart': 'false',
             'map': LaunchConfiguration('map'),
-            'log_level': 'debug',
+            'log_level': 'info',
         }.items(),
     )
 
@@ -60,7 +60,7 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': LaunchConfiguration("use_sim_time"),
             'slams_param_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
-            'log_level': 'debug',
+            'log_level': 'info',
         }.items(),
     )
 
