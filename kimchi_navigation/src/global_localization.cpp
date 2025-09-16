@@ -162,7 +162,6 @@ void GlobalLocalizationServer::execute(
 void GlobalLocalizationServer::PublishInitialPoseWithHighVariance() {
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_estimate;
   initial_pose_estimate.header.frame_id = "map";
-  // TODO(@lola): Is it necessary to take into account the orientation?
   initial_pose_estimate.pose.pose.position.x = inital_pose_estimate_x_;
   initial_pose_estimate.pose.pose.position.y = inital_pose_estimate_y_;
 

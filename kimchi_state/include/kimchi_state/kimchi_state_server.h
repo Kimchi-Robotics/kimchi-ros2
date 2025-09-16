@@ -127,8 +127,6 @@ class KimchiStateServer
   std::atomic<RobotState> state_;
   std::unique_ptr<MapInfo> map_info_;
 
-//   enum class LocalizationState { PENDING, LOCATING, SUCCESS, FAILED };
-//   std::atomic<LocalizationState> robot_localize_state_{LocalizationState::PENDING};
   std::optional<geometry_msgs::msg::Pose> inital_pose_estimate_;
 
   // Topics.

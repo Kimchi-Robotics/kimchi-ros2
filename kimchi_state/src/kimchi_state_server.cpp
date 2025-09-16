@@ -65,17 +65,17 @@ void KimchiStateServer::onNav2LocalizationStarted() {
 
 void KimchiStateServer::onLocalizationStarted()
 {
-  RCLCPP_ERROR(node_->get_logger(), "[LOLA] state server On localization started");
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Robot localizing.");
   changeState(RobotState::LOCATING);
 }
 
 void KimchiStateServer::onLocalizationCancelled() {
-  RCLCPP_ERROR(node_->get_logger(),"[LOLA] state server On localization cancelled");
+  RCLCPP_ERROR(node_->get_logger(),"[KimchiStateServer] Localization action cancelled.");
   changeState(RobotState::LOST);
 }
 
 void KimchiStateServer::onLocalizationSucceded() {
-  RCLCPP_ERROR(node_->get_logger(), "[LOLA] state server On localization succeded");
+  RCLCPP_ERROR(node_->get_logger(), "[KimchiStateServer] Robot localized correclty.");
   changeState(RobotState::IDLE);
 }
 
@@ -246,16 +246,6 @@ void KimchiStateServer::initialPoseCallback(
     return;
   }
 
-  // changeState(RobotState::LOCATING);
-  // robot_localize_state_.store(LocalizationState::LOCATING);
-
-  // std::thread locate_thread([this, request](){
-  //   bool success = navigation_manager_->startLocating(Point2D(request->goal.x, request->goal.y));
-  //   robot_localize_state_.store(success ? LocalizationState::SUCCESS : LocalizationState::FAILED);
-  // });
-
-  // locate_thread.detach();
-
   startLocating(Point2D(request->goal.x, request->goal.y));
   response->success = true;
 
@@ -263,7 +253,6 @@ void KimchiStateServer::initialPoseCallback(
 }
 
 void KimchiStateServer::startLocating(const Point2D& point) {
-  // changeState(RobotState::LOCATING);
   std::thread locate_thread([this, point]() {
     navigation_manager_->startLocating(point);
   });

@@ -56,17 +56,17 @@ class NavigationManager {
     virtual void onMissionFinished() = 0;
 
     /**
-     *
+     * Called when the localization process starts.
      */
     virtual void onLocalizationStarted() = 0;
 
     /**
-     *
+     * Called when the localization process is cancelled.
      */
     virtual void onLocalizationCancelled() = 0;
 
     /**
-     *
+     * Called when the robot gets localized correctly.
      */
     virtual void onLocalizationSucceded() = 0;
 
@@ -86,7 +86,7 @@ class NavigationManager {
    * of the current position of the robot. Based on this position
    * a movement sequence is executed for the robot to localize.
    *
-   * The localization is expected to take less than 60 seconds, if
+   * The localization is expected to take less than 30 seconds, if
    * not the action is canceled.
    */
   void startLocating(const Point2D& point);
@@ -139,4 +139,5 @@ class NavigationManager {
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
 
+  const int kMaxGlobalLocalizationWaitTimeSeconds{30};
 };
