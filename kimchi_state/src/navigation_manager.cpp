@@ -105,14 +105,14 @@ void NavigationManager::startLocating(const Point2D& point) {
 
   auto result_future = global_localization_action_client_ptr_->async_get_result(goal_handle);
   mission_observer_->onLocalizationStarted();
-  RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Goal accepted. Waiting for result for up to 60 seconds...");
+  RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Goal accepted. Waiting for result for up to %d seconds...", kMaxGlobalLocalizationWaitTimeSeconds);
 
-  // Block and wait for the result for a maximum of 60 seconds.
+  // Block and wait for the result for a maximum of 30 seconds.
   std::future_status status = result_future.wait_for(std::chrono::seconds(kMaxGlobalLocalizationWaitTimeSeconds));
 
   if (status == std::future_status::ready)
   {
-    // Result was received within the 60-second window
+    // Result was received within the 30-second window
     auto result = result_future.get();
     RCLCPP_INFO(
         node_->get_logger(),
@@ -121,7 +121,7 @@ void NavigationManager::startLocating(const Point2D& point) {
   }
   else
   {
-    // The future timed out after 60 seconds
+    // The future timed out after 30 seconds
     RCLCPP_WARN(
         node_->get_logger(),
         "[ERROR NavigationManager] Robot not localized in 1 minute.");
