@@ -31,8 +31,9 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
         adduser $USER sudo && \
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers; \
     else \
-        # If no user has the conflicting UID, do nothing.
-        echo "No user with UID $USERID found. No changes needed."; \
+        RUN adduser --uid $USERID --gecos "ekumen developer" --disabled-password $USER
+        RUN adduser $USER sudo
+        RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
     fi
 RUN echo "export QT_X11_NO_MITSHM=1" >> /home/$USER/.bashrc
 RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
