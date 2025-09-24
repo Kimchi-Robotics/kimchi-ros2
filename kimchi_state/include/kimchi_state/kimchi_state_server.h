@@ -122,6 +122,16 @@ class KimchiStateServer
   void jointStatesCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
   void getRobotPositionFromTF();
 
+    /**
+   * AMCL pose callback
+   * Callback method for pose published by AMCL.
+   *
+   * Verifies if the robot is localized by checking if the covariance of the
+   * estimated amcl pose is within a set threshold
+   */
+  void AmclPoseCallback(
+      const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg);
+
   std::shared_ptr<rclcpp::Node> node_;
   std::unique_ptr<NavigationManager> navigation_manager_;
   std::atomic<RobotState> state_;
@@ -134,6 +144,8 @@ class KimchiStateServer
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber_;
+	rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+			amcl_pose_subscription_;
 
   // Service servers.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;
