@@ -75,6 +75,12 @@ void NavigationManager::startNavigation() {
 void NavigationManager::startNav2Localization() {
   std::chrono::milliseconds wait_duration(100);
   client_localization_->startup(wait_duration);
+  while (client_localization_->is_active(std::chrono::nanoseconds(100000)) != 
+         nav2_lifecycle_manager::SystemStatus::ACTIVE) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[NavigationManager] Waiting for lifecycle_manager_localization to be active");
+    std::this_thread::sleep_for(wait_duration);
+  }
   mission_observer_->onNav2LocalizationStarted();
 }
 
