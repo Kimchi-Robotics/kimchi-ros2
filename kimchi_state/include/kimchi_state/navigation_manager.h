@@ -30,6 +30,7 @@ class NavigationManager {
   class MissionObserver {
    public:
     virtual void onNav2LocalizationStarted() = 0;
+    virtual void onSlamStarted() = 0;
 
    /**
      * Called when the robot starts a new mission.
@@ -122,8 +123,6 @@ class NavigationManager {
   void navigateToPoseResultCallback(
       const GoalHandleNavigateToPose::WrappedResult& result);
 
-  void startNav2Localization();
-
   std::shared_ptr<rclcpp::Node> node_;
   std::shared_ptr<MissionObserver> mission_observer_;
   std::unique_ptr<Point2D> current_goal_;
@@ -133,11 +132,11 @@ class NavigationManager {
       global_localization_action_client_ptr_;
   rclcpp_action::Client<NavigateToPose>::SharedPtr
       navigate_to_pose_action_client_ptr_;
-  rclcpp::Client<lifecycle_msgs::srv::ChangeState>::SharedPtr
-      active_slam_toolbox_node_client_;
 
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-      client_localization_;
+    client_localization_;
+  std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
+    slam_toolbox_client_;
 
   const int kMaxGlobalLocalizationWaitTimeSeconds{30};
 };
