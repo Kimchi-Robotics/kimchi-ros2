@@ -10,6 +10,8 @@
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
 
+#include "kimchi_navigation/global_localization.hpp"
+
 /**
  * Class to manage navigation-related functionalities.
  * It handles:
@@ -52,6 +54,22 @@ class NavigationManager {
      * Called when the path is finished, e.g., when the robot reaches the goal.
      */
     virtual void onMissionFinished() = 0;
+
+    /**
+     * Called when the localization process starts.
+     */
+    virtual void onLocalizationStarted() = 0;
+
+    /**
+     * Called when the localization process is cancelled.
+     */
+    virtual void onLocalizationCancelled() = 0;
+
+    /**
+     * Called when the robot gets localized correctly.
+     */
+    virtual void onLocalizationSucceded() = 0;
+
   };
 
   NavigationManager(std::shared_ptr<rclcpp::Node> node,
@@ -61,6 +79,16 @@ class NavigationManager {
 
   void startSlam();
   void stopSlam();
+  /**
+   * Localization method.
+   *
+   * A global localization action is called with an estimate
+   * of the current position of the robot. Based on this position
+   * a movement sequence is executed for the robot to localize.
+   *
+   * The localization is expected to take less than 30 seconds, if
+   * not the action is canceled.
+   */
   void startLocating(const Point2D& point);
   void startNavigation();
   void stopNavigation();
@@ -82,14 +110,13 @@ class NavigationManager {
       rclcpp_action::ClientGoalHandle<NavigateToPose>;
   void onNewGoal();
 
-  void localizeGoalResponseCallback(
+  void GlobalLocalizationGoalResponseCallback(
       GoalHandleGlobalLocalization::SharedPtr goal_handle);
-  void localizeFeedbackCallback(
-      GoalHandleGlobalLocalization::SharedPtr,
-      const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
-  void localizeResultCallback(
+  void GlobalLocalizationGoalResultCallback(
       const GoalHandleGlobalLocalization::WrappedResult& result);
-
+  void GlobalLocalizationFeedbackCallback(
+      GoalHandleGlobalLocalization::SharedPtr goal_handle,
+      const std::shared_ptr<const GlobalLocalization::Feedback> feedback);
   void navigateToPoseGoalResponseCallback(
       GoalHandleNavigateToPose::SharedPtr goal_handle);
   void navigateToPoseResultCallback(
@@ -111,4 +138,6 @@ class NavigationManager {
 
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
       client_localization_;
+
+  const int kMaxGlobalLocalizationWaitTimeSeconds{30};
 };

@@ -23,9 +23,9 @@ GlobalLocalizationServer::GlobalLocalizationServer()
 
   // Declare parameters for convergence thresholds
   this->declare_parameter<double>("position_covariance_threshold",
-                                  0.5);  // meters^2
+                                  0.25);  // meters^2
   this->declare_parameter<double>("orientation_covariance_threshold",
-                                  0.05);  // radians^2
+                                  0.025);  // radians^2
 
   // Get the configured thresholds
   pos_uncertainty_threashold_ =
@@ -117,7 +117,6 @@ void GlobalLocalizationServer::execute(
 
   // Rate of 20hz
   rclcpp::Rate loop_rate(20);
-  const auto goal = goal_handle->get_goal();
   auto feedback = std::make_shared<GlobalLocalization::Feedback>();
   auto result = std::make_shared<GlobalLocalization::Result>();
 
@@ -163,7 +162,6 @@ void GlobalLocalizationServer::execute(
 void GlobalLocalizationServer::PublishInitialPoseWithHighVariance() {
   geometry_msgs::msg::PoseWithCovarianceStamped initial_pose_estimate;
   initial_pose_estimate.header.frame_id = "map";
-  // TODO(@lola): Is it necessary to take into account the orientation?
   initial_pose_estimate.pose.pose.position.x = inital_pose_estimate_x_;
   initial_pose_estimate.pose.pose.position.y = inital_pose_estimate_y_;
 

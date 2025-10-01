@@ -13,6 +13,8 @@
 #include <kimchi_interfaces/srv/proccess_selected_position.hpp>
 #include <lifecycle_msgs/srv/change_state.hpp>
 #include <memory>
+
+#include <lifecycle_msgs/srv/change_state.hpp>
 #include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
 #include <nav2_msgs/srv/save_map.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -24,6 +26,8 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 
+#include <kimchi_interfaces/msg/robot_state.hpp>
+#include <kimchi_interfaces/srv/map_info.hpp>
 #include "map_info.h"
 #include "point_2d.h"
 #include "navigation_manager.h"
@@ -58,6 +62,9 @@ class KimchiStateServer
 
   // MissionObserver implemented methods.
   void onNav2LocalizationStarted() override;
+  void onLocalizationStarted() override;
+  void onLocalizationCancelled() override;
+  void onLocalizationSucceded() override;
   void onNavigatingToGoal(const Point2D& point) override;
   void onGoalReached(const Point2D& point) override;
   void onMissionFinished() override;
@@ -80,6 +87,10 @@ class KimchiStateServer
   void startLocating(const Point2D& point);
 
   void statePublisherTimerCallback();
+  /**
+   * Timer callback to check the state of the localization action.
+   * It checks if the robot has been localized and sets the state in accordance
+   */
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);

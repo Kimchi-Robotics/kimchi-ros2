@@ -1,15 +1,15 @@
 #include "kimchi_state/kimchi_state_server.h"
 
-#include <kimchi_state/map_info.h>
-
 #include <chrono>
 #include <filesystem>
 #include <functional>
-#include <rclcpp/rclcpp.hpp>
-#include <std_srvs/srv/trigger.hpp>
 #include <thread>
 
+#include <rclcpp/rclcpp.hpp>
 #include "rclcpp/wait_for_message.hpp"
+#include <std_srvs/srv/trigger.hpp>
+
+#include <kimchi_state/map_info.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/buffer.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
@@ -63,9 +63,25 @@ void KimchiStateServer::onNav2LocalizationStarted() {
   }
 }
 
+void KimchiStateServer::onLocalizationStarted()
+{
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Robot localizing.");
+  changeState(RobotState::LOCATING);
+}
+
+void KimchiStateServer::onLocalizationCancelled() {
+  RCLCPP_ERROR(node_->get_logger(),"[KimchiStateServer] Localization action cancelled.");
+  changeState(RobotState::LOST);
+}
+
+void KimchiStateServer::onLocalizationSucceded() {
+  RCLCPP_ERROR(node_->get_logger(), "[KimchiStateServer] Robot localized correclty.");
+  changeState(RobotState::IDLE);
+}
+
 void KimchiStateServer::onNavigatingToGoal(const Point2D &point) {
   changeState(RobotState::NAVIGATING);
-  RCLCPP_INFO(node_->get_logger(), "Navigating to goal at point: (%f, %f)",
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Navigating to goal at point: (%f, %f)",
               point.x, point.y);
 }
 
@@ -78,7 +94,7 @@ void KimchiStateServer::onGoalReached(const Point2D &point) {
 
 void KimchiStateServer::onGoalCancelled(const Point2D &point) {
   changeState(RobotState::GOAL_REACHED);
-  RCLCPP_INFO(node_->get_logger(), "Goal cancelled: (%f, %f)", point.x,
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Goal cancelled: (%f, %f)", point.x,
               point.y);
 }
 
@@ -139,6 +155,7 @@ void KimchiStateServer::initialize() {
           "/kimchi_state_server/send_command",
           std::bind(&KimchiStateServer::sendCommandCallback, this,
                     std::placeholders::_1, std::placeholders::_2));
+
   joint_states_subscriber_ = node_->create_subscription<sensor_msgs::msg::JointState>(
       "/joint_states", 10,
       std::bind(&KimchiStateServer::jointStatesCallback, this,
@@ -236,7 +253,6 @@ void KimchiStateServer::initialPoseCallback(
 }
 
 void KimchiStateServer::startLocating(const Point2D& point) {
-  changeState(RobotState::LOCATING);
   std::thread locate_thread([this, point]() {
     navigation_manager_->startLocating(point);
   });
@@ -333,7 +349,7 @@ KimchiStateServer::SetMapFileName() {
     return future;
   }
   RCLCPP_ERROR(node_->get_logger(),
-               "Failed to set map file name, map_server service not available");
+               "[KimchiStateServer] Failed to set map file name, map_server service not available");
   return std::shared_future<
       std::vector<rcl_interfaces::msg::SetParametersResult>>{};
 }
