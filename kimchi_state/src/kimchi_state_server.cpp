@@ -161,12 +161,6 @@ void KimchiStateServer::initialize() {
       std::bind(&KimchiStateServer::jointStatesCallback, this,
                 std::placeholders::_1));
 
-  amcl_pose_subscription_ =
-      node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
-          "/amcl_pose", 10,
-          std::bind(&KimchiStateServer::AmclPoseCallback, this,
-                    std::placeholders::_1));
-
   // Initialize tf2 buffer and listener
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -415,27 +409,6 @@ void KimchiStateServer::getRobotPositionFromTF() {
             "Could not transform %s to %s: %s", 
             source_frame.c_str(), target_frame.c_str(), ex.what());
     }
-}
-
-void KimchiStateServer::AmclPoseCallback(
-    const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
-
-  double var_x = msg->pose.covariance[0];     // Variance in X position
-  double var_y = msg->pose.covariance[7];     // Variance in Y position
-  double var_yaw = msg->pose.covariance[35];  // Variance in Yaw orientation
-
-  // Calculate a combined position covariance (e.g., sum of squares)
-  double current_position_uncertainty = std::sqrt(var_x + var_y);
-  // For orientation, we directly use the yaw variance
-  double current_orientation_uncertainty = std::sqrt(var_yaw);
-
-  // Check if uncertainty of the pose is lower than the threshold
-  if (current_position_uncertainty > 0.5 &&
-      current_orientation_uncertainty > 0.1 && state_ == RobotState::IDLE) {
-    RCLCPP_INFO(node_->get_logger(),
-                "[GlobalLocalizationServer] Robot Kidnapped starting relocalization");
-    changeState(RobotState::LOST);
-  }
 }
 
 int main(int argc, char *argv[]) {
