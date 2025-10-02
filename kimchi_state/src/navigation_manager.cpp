@@ -12,9 +12,10 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
     : node_(node), mission_observer_(observer), current_goal_(nullptr) {
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] NavigationManager initialized.");
-  active_slam_toolbox_node_client_ =
-      node_->create_client<lifecycle_msgs::srv::ChangeState>(
-          "/slam_toolbox/change_state");
+
+  slam_toolbox_client_ =
+      std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
+          "slam_toolbox_lifecycle_manager", node_);
 
   client_localization_ =
       std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
@@ -31,21 +32,31 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
 void NavigationManager::startSlam() {
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] Waiting for slam_toolbox service");
-  active_slam_toolbox_node_client_->wait_for_service();
-  auto new_request =
-      std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
-  new_request->transition.id = 3;  // Activate
-  active_slam_toolbox_node_client_->async_send_request(new_request);
+  std::chrono::milliseconds wait_duration(100);  
+  // If is_active() returns TIMEOUT it means the lifecycle manager is not
+  // configured yet. Waiting for it to be configured is a must before calling
+  // the startup service.
+  while (slam_toolbox_client_->is_active(std::chrono::nanoseconds(100000)) ==
+         nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[NavigationManager] Waiting for "
+                "slam_toolbox_lifecycle_manager to be configured");
+    std::this_thread::sleep_for(wait_duration);
+  }
+
+  std::thread activate_slam_thread([this]() {
+    slam_toolbox_client_->resume();
+    mission_observer_->onSlamStarted();
+  });
+  activate_slam_thread.detach();
 }
 
 void NavigationManager::stopSlam() {
-  active_slam_toolbox_node_client_->wait_for_service();
-  auto new_request =
-      std::make_shared<lifecycle_msgs::srv::ChangeState::Request>();
-  new_request->transition.id = 4;  // Deactivate
-  // TODO(arilow): Handle the response by passing a callback to
-  // async_send_request
-  active_slam_toolbox_node_client_->async_send_request(new_request);
+  std::thread stop_slam_thread([this]() {
+    slam_toolbox_client_->pause();
+  });
+  stop_slam_thread.detach();
+
 }
 
 void NavigationManager::startNavigation() {
@@ -64,24 +75,12 @@ void NavigationManager::startNavigation() {
     std::this_thread::sleep_for(wait_duration);
   }
 
-  std::thread startup_loc_thread(
-      std::bind(&NavigationManager::startNav2Localization,
-                this),
-      wait_duration  // Direct argument instead of placeholder
-  );
+  std::thread startup_loc_thread([this]() {
+    client_localization_->startup();
+    mission_observer_->onNav2LocalizationStarted();
+  });
 
   startup_loc_thread.detach();
-}
-void NavigationManager::startNav2Localization() {
-  std::chrono::milliseconds wait_duration(100);
-  client_localization_->startup(wait_duration);
-  while (client_localization_->is_active(std::chrono::nanoseconds(100000)) != 
-         nav2_lifecycle_manager::SystemStatus::ACTIVE) {
-    RCLCPP_INFO(node_->get_logger(),
-                "[NavigationManager] Waiting for lifecycle_manager_localization to be active");
-    std::this_thread::sleep_for(wait_duration);
-  }
-  mission_observer_->onNav2LocalizationStarted();
 }
 
 void NavigationManager::stopNavigation() {}

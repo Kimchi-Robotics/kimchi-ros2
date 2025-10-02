@@ -62,6 +62,7 @@ class KimchiStateServer
 
   // MissionObserver implemented methods.
   void onNav2LocalizationStarted() override;
+  void onSlamStarted() override;
   void onLocalizationStarted() override;
   void onLocalizationCancelled() override;
   void onLocalizationSucceded() override;

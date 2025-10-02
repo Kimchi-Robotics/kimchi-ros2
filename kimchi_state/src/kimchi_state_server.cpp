@@ -63,6 +63,11 @@ void KimchiStateServer::onNav2LocalizationStarted() {
   }
 }
 
+void KimchiStateServer::onSlamStarted() {
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] SLAM started");
+  changeState(RobotState::MAPPING_WITH_TELEOP);
+}
+
 void KimchiStateServer::onLocalizationStarted()
 {
   RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Robot localizing.");
@@ -229,8 +234,6 @@ void KimchiStateServer::callGetMapInfoService() {
 void KimchiStateServer::startSlamCallback(
     const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
     std_srvs::srv::Trigger::Response::SharedPtr response) {
-  changeState(RobotState::MAPPING_WITH_TELEOP);
-
   navigation_manager_->startSlam();
   response->success = true;
 }

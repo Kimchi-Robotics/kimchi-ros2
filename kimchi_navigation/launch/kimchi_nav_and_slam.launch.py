@@ -2,12 +2,14 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, ExecuteProcess, TimerAction, LogInfo
+from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, LogInfo, EmitEvent
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch.actions import ExecuteProcess
-
+from lifecycle_msgs.msg import Transition
+from launch_ros.actions import LifecycleNode
+from launch_ros.events.lifecycle import ChangeState
+from launch.events import matches_action
 
 def generate_launch_description():
     pkg_kimchi_nav = get_package_share_directory("kimchi_navigation")
@@ -55,13 +57,38 @@ def generate_launch_description():
         }.items(),
     )
 
-    slam_toolbox_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_slam_toolbox, "launch", "online_async_launch.py")),
-        launch_arguments={
-            'use_sim_time': LaunchConfiguration("use_sim_time"),
-            'slams_param_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
-            'log_level': 'info',
-        }.items(),
+    start_async_slam_toolbox_node = LifecycleNode(
+        parameters=[
+          {
+            'slam_params_file': os.path.join(pkg_slam_toolbox, 'config', 'mapper_params_online_async.yaml'),
+            'use_lifecycle_manager': True,
+            'use_sim_time': LaunchConfiguration("use_sim_time")
+          }
+        ],
+        package='slam_toolbox',
+        executable='async_slam_toolbox_node',
+        name='slam_toolbox',
+        output='screen',
+        namespace=''
+    )
+
+    configure_slam_toolbox_event = EmitEvent(
+        event=ChangeState(
+          lifecycle_node_matcher=matches_action(start_async_slam_toolbox_node),
+          transition_id=Transition.TRANSITION_CONFIGURE
+        ),
+    )
+
+    slam_toolbox_lifecycle_manager = Node(
+        package='nav2_lifecycle_manager',
+        executable='lifecycle_manager',
+        name='slam_toolbox_lifecycle_manager',
+        parameters=[{
+            'node_names': ['slam_toolbox'],  # List of nodes to manage
+            'autostart': False,  # Automatically start the lifecycle
+            'bond_timeout': 4.0
+        }],
+        output='screen'
     )
 
     map_saver_launch = IncludeLaunchDescription(
@@ -90,22 +117,6 @@ def generate_launch_description():
         arguments=["-d", LaunchConfiguration("rviz_config_file"), '--ros-args', '--log-level', 'WARN'],
     )
 
-    deactivate_slam_toolbox_node_after_2_secs = TimerAction(
-        period=2.0,  # Adjust timing as needed
-        actions=[
-            ExecuteProcess(
-                cmd=[[
-                    'ros2',
-                    " service call ",
-                    "/slam_toolbox/change_state",
-                    " lifecycle_msgs/srv/ChangeState ",
-                    '"{transition: {id: 4}}"',
-                ]],
-                shell=True
-            )
-        ]
-    )
-
     ld = LaunchDescription()
 
     # Arguments
@@ -114,7 +125,6 @@ def generate_launch_description():
     ld.add_action(rviz_config_file_argunment)
 
     # Launch files.
-    ld.add_action(slam_toolbox_launch)
     ld.add_action(navigation_launch)
     ld.add_action(localization_launch)
 
@@ -122,8 +132,9 @@ def generate_launch_description():
     ld.add_action(rviz)
     ld.add_action(map_saver_launch)
     ld.add_action(global_localization)
-
+    ld.add_action(slam_toolbox_lifecycle_manager)
+    ld.add_action(start_async_slam_toolbox_node)
     # Event handlers
-    ld.add_action(deactivate_slam_toolbox_node_after_2_secs)
+    ld.add_action(configure_slam_toolbox_event)
 
     return ld
