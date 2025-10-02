@@ -234,8 +234,6 @@ void KimchiStateServer::callGetMapInfoService() {
 void KimchiStateServer::startSlamCallback(
     const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
     std_srvs::srv::Trigger::Response::SharedPtr response) {
-  // changeState(RobotState::MAPPING_WITH_TELEOP);
-
   navigation_manager_->startSlam();
   response->success = true;
 }
