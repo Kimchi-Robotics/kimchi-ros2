@@ -12,6 +12,7 @@ WORKSPACE_PATH="${HOME}/ws"
 LOG_DIR="${HOME}/ros_logs"
 LAUNCH_PACKAGE="kimchi_bringup"
 LAUNCH_FILE="bringup_robot.launch.py"
+# LAUNCH_FILE="bringup_simulation.launch.py"
 ROS_DISTRO="jazzy"
 ROS_DOMAIN_ID=10
 NETWORK_WAIT=15
@@ -26,7 +27,7 @@ mkdir -p "$LOG_DIR"
 LOG_FILE="$LOG_DIR/kimchi_startup_$(date +%Y%m%d_%H%M%S).log"
 
 # Redirect all output to log file
-exec > "$LOG_FILE" 2>&1
+# exec > "$LOG_FILE" 2>&1
 
 log "===== Kimchi Robot Startup Sequence ====="
 log "Hostname: $(hostname)"
@@ -78,21 +79,21 @@ log "Package ${LAUNCH_PACKAGE} found"
 
 # Launch the robot
 log "===== Starting Kimchi Robot Bringup ====="
-log "Command: ros2 launch ${LAUNCH_PACKAGE} ${LAUNCH_FILE} use_kimchi:=true"
+log "Command: ros2 launch ${LAUNCH_PACKAGE} ${LAUNCH_FILE}"
 log "Launch initiated at $(date)"
 
 # Publish robot info for network discovery (runs in background)
-(
-    sleep 5  # Wait for ROS2 to initialize
-    # Publish with transient_local durability to persist the last message
-    ros2 topic pub /kimchi/robot_info std_msgs/msg/String "{data: 'Kimchi Robot - IP: ${LOCAL_IP} - Hostname: $(hostname)'}" --qos-durability transient_local --keep-all --rate 0.1 &
-    PUBLISHER_PID=$!
-    sleep 20  # Publish for 20 seconds
-    kill $PUBLISHER_PID 2>/dev/null || true
-) &
+# (
+#     sleep 5  # Wait for ROS2 to initialize
+#     # Publish with transient_local durability to persist the last message
+#     ros2 topic pub /kimchi/robot_info std_msgs/msg/String "{data: 'Kimchi Robot - IP: ${LOCAL_IP} - Hostname: $(hostname)'}" --qos-durability transient_local --keep-all --rate 0.1 &
+#     PUBLISHER_PID=$!
+#     sleep 20  # Publish for 20 seconds
+#     kill $PUBLISHER_PID 2>/dev/null || true
+# ) &
 
 # Launch Kimchi bringup
-ros2 launch "$LAUNCH_PACKAGE" "$LAUNCH_FILE" use_kimchi:=true
+ros2 launch "$LAUNCH_PACKAGE" "$LAUNCH_FILE"
 
 # This will only execute if launchfile exits
 log "===== Kimchi Robot Bringup Exited ====="
