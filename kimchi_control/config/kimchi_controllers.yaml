@@ -1,6 +1,6 @@
 controller_manager:
   ros__parameters:
-    update_rate: 50  # Hz
+    update_rate: 20  # Hz
 
     diff_controller:
       type: diff_drive_controller/DiffDriveController
@@ -11,11 +11,11 @@ controller_manager:
 diff_controller:
   ros__parameters:
     # See https://github.com/ros-controls/ros2_controllers/blob/humble/diff_drive_controller/src/diff_drive_controller_parameter.yaml
-    publish_rate: 50.0
+    publish_rate: 20.0
     left_wheel_names: ['left_wheel_joint']
     right_wheel_names: ['right_wheel_joint']
     wheels_per_side: 1
-    wheel_separation: 0.252
+    wheel_separation: 0.27
     wheel_radius: 0.055
     odom_frame_id: odom
     base_frame_id: base_link
