@@ -10,7 +10,6 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-
 find_package(ament_cmake REQUIRED)
 find_package(nav2_bringup REQUIRED)
 find_package(slam_toolbox REQUIRED)
@@ -28,7 +27,6 @@ find_package(nav2_lifecycle_manager REQUIRED)
 
 find_package(kimchi_interfaces REQUIRED)
 
-
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
   set(ament_cmake_copyright_FOUND TRUE)
@@ -39,12 +37,16 @@ endif()
 # Include directories
 include_directories(include)
 
-add_executable(global_localization src/global_localization.cpp)
-ament_target_dependencies(global_localization PUBLIC
+add_executable(global_localization src/global_localization.cpp
+  src/scape_manuver_server.cpp)
+  ament_target_dependencies(global_localization PUBLIC
   rclcpp
   rclcpp_action
   geometry_msgs
-  kimchi_interfaces)
+  nav_msgs
+  sensor_msgs
+  kimchi_interfaces
+  tf2)
 
 ament_export_include_directories(include)
 target_include_directories(global_localization PUBLIC
@@ -55,7 +57,6 @@ install(
   DIRECTORY include/
   DESTINATION include
 )
-
 
 install(TARGETS
   global_localization

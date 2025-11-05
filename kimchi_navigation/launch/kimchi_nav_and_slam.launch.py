@@ -109,6 +109,14 @@ def generate_launch_description():
         # Launch this after AMCL is started
         on_exit=LogInfo(msg="Initial pose estimator has completed its task"),
     )
+
+    scape_maneuver_node = Node(
+        package='kimchi_navigation',
+        executable='scape_manuver_server',
+        name='scape_manuver_server',
+        output='screen',
+        arguments=['--ros-args', '--log-level', 'INFO'],
+    )
     # RViz
     rviz = Node(
         package="rviz2",
@@ -132,6 +140,7 @@ def generate_launch_description():
     ld.add_action(rviz)
     ld.add_action(map_saver_launch)
     ld.add_action(global_localization)
+    ld.add_action(scape_maneuver_node)
     ld.add_action(slam_toolbox_lifecycle_manager)
     ld.add_action(start_async_slam_toolbox_node)
     # Event handlers

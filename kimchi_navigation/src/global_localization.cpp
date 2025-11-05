@@ -1,7 +1,22 @@
 #include "kimchi_navigation/global_localization.hpp"
 
+// Helper to keep angles in the [0, 2PI] range
+double NormalizeAngle(double angle) {
+    const double TWO_PI = 2.0 * M_PI;
+
+    // remainder() normalizes to [-PI, PI]
+    double normalized = std::remainder(angle, TWO_PI);
+
+    // If the result is negative, shift it into the [0, 2*PI] range
+    if (normalized < 0.0) {
+        normalized += TWO_PI;
+    }
+
+    return normalized;
+}
+
 GlobalLocalizationServer::GlobalLocalizationServer()
-    : Node("global_localization") {
+    : node_(new rclcpp::Node("global_localization")) {
   using namespace std::placeholders;
 
   auto qos_profile =
@@ -15,38 +30,44 @@ GlobalLocalizationServer::GlobalLocalizationServer()
           false  // avoid_ros_namespace_conventions
       }));
 
-  this->action_server_ = rclcpp_action::create_server<GlobalLocalization>(
-      this, "global_localization",
+  action_server_ = rclcpp_action::create_server<GlobalLocalization>(
+      node_, "global_localization",
       std::bind(&GlobalLocalizationServer::handleGoal, this, _1, _2),
       std::bind(&GlobalLocalizationServer::handleCancel, this, _1),
       std::bind(&GlobalLocalizationServer::handleAccepted, this, _1));
 
   // Declare parameters for convergence thresholds
-  this->declare_parameter<double>("position_covariance_threshold",
+  node_->declare_parameter<double>("position_covariance_threshold",
                                   0.25);  // meters^2
-  this->declare_parameter<double>("orientation_covariance_threshold",
+  node_->declare_parameter<double>("orientation_covariance_threshold",
                                   0.025);  // radians^2
 
   // Get the configured thresholds
   pos_uncertainty_threashold_ =
-      this->get_parameter("position_covariance_threshold").as_double();
+      node_->get_parameter("position_covariance_threshold").as_double();
   orientation_uncertainty_threashold_ =
-      this->get_parameter("orientation_covariance_threshold").as_double();
+      node_->get_parameter("orientation_covariance_threshold").as_double();
 
   initial_pose_publisher_ =
-      this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      node_->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
           "/initialpose", qos_profile);
 
-  command_robot_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+  command_robot_pub_ = node_->create_publisher<geometry_msgs::msg::Twist>(
       "/cmd_vel", qos_profile);
 
   // Create a subscription to the /amcl_pose topic
   // This is AMCL's output, which we will monitor for convergence.
   amcl_pose_subscription_ =
-      this->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+      node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
           "/amcl_pose", 10,
           std::bind(&GlobalLocalizationServer::AmclPoseCallback, this,
                     std::placeholders::_1));
+
+  lidar_subscriber_ = node_->create_subscription<sensor_msgs::msg::LaserScan>(
+            "/scan", 1,
+            std::bind(&GlobalLocalizationServer::LidarCallback, this, std::placeholders::_1));
+
+  scape_manuver_ = std::make_unique<ScapeManuver>(node_);
 }
 
 rclcpp_action::GoalResponse GlobalLocalizationServer::handleGoal(
@@ -85,6 +106,8 @@ void GlobalLocalizationServer::cleanup() {
   // Reset state flags
   robot_localized_ = false;
   initial_pose_published_ = false;
+  localization_state_ = LocalizationState::LOOKING_FOR_OBSTACLES;
+  obstacles_.clear();
 }
 
 void GlobalLocalizationServer::RotateRobot() {
@@ -120,7 +143,7 @@ void GlobalLocalizationServer::execute(
   auto feedback = std::make_shared<GlobalLocalization::Feedback>();
   auto result = std::make_shared<GlobalLocalization::Result>();
 
-  while (!robot_localized_ && rclcpp::ok()) {
+  while (!robot_localized_) {
     // Check for cancellation first
     if (goal_handle->is_canceling()) {
       // Handles cleanup
@@ -132,14 +155,37 @@ void GlobalLocalizationServer::execute(
       return;
     }
 
-    RotateRobot();
-    feedback->pose_feedback = current_pose_;
-    feedback->current_uncertainty[0] = current_position_uncertainty_;
-    feedback->current_uncertainty[1] = current_orientation_uncertainty_;
-    goal_handle->publish_feedback(feedback);
+    switch (localization_state_)
+    {
+      case LocalizationState::LOOKING_FOR_OBSTACLES:
+        CheckForObstacles();
+        if (obstacles_.size() == 0 && lidar_reading_ != nullptr){
+          localization_state_ = LocalizationState::LOCALIZING;
+        } else if (obstacles_.size() > 0) {
+          localization_state_ = LocalizationState::SCAPING_MANEUVER;
+        }
+        break;
+      case LocalizationState::SCAPING_MANEUVER:
+        scape_manuver_->InitializeScapeManuver(obstacles_);
+
+        localization_state_ = LocalizationState::LOOKING_FOR_OBSTACLES;
+        obstacles_.clear();
+        break;
+      case LocalizationState::LOCALIZING:
+        obstacles_.clear();
+        RotateRobot();
+        feedback->pose_feedback = current_pose_;
+        feedback->current_uncertainty[0] = current_position_uncertainty_;
+        feedback->current_uncertainty[1] = current_orientation_uncertainty_;
+        goal_handle->publish_feedback(feedback);
+        break;
+      default:
+        break;
+    }
 
     loop_rate.sleep();
   }
+
 
   // Check if we exited due to successful localization
   if (rclcpp::ok() && robot_localized_) {
@@ -207,16 +253,75 @@ void GlobalLocalizationServer::AmclPoseCallback(
   // Check if uncertainty of the pose is lower than the threshold
   if (current_position_uncertainty_ < pos_uncertainty_threashold_ &&
       current_orientation_uncertainty_ < orientation_uncertainty_threashold_) {
-    RCLCPP_INFO(this->get_logger(),
+    RCLCPP_INFO(node_->get_logger(),
                 "[GlobalLocalizationServer] Robot localized");
     RobotLocalized();
   }
 }
 
+void GlobalLocalizationServer::CheckForObstacles() {
+  RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Checking if obstacle near.");
+  std::lock_guard<std::mutex> lock(mutex_);
+  // Wait for one laser scan.
+  if (lidar_reading_ == nullptr)
+  {
+    RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] No lidar reading.");
+    return;
+  }
+
+  min_range_ = lidar_reading_->range_max;
+  int min_index = -1;
+
+  for (size_t i = 0; i < lidar_reading_->ranges.size(); ++i) {
+    if (std::isfinite(lidar_reading_->ranges[i]) &&
+        lidar_reading_->ranges[i] > lidar_reading_->range_min &&
+        lidar_reading_->ranges[i] < min_range_ &&
+        lidar_reading_->ranges[i] < kSafetyDistance) {
+
+      obstacle_angle_ = lidar_reading_->angle_min + i * lidar_reading_->angle_increment;
+      obstacle_angle_ = NormalizeAngle(obstacle_angle_);
+
+      // If it's the first obstacle found in a sector, then add the sector to
+      // the obstacles position vector.
+      if (obstacle_angle_ < (M_PI / 2.0)) {
+        if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_1) == obstacles_.end()) {
+          obstacles_.push_back(ObstaclesPosition::SECTOR_1);
+          RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 1");
+        }
+      } else if (obstacle_angle_ < M_PI) {
+        if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_2) == obstacles_.end()) {
+          obstacles_.push_back(ObstaclesPosition::SECTOR_2);
+          RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 2");
+        }
+      } else if (obstacle_angle_ < (3 * M_PI / 4.0)) {
+        if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_3) == obstacles_.end()) {
+          obstacles_.push_back(ObstaclesPosition::SECTOR_3);
+          RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 3");
+        }
+      } else {
+        if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_4) == obstacles_.end()) {
+          obstacles_.push_back(ObstaclesPosition::SECTOR_4);
+          RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 4");
+        }
+      }
+    }
+  }
+}
+
+void GlobalLocalizationServer::LidarCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg) {
+  std::lock_guard<std::mutex> lock(mutex_);
+  lidar_reading_ = msg;
+}
+
 int main(int argc, char *argv[]) {
   rclcpp::init(argc, argv);
   auto node = std::make_shared<GlobalLocalizationServer>();
-  rclcpp::spin(node);
+
+  std::shared_ptr<GlobalLocalizationServer> global_localization_action = std::make_shared<GlobalLocalizationServer>();
+  rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(),
+                                                    4);
+  executor.add_node(global_localization_action->getNode());
+  executor.spin();
   rclcpp::shutdown();
   return 0;
 }
