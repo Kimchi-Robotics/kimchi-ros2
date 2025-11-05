@@ -5,7 +5,7 @@ import warnings
 
 import kimchi_grpc_server.kimchi_pb2 as kimchi__pb2
 
-GRPC_GENERATED_VERSION = '1.73.1'
+GRPC_GENERATED_VERSION = '1.75.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -54,6 +54,11 @@ class KimchiAppStub(object):
                 '/kimchi.KimchiApp/GetRobotState',
                 request_serializer=kimchi__pb2.Empty.SerializeToString,
                 response_deserializer=kimchi__pb2.RobotStateMsg.FromString,
+                _registered_method=True)
+        self.StartLocalization = channel.unary_unary(
+                '/kimchi.KimchiApp/StartLocalization',
+                request_serializer=kimchi__pb2.Empty.SerializeToString,
+                response_deserializer=kimchi__pb2.Empty.FromString,
                 _registered_method=True)
         self.StartMapping = channel.unary_unary(
                 '/kimchi.KimchiApp/StartMapping',
@@ -135,6 +140,12 @@ class KimchiAppServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def GetRobotState(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StartLocalization(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -229,6 +240,11 @@ def add_KimchiAppServicer_to_server(servicer, server):
                     servicer.GetRobotState,
                     request_deserializer=kimchi__pb2.Empty.FromString,
                     response_serializer=kimchi__pb2.RobotStateMsg.SerializeToString,
+            ),
+            'StartLocalization': grpc.unary_unary_rpc_method_handler(
+                    servicer.StartLocalization,
+                    request_deserializer=kimchi__pb2.Empty.FromString,
+                    response_serializer=kimchi__pb2.Empty.SerializeToString,
             ),
             'StartMapping': grpc.unary_unary_rpc_method_handler(
                     servicer.StartMapping,
@@ -395,6 +411,33 @@ class KimchiApp(object):
             '/kimchi.KimchiApp/GetRobotState',
             kimchi__pb2.Empty.SerializeToString,
             kimchi__pb2.RobotStateMsg.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StartLocalization(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/kimchi.KimchiApp/StartLocalization',
+            kimchi__pb2.Empty.SerializeToString,
+            kimchi__pb2.Empty.FromString,
             options,
             channel_credentials,
             insecure,
