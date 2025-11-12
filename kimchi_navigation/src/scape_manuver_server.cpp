@@ -37,6 +37,87 @@ void ScapeManuver::OdomCallback(const nav_msgs::msg::Odometry::SharedPtr msg) {
 }
 
 void ScapeManuver::InitializeScapeManuver(std::vector<ObstaclesPosition> obstacles) {
+        // double angle;
+    // if (obstacles.size() > 2) {
+    //     RCLCPP_ERROR(node_->get_logger(), "[Lola] Robot trapped. Wait for operator.");
+    //     return;
+    // } else if (obstacles.size() == 2) {
+    //     if (obstacles.count(ObstaclesPosition::SECTOR_1)) {
+    //         if (obstacles.count(ObstaclesPosition::SECTOR_2)) {
+    //             std::vector<double> angles = obstacles[ObstaclesPosition::SECTOR_2];
+    //             auto it = std::find_if(angles.begin(), angles.end(),
+    //                     [](double angle) {
+    //                         return angle > (3 * M_PI / 4.0);
+    //                     });
+    //             if (it != angles.end()) {
+    //                 RCLCPP_ERROR(node_->get_logger(), "[Lola] Robot trapped.");
+    //             } else {
+    //                 scape_direction_ = 1;
+    //             }
+    //         } else if (obstacles.count(ObstaclesPosition::SECTOR_3)) {
+    //             scape_direction_ = 2;
+    //         } else {
+    //             scape_direction_ = 1;
+    //         }
+    //     } else if (obstacles.count(ObstaclesPosition::SECTOR_2)) {
+    //         if(obstacles.count(ObstaclesPosition::SECTOR_4)) {
+    //             std::vector<double> angles = obstacles[ObstaclesPosition::SECTOR_4];
+    //             auto it = std::find_if(angles.begin(), angles.end(),
+    //                     [](double angle) {
+    //                         return angle > (7 * M_PI / 4.0);
+    //                     });
+    //             if (it != angles.end()) {
+    //                 scape_direction_ = 4;
+    //             }
+    //         } else {
+    //             scape_direction_ = 3;
+    //         }
+    //     } else if (obstacles.count(ObstaclesPosition::SECTOR_3)) {
+    //         if(obstacles.count(ObstaclesPosition::SECTOR_4)) {
+    //             std::vector<double> angles_s4 = obstacles[ObstaclesPosition::SECTOR_4];
+    //             auto it_8 = std::find_if(angles_s4.begin(), angles_s4.end(),
+    //                     [](double angle) {
+    //                         return angle > (7 * M_PI / 4.0);
+    //                     });
+
+    //             std::vector<double> angles_s3 = obstacles[ObstaclesPosition::SECTOR_3];
+    //             auto it_6 = std::find_if(angles_s3.begin(), angles_s3.end(),
+    //                     [](double angle) {
+    //                         return angle > (5 * M_PI / 4.0);
+    //                     });
+    //             auto it_5 = std::find_if(angles_s3.begin(), angles_s3.end(),
+    //                     [](double angle) {
+    //                         return angle > (M_PI);
+    //                     });
+
+    //             if(it_8 != angles_s4.end() && it_5 != angles_s3.end())
+    //             {
+    //                 RCLCPP_ERROR(node_->get_logger(), "[Lola] Robot trapped. Wait for operator.");
+
+    //             } else if(it_8 != angles_s4.end() && it_6 != angles_s3.end())
+    //             {
+    //                 scape_direction_ = 1;
+    //             } else {
+    //                 scape_direction_ = 3;
+    //             }
+    //         }
+    //     } else {
+    //         scape_direction_ = 1;
+    //     }
+    // } else {
+    //     if(auto it = obstacles.find(ObstaclesPosition::SECTOR_1);
+    //         it != obstacles.end()) {
+    //         scape_direction_ = 1;
+    //     } else if (auto it = obstacles.find(ObstaclesPosition::SECTOR_2);
+    //         it != obstacles.end()){
+    //         scape_direction_ = 4;
+    //     } else if (auto it = obstacles.find(ObstaclesPosition::SECTOR_3);
+    //         it != obstacles.end()) {
+    //         scape_direction_ = 4;
+    //     } else {
+    //         scape_direction_ = 1;
+    //     }
+    // }
 
     if(std::find(obstacles.begin(), obstacles.end(), ObstaclesPosition::SECTOR_1) != obstacles.end()) {
         scape_direction_ = 1;
