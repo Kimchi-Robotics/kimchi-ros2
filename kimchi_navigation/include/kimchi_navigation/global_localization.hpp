@@ -12,8 +12,7 @@
 #include <sensor_msgs/msg/laser_scan.hpp>
 
 #include "kimchi_interfaces/action/localizing.hpp"
-#include "kimchi_interfaces/srv/scape_maneuver.hpp"
-#include "scape_manuver_server.hpp"
+#include "scape_maneuver_server.hpp"
 
 
 enum LocalizationState {
@@ -52,8 +51,6 @@ class GlobalLocalizationServer {
       const std::shared_ptr<GoalHandleGlobalLocalization> goal_handle);
   void handleAccepted(
       const std::shared_ptr<GoalHandleGlobalLocalization> goal_handle);
-
-//   void InitializeScapeManuver();
 
   /**
    * Managed the workflow of the action.
@@ -113,7 +110,7 @@ class GlobalLocalizationServer {
 
   rclcpp_action::Server<GlobalLocalization>::SharedPtr action_server_;
 
-  std::unique_ptr<ScapeManuver> scape_manuver_;
+  std::unique_ptr<ScapeManeuver> scape_maneuver_;
 
   float inital_pose_estimate_x_;
   float inital_pose_estimate_y_;
@@ -125,8 +122,6 @@ class GlobalLocalizationServer {
   double orientation_uncertainty_threashold_;
   std::atomic<double> current_position_uncertainty_;
   std::atomic<double> current_orientation_uncertainty_;
-  double obstacle_angle_{};
-  double min_range_{};
   double kSafetyDistance{0.5};
   std::mutex mutex_;
 

@@ -38,8 +38,8 @@ endif()
 include_directories(include)
 
 add_executable(global_localization src/global_localization.cpp
-  src/scape_manuver_server.cpp)
-  ament_target_dependencies(global_localization PUBLIC
+  src/scape_maneuver_server.cpp)
+ament_target_dependencies(global_localization PUBLIC
   rclcpp
   rclcpp_action
   geometry_msgs

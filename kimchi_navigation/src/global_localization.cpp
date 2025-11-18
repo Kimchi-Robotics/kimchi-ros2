@@ -67,7 +67,7 @@ GlobalLocalizationServer::GlobalLocalizationServer()
             "/scan", 1,
             std::bind(&GlobalLocalizationServer::LidarCallback, this, std::placeholders::_1));
 
-  scape_manuver_ = std::make_unique<ScapeManuver>(node_);
+  scape_maneuver_ = std::make_unique<ScapeManeuver>(node_);
 }
 
 rclcpp_action::GoalResponse GlobalLocalizationServer::handleGoal(
@@ -166,7 +166,7 @@ void GlobalLocalizationServer::execute(
         }
         break;
       case LocalizationState::SCAPING_MANEUVER:
-        scape_manuver_->InitializeScapeManuver(obstacles_);
+        scape_maneuver_->InitializeScapeManeuver(obstacles_);
 
         localization_state_ = LocalizationState::LOOKING_FOR_OBSTACLES;
         obstacles_.clear();
@@ -269,31 +269,31 @@ void GlobalLocalizationServer::CheckForObstacles() {
     return;
   }
 
-  min_range_ = lidar_reading_->range_max;
+  double min_range = lidar_reading_->range_max;
   int min_index = -1;
 
   for (size_t i = 0; i < lidar_reading_->ranges.size(); ++i) {
     if (std::isfinite(lidar_reading_->ranges[i]) &&
         lidar_reading_->ranges[i] > lidar_reading_->range_min &&
-        lidar_reading_->ranges[i] < min_range_ &&
+        lidar_reading_->ranges[i] < min_range &&
         lidar_reading_->ranges[i] < kSafetyDistance) {
 
-      obstacle_angle_ = lidar_reading_->angle_min + i * lidar_reading_->angle_increment;
-      obstacle_angle_ = NormalizeAngle(obstacle_angle_);
+      double obstacle_angle = lidar_reading_->angle_min + i * lidar_reading_->angle_increment;
+      obstacle_angle = NormalizeAngle(obstacle_angle);
 
       // If it's the first obstacle found in a sector, then add the sector to
       // the obstacles position vector.
-      if (obstacle_angle_ < (M_PI / 2.0)) {
+      if (obstacle_angle < (M_PI / 2.0)) {
         if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_1) == obstacles_.end()) {
           obstacles_.push_back(ObstaclesPosition::SECTOR_1);
           RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 1");
         }
-      } else if (obstacle_angle_ < M_PI) {
+      } else if (obstacle_angle < M_PI) {
         if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_2) == obstacles_.end()) {
           obstacles_.push_back(ObstaclesPosition::SECTOR_2);
           RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 2");
         }
-      } else if (obstacle_angle_ < (3 * M_PI / 4.0)) {
+      } else if (obstacle_angle < (3 * M_PI / 4.0)) {
         if(std::find(obstacles_.begin(), obstacles_.end(), ObstaclesPosition::SECTOR_3) == obstacles_.end()) {
           obstacles_.push_back(ObstaclesPosition::SECTOR_3);
           RCLCPP_INFO(node_->get_logger(), "[GlobalLocalizationServer] Obstacle encountered on sector 3");
