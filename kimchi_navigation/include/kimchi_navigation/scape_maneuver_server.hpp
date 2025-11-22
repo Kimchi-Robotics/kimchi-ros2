@@ -35,8 +35,8 @@ private:
 
     // Constants for control
     const double kEscapedDistance = 0.35; // meters
-    const double kLinearVelocity = 0.2; // m/s
-    const double kAngularVelocity = 0.1; // rad/s
+    const double kLinearVelocity = 0.4; // m/s
+    const double kAngularVelocity = 0.3; // rad/s
     const double kYawTolerance = 0.05; // radians
     int scape_direction_{0};
 

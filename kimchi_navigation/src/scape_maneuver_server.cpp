@@ -50,35 +50,35 @@ void ScapeManeuver::InitializeScapeManeuver(std::vector<ObstaclesPosition> obsta
 
     geometry_msgs::msg::Twist twist_msg;
     if (scape_direction_ == 1) {
-        twist_msg.linear.x = 0.4;
+        twist_msg.linear.x = kLinearVelocity;
         cmd_vel_pub_->publish(twist_msg);
         auto waiting_time = std::chrono::seconds(1);
         std::this_thread::sleep_for(waiting_time);
     } else if (scape_direction_ == 2) {
         geometry_msgs::msg::Twist twist_msg;
-        twist_msg.angular.z = 0.3;
+        twist_msg.angular.z = kAngularVelocity;
         cmd_vel_pub_->publish(twist_msg);
         auto waiting_time = std::chrono::milliseconds(2618);
         std::this_thread::sleep_for(waiting_time);
         twist_msg.angular.z = 0.0;
-        twist_msg.linear.x = 0.4;
+        twist_msg.linear.x = kLinearVelocity;
         cmd_vel_pub_->publish(twist_msg);
         waiting_time = std::chrono::seconds(1);
         std::this_thread::sleep_for(waiting_time);
     } else if (scape_direction_ == 3) {
         geometry_msgs::msg::Twist twist_msg;
-        twist_msg.angular.z = -0.3;
+        twist_msg.angular.z = -kAngularVelocity;
         cmd_vel_pub_->publish(twist_msg);
         auto waiting_time = std::chrono::milliseconds(2618);
         std::this_thread::sleep_for(waiting_time);
         twist_msg.angular.z = 0.0;
-        twist_msg.linear.x = 0.4;
+        twist_msg.linear.x = kLinearVelocity;
         cmd_vel_pub_->publish(twist_msg);
         waiting_time = std::chrono::seconds(1);
         std::this_thread::sleep_for(waiting_time);
     } else if (scape_direction_ == 4) {
         geometry_msgs::msg::Twist twist_msg;
-        twist_msg.linear.x = -0.4;
+        twist_msg.linear.x = -kLinearVelocity;
         cmd_vel_pub_->publish(twist_msg);
         auto waiting_time = std::chrono::seconds(1);
         std::this_thread::sleep_for(waiting_time);
