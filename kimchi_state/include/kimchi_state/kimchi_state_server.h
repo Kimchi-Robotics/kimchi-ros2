@@ -70,6 +70,7 @@ class KimchiStateServer
   void onGoalReached(const Point2D& point) override;
   void onMissionFinished() override;
   void onGoalCancelled(const Point2D& point) override;
+  void onMissionAborted() override;
 
  private:
   /**

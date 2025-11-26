@@ -71,6 +71,7 @@ class NavigationManager {
      */
     virtual void onLocalizationSucceded() = 0;
 
+    virtual void onMissionAborted() = 0;
   };
 
   NavigationManager(std::shared_ptr<rclcpp::Node> node,

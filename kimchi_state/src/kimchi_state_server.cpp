@@ -103,6 +103,11 @@ void KimchiStateServer::onGoalCancelled(const Point2D &point) {
               point.y);
 }
 
+void KimchiStateServer::onMissionAborted() {
+  changeState(RobotState::GOAL_REACHED);
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission aborted");
+}
+
 void KimchiStateServer::onMissionFinished() {
   changeState(RobotState::IDLE);
   RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission finished");

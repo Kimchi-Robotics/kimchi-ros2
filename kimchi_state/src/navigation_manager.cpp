@@ -245,6 +245,8 @@ void NavigationManager::navigateToPoseResultCallback(
                    "aborted. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+        mission_observer_->onMissionAborted();
+
       return;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_DEBUG(node_->get_logger(),
