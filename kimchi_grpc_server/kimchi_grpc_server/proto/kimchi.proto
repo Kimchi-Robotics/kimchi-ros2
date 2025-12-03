@@ -39,7 +39,6 @@ service KimchiApp {
   rpc Move (stream Velocity) returns (Empty) {}
   rpc GetMap (Empty) returns (Map) {}
   rpc GetRobotState (Empty) returns (RobotStateMsg) {}
-  rpc StartLocalization(Empty) returns (Empty) {}
   rpc StartMapping(Empty) returns (StartMappingResponse) {}
   rpc StartNavigation(Empty) returns (StartNavigationResponse) {}
   rpc SendSelectedPose(Pose) returns (Empty) {}
