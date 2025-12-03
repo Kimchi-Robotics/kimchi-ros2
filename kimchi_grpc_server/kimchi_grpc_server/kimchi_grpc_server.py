@@ -108,11 +108,6 @@ class KimchiGrpcServer(kimchi_pb2_grpc.KimchiAppServicer):
         [success, msg] = self._ros_node.start_navigation()
         return kimchi_pb2.StartNavigationResponse(success=success, info=msg)
 
-    def StartLocalization(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
-        self._logger.info(f"Serving StartLocalization request {request}")
-        self._ros_node.send_command("relocalize")
-        return kimchi_pb2.Empty()
-
     def NavigationCancelGoalService(self, request: kimchi_pb2.Empty, context: grpc.aio.ServicerContext):
         self._logger.info(f"Cancelling navigation goal")
         self._ros_node.send_command("cancel_navigation_goal")
