@@ -140,7 +140,7 @@ void KimchiStateServer::initialize() {
 
   start_navigation_service_ = node_->create_service<std_srvs::srv::Trigger>(
       "/kimchi_state_server/start_navigation",
-      std::bind(&KimchiStateServer::startNavigationCallback, this,
+      std::bind(&KimchiStateServer::startLocalizationCallback, this,
                 std::placeholders::_1, std::placeholders::_2));
 
   add_goal_to_mission_service_ =
@@ -226,7 +226,7 @@ void KimchiStateServer::callGetMapInfoService() {
       auto set_map_filename_future = SetMapFileName();
       rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
                                          set_map_filename_future);
-      startNavigation();
+      startLocalization();
 
     } else {
       changeState(RobotState::NO_MAP);
@@ -263,12 +263,15 @@ void KimchiStateServer::initialPoseCallback(
 
 void KimchiStateServer::startLocating(const Point2D& point) {
   std::thread locate_thread([this, point]() {
+    // It is required to wait for localization to start before starting navigation because
+    //  navigation depends on a link between map and base_link frames being available.
+    navigation_manager_->startNavigation();
     navigation_manager_->startLocating(point);
   });
   locate_thread.detach();
 }
 
-void KimchiStateServer::startNavigationCallback(
+void KimchiStateServer::startLocalizationCallback(
     const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
     std_srvs::srv::Trigger::Response::SharedPtr response) {
   if (state_ == RobotState::NO_MAP) {
@@ -286,17 +289,17 @@ void KimchiStateServer::startNavigationCallback(
       auto set_map_filename_future = SetMapFileName();
       save_map_future.wait();
       set_map_filename_future.wait();
-      startNavigation();
+      startLocalization();
     });
     map_saved_callback_thread.detach();
     return;
   }
 
-  startNavigation();
+  startLocalization();
 }
 
-void KimchiStateServer::startNavigation() {
-  navigation_manager_->startNavigation();
+void KimchiStateServer::startLocalization() {
+  navigation_manager_->startLocalization();
 }
 
 void KimchiStateServer::sendCommandCallback(

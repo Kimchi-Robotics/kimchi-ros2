@@ -21,6 +21,10 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
       std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
           "lifecycle_manager_localization", node_);
 
+  client_navigation_ =
+      std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
+          "lifecycle_manager_navigation", node_);
+
   global_localization_action_client_ptr_ =
       rclcpp_action::create_client<GlobalLocalization>(node_,
                                                        "global_localization");
@@ -59,8 +63,8 @@ void NavigationManager::stopSlam() {
 
 }
 
-void NavigationManager::startNavigation() {
-  RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Navigation");
+void NavigationManager::startLocalization() {
+  RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Localization");
 
   std::chrono::milliseconds wait_duration(100);
 
@@ -83,7 +87,27 @@ void NavigationManager::startNavigation() {
   startup_loc_thread.detach();
 }
 
-void NavigationManager::stopNavigation() {}
+void NavigationManager::stopLocalization() {}
+
+void NavigationManager::startNavigation() {
+  RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Navigation");
+
+  std::chrono::milliseconds wait_duration(100);
+
+  while (client_navigation_->is_active(std::chrono::nanoseconds(100000)) ==
+         nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[NavigationManager] Waiting for "
+                "lifecycle_manager_navigation to be configured");
+    std::this_thread::sleep_for(wait_duration);
+  }
+
+  std::thread startup_nav_thread([this]() {
+    client_navigation_->startup();
+  });
+
+  startup_nav_thread.detach();
+}
 
 void NavigationManager::startLocating(const Point2D& point) {
   using namespace std::placeholders;
