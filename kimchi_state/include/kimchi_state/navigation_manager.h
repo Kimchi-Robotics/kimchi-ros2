@@ -94,7 +94,6 @@ class NavigationManager {
   void startLocalization();
   void stopLocalization();
   void startNavigation();
-  void stopNavigation();
 
   void addGoalToMission(const Point2D& point);
   void goToNextGoal();

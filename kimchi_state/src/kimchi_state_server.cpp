@@ -210,19 +210,35 @@ void KimchiStateServer::callGetMapInfoService() {
                 "[KimchiStateServer] Service not available, waiting again...");
   }
 
-  auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
-  request->str_place_holder = "May you share the map info please?";
+  // The service call might fail in a mysterious way, so we try it multiple times.
+  std::shared_ptr<kimchi_interfaces::srv::MapInfo::Response> response;
+  bool success = false;
+  for (int i = 0; i < 5; ++i) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[KimchiStateServer] Attempt %d to call get_map_info service",
+                i + 1);
+    
+    auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
+    request->str_place_holder = "May you share the map info please?";
 
-  auto future = get_map_info_client_->async_send_request(request);
+    auto future = get_map_info_client_->async_send_request(request);
 
-  // Wait for the result.
-  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
-                                         future) ==
-      rclcpp::FutureReturnCode::SUCCESS) {
-    auto result = future.get();
-    if (result->success) {
-      map_info_ = std::make_unique<MapInfo>(result->resolution, result->origin,
-                                            result->map_image);
+    if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
+                                          future, std::chrono::seconds(10)) ==
+        rclcpp::FutureReturnCode::SUCCESS) {
+      response = future.get();
+      success = true;
+      break;
+    } else {
+      RCLCPP_WARN(node_->get_logger(),
+                  "[KimchiStateServer] Service call timed out or failed");
+    }
+  }
+
+  if (success) {
+    if (response->success) {
+      map_info_ = std::make_unique<MapInfo>(response->resolution, response->origin,
+                                            response->map_image);
       auto set_map_filename_future = SetMapFileName();
       rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
                                          set_map_filename_future);
