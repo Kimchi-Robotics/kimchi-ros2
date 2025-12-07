@@ -224,7 +224,7 @@ void KimchiStateServer::callGetMapInfoService() {
     auto future = get_map_info_client_->async_send_request(request);
 
     if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
-                                          future, std::chrono::seconds(10)) ==
+                                          future, std::chrono::seconds(3)) ==
         rclcpp::FutureReturnCode::SUCCESS) {
       response = future.get();
       success = true;
