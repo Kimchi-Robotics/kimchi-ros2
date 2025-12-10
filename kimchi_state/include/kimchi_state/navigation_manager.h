@@ -91,8 +91,9 @@ class NavigationManager {
    * not the action is canceled.
    */
   void startLocating(const Point2D& point);
+  void startLocalization();
+  void stopLocalization();
   void startNavigation();
-  void stopNavigation();
 
   void addGoalToMission(const Point2D& point);
   void goToNextGoal();
@@ -137,6 +138,8 @@ class NavigationManager {
     client_localization_;
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
     slam_toolbox_client_;
+  std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
+    client_navigation_;
 
   const int kMaxGlobalLocalizationWaitTimeSeconds{30};
 };

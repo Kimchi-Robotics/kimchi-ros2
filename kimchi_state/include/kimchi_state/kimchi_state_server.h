@@ -95,8 +95,7 @@ class KimchiStateServer
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);
-  std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>
-  SetMapFileName();
+  void startLocalization();
   void startNavigation();
 
   // Callback methods for the services.
@@ -108,7 +107,7 @@ class KimchiStateServer
           request,
       kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
           response);
-  void startNavigationCallback(
+  void startLocalizationCallback(
       const std_srvs::srv::Trigger::Request::SharedPtr request,
       std_srvs::srv::Trigger::Response::SharedPtr response);
   void addGoalToMissionCallback(
