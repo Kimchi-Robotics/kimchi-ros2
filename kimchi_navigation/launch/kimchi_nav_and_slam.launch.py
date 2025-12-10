@@ -10,6 +10,7 @@ from lifecycle_msgs.msg import Transition
 from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from launch.events import matches_action
+from pathlib import Path
 
 def generate_launch_description():
     pkg_kimchi_nav = get_package_share_directory("kimchi_navigation")
@@ -32,7 +33,7 @@ def generate_launch_description():
 
     map_argunment = DeclareLaunchArgument(
         "map",
-        default_value="",
+        default_value=str(Path("kimchi_map.yaml").absolute()),
         description="Full path to the map file to use",
     )
 
