@@ -95,7 +95,6 @@ class KimchiStateServer
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
   void changeState(RobotState new_state);
-  std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>
   void startLocalization();
   void startNavigation();
 
