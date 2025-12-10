@@ -210,22 +210,35 @@ void KimchiStateServer::callGetMapInfoService() {
                 "[KimchiStateServer] Service not available, waiting again...");
   }
 
-  auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
-  request->str_place_holder = "May you share the map info please?";
+  // The service call might fail in a mysterious way, so we try it multiple times.
+  std::shared_ptr<kimchi_interfaces::srv::MapInfo::Response> response;
+  bool success = false;
+  for (int i = 0; i < 5; ++i) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[KimchiStateServer] Attempt %d to call get_map_info service",
+                i + 1);
+    
+    auto request = std::make_shared<kimchi_interfaces::srv::MapInfo::Request>();
+    request->str_place_holder = "May you share the map info please?";
 
-  auto future = get_map_info_client_->async_send_request(request);
+    auto future = get_map_info_client_->async_send_request(request);
 
-  // Wait for the result.
-  if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
-                                         future) ==
-      rclcpp::FutureReturnCode::SUCCESS) {
-    auto result = future.get();
-    if (result->success) {
-      map_info_ = std::make_unique<MapInfo>(result->resolution, result->origin,
-                                            result->map_image);
-      auto set_map_filename_future = SetMapFileName();
-      rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
-                                         set_map_filename_future);
+    if (rclcpp::spin_until_future_complete(node_->get_node_base_interface(),
+                                          future, std::chrono::seconds(3)) ==
+        rclcpp::FutureReturnCode::SUCCESS) {
+      response = future.get();
+      success = true;
+      break;
+    } else {
+      RCLCPP_WARN(node_->get_logger(),
+                  "[KimchiStateServer] Service call timed out or failed");
+    }
+  }
+
+  if (success) {
+    if (response->success) {
+      map_info_ = std::make_unique<MapInfo>(response->resolution, response->origin,
+                                            response->map_image);
       startLocalization();
 
     } else {
@@ -286,9 +299,7 @@ void KimchiStateServer::startLocalizationCallback(
     std::thread map_saved_callback_thread([this]() {
       auto save_map_future = saveMap();
       navigation_manager_->stopSlam();
-      auto set_map_filename_future = SetMapFileName();
       save_map_future.wait();
-      set_map_filename_future.wait();
       startLocalization();
     });
     map_saved_callback_thread.detach();
@@ -345,25 +356,6 @@ KimchiStateServer::saveMap() {
 
   auto future = save_map_client_->async_send_request(request);
   return future.share();  // Return the future to allow waiting for completion
-}
-
-std::shared_future<std::vector<rcl_interfaces::msg::SetParametersResult>>
-KimchiStateServer::SetMapFileName() {
-  // TODO(Arilow): Instead of hardcoding the map file name, we should make it a
-  // parameter.
-  auto map_server_param_client =
-      std::make_shared<rclcpp::AsyncParametersClient>(node_, "/map_server");
-  if (map_server_param_client->wait_for_service(std::chrono::seconds(1))) {
-    auto future = map_server_param_client->set_parameters({rclcpp::Parameter(
-        "yaml_filename",
-        std::filesystem::absolute("kimchi_map.yaml").c_str())});
-    // Handle future result...
-    return future;
-  }
-  RCLCPP_ERROR(node_->get_logger(),
-               "[KimchiStateServer] Failed to set map file name, map_server service not available");
-  return std::shared_future<
-      std::vector<rcl_interfaces::msg::SetParametersResult>>{};
 }
 
 void KimchiStateServer::changeState(RobotState new_state) {

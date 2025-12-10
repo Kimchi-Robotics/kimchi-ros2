@@ -83,7 +83,6 @@ void NavigationManager::startLocalization() {
     client_localization_->startup();
     mission_observer_->onNav2LocalizationStarted();
   });
-
   startup_loc_thread.detach();
 }
 
