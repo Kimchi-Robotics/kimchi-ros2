@@ -326,6 +326,9 @@ void KimchiStateServer::sendCommandCallback(
     response->success = true;
   } else if (request->command == "cancel_navigation_mission") {
     navigation_manager_->cancelMission();
+  } else if (request->command == "relocalize") {
+    navigation_manager_->cancelMission();
+    changeState(RobotState::LOST);
   } else {
     response->success = false;
     response->msg = "Unknown command: " + request->command;
