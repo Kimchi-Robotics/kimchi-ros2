@@ -1,16 +1,6 @@
 ## ROS2 jazzy guidelines
 
-Base project docker image with ros jazzy full distribution and a sample package.
-
-### CI
-
-CI relies on two Github Action packages that essentially configure the ROS
-jazzy environment to build and test the packages. If extra dependencies are
-required which cannot be handled by `rosdep` you must perform the custom
-installation steps before the execution of `action-ros-ci`.
-
-Additionally, pre-commit runs to check format and some other nits. Check the section `Using pre-commit` below
-to learn how to run it locally.
+## Build
 
 ### Docker
 
@@ -85,9 +75,9 @@ If you reach this point and before moving to the next section you might want to 
 For doing so simply `exit` the container and when doing so a prompt will ask you to overwrite the image with the current state of the container. In this occasion you will need to
 do accept this writing `yes`.
 
-## Running Andino simulation
+## Running Kimchi simulation
 
-After having built the repository, you can try launching Andino!
+After having built the repository, you can try launching Kimchi!
 
 - Run:
 
@@ -128,6 +118,26 @@ ros2 launch kimchi_navigation kimchi_navigation.launch.py
 
 ```
 ros2 launch kimchi_grpc_server kimchi_grpc_server.launch.py
+```
+
+### Test different planner and controllers combinations
+
+There's a launch file within kimchi_navigation that is meant for testing planners and controller. If works both for the real robot and the simulation.
+
+**Prerequisites**: 
+- Have a map created in [kimchi_navigation/maps](https://github.com/Kimchi-Robotics/kimchi-ros2/tree/main/kimchi_navigation/maps)
+- Bring up kimchi. Either real or simulation.
+
+You can run it like (Remember to set `use_sim_time` accordingly)
+
+```
+ros2 launch kimchi_navigation kimchi_navigation.launch.py use_sim_time:=True nav_planner:=smac_lattice nav_controller:=mppi
+```
+
+You can check supported planners and controllers by checking the launch options like:
+
+```
+ros2 launch kimchi_navigation kimchi_navigation.launch.py -s
 ```
 
 ### Generate Protocol buffers
