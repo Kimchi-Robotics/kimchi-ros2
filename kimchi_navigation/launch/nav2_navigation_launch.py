@@ -49,8 +49,6 @@ def generate_launch_description():
         'velocity_smoother',
         'collision_monitor',
         'bt_navigator',
-        # 'waypoint_follower',
-        # 'docking_server',
     ]
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
@@ -191,17 +189,6 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
-            # Node(
-            #     package='nav2_waypoint_follower',
-            #     executable='waypoint_follower',
-            #     name='waypoint_follower',
-            #     output='screen',
-            #     respawn=use_respawn,
-            #     respawn_delay=2.0,
-            #     parameters=[configured_params],
-            #     arguments=['--ros-args', '--log-level', log_level],
-            #     remappings=remappings,
-            # ),
             Node(
                 package='nav2_velocity_smoother',
                 executable='velocity_smoother',
@@ -225,17 +212,6 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings,
             ),
-            # Node(
-            #     package='opennav_docking',
-            #     executable='opennav_docking',
-            #     name='docking_server',
-            #     output='screen',
-            #     respawn=use_respawn,
-            #     respawn_delay=2.0,
-            #     parameters=[configured_params],
-            #     arguments=['--ros-args', '--log-level', log_level],
-            #     remappings=remappings,
-            # ),
             Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
@@ -296,13 +272,6 @@ def generate_launch_description():
                         parameters=[configured_params],
                         remappings=remappings,
                     ),
-                    # ComposableNode(
-                    #     package='nav2_waypoint_follower',
-                    #     plugin='nav2_waypoint_follower::WaypointFollower',
-                    #     name='waypoint_follower',
-                    #     parameters=[configured_params],
-                    #     remappings=remappings,
-                    # ),
                     ComposableNode(
                         package='nav2_velocity_smoother',
                         plugin='nav2_velocity_smoother::VelocitySmoother',
@@ -318,13 +287,6 @@ def generate_launch_description():
                         parameters=[configured_params],
                         remappings=remappings,
                     ),
-                    # ComposableNode(
-                    #     package='opennav_docking',
-                    #     plugin='opennav_docking::DockingServer',
-                    #     name='docking_server',
-                    #     parameters=[configured_params],
-                    #     remappings=remappings,
-                    # ),
                     ComposableNode(
                         package='nav2_lifecycle_manager',
                         plugin='nav2_lifecycle_manager::LifecycleManager',
