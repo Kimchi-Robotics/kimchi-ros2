@@ -38,7 +38,7 @@ def generate_launch_description():
     )
 
     navigation_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")),
+        PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_nav, "launch", "nav2_navigation_launch.py")),
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
