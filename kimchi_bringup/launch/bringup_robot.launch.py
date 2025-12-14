@@ -51,6 +51,13 @@ def generate_launch_description():
             default_value='True',
             description='Indicates whether to include rplidar launch.')
     rplidar =  LaunchConfiguration('include_rplidar')
+
+    use_kimchi_arg = DeclareLaunchArgument(
+            'use_kimchi',
+            default_value='False',
+            description='Indicates whether to use kimchi.')
+    use_kimchi = LaunchConfiguration('use_kimchi')
+
     use_sim_time = 'False'  # Set to True for simulation
 
     # Includes kimchi_description launch file
@@ -88,10 +95,12 @@ def generate_launch_description():
         launch_arguments={
             'use_sim_time': use_sim_time
         }.items(),
+        condition=IfCondition(use_kimchi)
     )
 
     kimchi_grpc_server_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_grpc_server, "launch", "kimchi_grpc_server.launch.py")),
+        condition=IfCondition(use_kimchi)
     )
 
     # Waits for kimchi_description to set up robot_state_publisher.
@@ -104,5 +113,8 @@ def generate_launch_description():
         include_kimchi_description,
         kimchi_control_timer,
         rplidar_arg,
+        use_kimchi_arg,
         rplidar_timer,
+        kimchi_state_server_launch,
+        kimchi_grpc_server_launch
     ])
