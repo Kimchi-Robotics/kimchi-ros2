@@ -268,7 +268,14 @@ void NavigationManager::navigateToPoseResultCallback(
                    "aborted. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
-      return;
+      if (goals_.empty()) {
+        mission_observer_->onMissionFinished();
+      } else {
+        mission_observer_->onGoalReached(*current_goal_);
+      }
+      current_goal_.reset();  // Clear the current goal after success
+
+      break;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_DEBUG(node_->get_logger(),
                    "[NavigationManager] navigateToPoseResultCallback: Goal was "
