@@ -34,18 +34,18 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
 }
 
 void NavigationManager::startSlam() {
+  std::chrono::seconds wait_duration(1);
+
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] Waiting for slam_toolbox service");
-  std::chrono::milliseconds wait_duration(100);  
   // If is_active() returns TIMEOUT it means the lifecycle manager is not
   // configured yet. Waiting for it to be configured is a must before calling
   // the startup service.
-  while (slam_toolbox_client_->is_active(std::chrono::nanoseconds(100000)) ==
+  while (slam_toolbox_client_->is_active(wait_duration) ==
          nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
     RCLCPP_INFO(node_->get_logger(),
                 "[NavigationManager] Waiting for "
                 "slam_toolbox_lifecycle_manager to be configured");
-    std::this_thread::sleep_for(wait_duration);
   }
 
   std::thread activate_slam_thread([this]() {
@@ -66,17 +66,21 @@ void NavigationManager::stopSlam() {
 void NavigationManager::startLocalization() {
   RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Localization");
 
-  std::chrono::milliseconds wait_duration(100);
+  std::chrono::seconds wait_duration(1);
 
-  // If is_active() returns TIMEOUT it means the lifecycle manager is not
-  // configured yet. Waiting for it to be configured is a must before calling
-  // the startup service.
-  while (client_localization_->is_active(std::chrono::nanoseconds(100000)) ==
-         nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+  auto client_loc_status = client_localization_->is_active(wait_duration);
+
+  if (client_loc_status == nav2_lifecycle_manager::SystemStatus::ACTIVE) {
     RCLCPP_INFO(node_->get_logger(),
-                "[NavigationManager] Waiting for "
-                "lifecycle_manager_localization to be configured");
-    std::this_thread::sleep_for(wait_duration);
+                "[NavigationManager] Localization already active.");
+    return;
+  } else if (client_loc_status == nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    while (client_localization_->is_active(wait_duration) ==
+           nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+      RCLCPP_INFO(node_->get_logger(),
+                  "[NavigationManager] Waiting for "
+                  "lifecycle_manager_localization to be configured");
+    }
   }
 
   std::thread startup_loc_thread([this]() {
@@ -91,14 +95,21 @@ void NavigationManager::stopLocalization() {}
 void NavigationManager::startNavigation() {
   RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Navigation");
 
-  std::chrono::milliseconds wait_duration(100);
+  std::chrono::seconds wait_duration(1);
 
-  while (client_navigation_->is_active(std::chrono::nanoseconds(100000)) ==
-         nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+  auto client_nav_status = client_navigation_->is_active(wait_duration);
+
+  if (client_nav_status == nav2_lifecycle_manager::SystemStatus::ACTIVE) {
     RCLCPP_INFO(node_->get_logger(),
-                "[NavigationManager] Waiting for "
-                "lifecycle_manager_navigation to be configured");
-    std::this_thread::sleep_for(wait_duration);
+                "[NavigationManager] Navigation already active.");
+    return;
+  } else if (client_nav_status == nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    while (client_navigation_->is_active(wait_duration) ==
+          nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+      RCLCPP_INFO(node_->get_logger(),
+                  "[NavigationManager] Waiting for "
+                  "lifecycle_manager_navigation to be configured");
+    }
   }
 
   std::thread startup_nav_thread([this]() {
