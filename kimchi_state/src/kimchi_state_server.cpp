@@ -421,20 +421,30 @@ void KimchiStateServer::getRobotPositionFromTF() {
 void KimchiStateServer::AmclPoseCallback(
     const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg) {
 
-  double var_x = msg->pose.covariance[0];     // Variance in X position
-  double var_y = msg->pose.covariance[7];     // Variance in Y position
-  double var_yaw = msg->pose.covariance[35];  // Variance in Yaw orientation
+  double var_x = msg->pose.covariance[0];
+  double var_y = msg->pose.covariance[7];
+  double var_yaw = msg->pose.covariance[35];
 
-  // Calculate a combined position covariance (e.g., sum of squares)
   double current_position_uncertainty = std::sqrt(var_x + var_y);
-  // For orientation, we directly use the yaw variance
   double current_orientation_uncertainty = std::sqrt(var_yaw);
 
-  // Check if uncertainty of the pose is lower than the threshold
-  if (current_position_uncertainty > 0.5 &&
-      current_orientation_uncertainty > 0.1 && state_ == RobotState::IDLE) {
+  // Log every few seconds to see typical values
+  static auto last_log = node_->now();
+  if ((node_->now() - last_log).seconds() > 2.0) {
     RCLCPP_INFO(node_->get_logger(),
-                "[GlobalLocalizationServer] Robot Kidnapped starting relocalization");
+                "AMCL Uncertainty - Position: %.3f m, Orientation: %.3f rad "
+                "(var_x: %.4f, var_y: %.4f, var_yaw: %.4f)",
+                current_position_uncertainty, current_orientation_uncertainty,
+                var_x, var_y, var_yaw);
+    last_log = node_->now();
+  }
+
+  if ((current_position_uncertainty > 1.5 ||
+      current_orientation_uncertainty > 0.50) && state_ == RobotState::IDLE) {
+    RCLCPP_WARN(node_->get_logger(),
+                "[GlobalLocalizationServer] Robot Kidnapped! "
+                "Pos uncertainty: %.3f (>0.8), Orient: %.3f (>0.25)",
+                current_position_uncertainty, current_orientation_uncertainty);
     changeState(RobotState::LOST);
   }
 }

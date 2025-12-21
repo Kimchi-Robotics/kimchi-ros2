@@ -23,9 +23,9 @@ GlobalLocalizationServer::GlobalLocalizationServer()
 
   // Declare parameters for convergence thresholds
   this->declare_parameter<double>("position_covariance_threshold",
-                                  0.25);  // meters^2
+                                  0.5);  // meters^2
   this->declare_parameter<double>("orientation_covariance_threshold",
-                                  0.025);  // radians^2
+                                  0.05);  // radians^2
 
   // Get the configured thresholds
   pos_uncertainty_threashold_ =
@@ -166,8 +166,8 @@ void GlobalLocalizationServer::PublishInitialPoseWithHighVariance() {
   initial_pose_estimate.pose.pose.position.y = inital_pose_estimate_y_;
 
   // Sets high covariance for x and y position
-  initial_pose_estimate.pose.covariance[0] = 3.0;
-  initial_pose_estimate.pose.covariance[7] = 3.0;
+  initial_pose_estimate.pose.covariance[0] = 0.5;
+  initial_pose_estimate.pose.covariance[7] = 0.5;
   // Sets really high covariance for yaw
   // We assume that the user is not going to point the
   // direction of the robot
