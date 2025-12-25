@@ -212,6 +212,12 @@ void NavigationManager::goToNextGoal() {
     return;
   }
 
+  if (!navigate_to_pose_action_client_ptr_->wait_for_action_server(std::chrono::seconds(5))) {
+    RCLCPP_ERROR(node_->get_logger(), "/navigate_to_pose action server not available after waiting");
+    while (!goals_.empty()) goals_.pop();
+    return;
+  }
+
   auto navigation_goal = NavigateToPose::Goal();
   navigation_goal.pose.header.frame_id = "map";
   navigation_goal.pose.header.stamp = node_->now();
@@ -251,6 +257,8 @@ void NavigationManager::navigateToPoseGoalResponseCallback(
     RCLCPP_ERROR(
         node_->get_logger(),
         "[NavigationManager] Goal was rejected by navigateToPose server");
+    while (!goals_.empty()) { goals_.pop(); }
+    mission_observer_->onMissionFinished();
   } else {
     RCLCPP_INFO(node_->get_logger(),
                 "[NavigationManager] Goal accepted by navigateToPose server, "
