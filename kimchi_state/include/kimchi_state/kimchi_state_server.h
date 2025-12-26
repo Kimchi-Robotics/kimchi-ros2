@@ -3,6 +3,9 @@
  */
 #pragma once
 
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
+
 #include <atomic>
 #include <future>  // For std::promise and std::future
 #include <geometry_msgs/msg/pose.hpp>
@@ -13,8 +16,6 @@
 #include <kimchi_interfaces/srv/proccess_selected_position.hpp>
 #include <lifecycle_msgs/srv/change_state.hpp>
 #include <memory>
-
-#include <lifecycle_msgs/srv/change_state.hpp>
 #include <nav2_lifecycle_manager/lifecycle_manager_client.hpp>
 #include <nav2_msgs/srv/save_map.hpp>
 #include <rclcpp/rclcpp.hpp>
@@ -23,14 +24,10 @@
 #include <std_msgs/msg/empty.hpp>
 #include <std_msgs/msg/int32.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/buffer.h>
 
-#include <kimchi_interfaces/msg/robot_state.hpp>
-#include <kimchi_interfaces/srv/map_info.hpp>
 #include "map_info.h"
-#include "point_2d.h"
 #include "navigation_manager.h"
+#include "point_2d.h"
 
 enum class RobotState {
   NO_MAP,
@@ -113,7 +110,8 @@ class KimchiStateServer
   void addGoalToMissionCallback(
       const kimchi_interfaces::srv::ProccessSelectedPosition::Request::SharedPtr
           request,
-      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr response);
+      kimchi_interfaces::srv::ProccessSelectedPosition::Response::SharedPtr
+          response);
   void sendCommandCallback(
       const kimchi_interfaces::srv::KimchiStateServerCommand::Request::SharedPtr
           request,
@@ -122,7 +120,7 @@ class KimchiStateServer
   void jointStatesCallback(const sensor_msgs::msg::JointState::SharedPtr msg);
   void getRobotPositionFromTF();
 
-    /**
+  /**
    * AMCL pose callback
    * Callback method for pose published by AMCL.
    *
@@ -143,9 +141,10 @@ class KimchiStateServer
   rclcpp::TimerBase::SharedPtr state_publisher_timer_;
   rclcpp::Publisher<kimchi_interfaces::msg::RobotState>::SharedPtr
       state_publisher_;
-  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_states_subscriber_;
-	rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
-			amcl_pose_subscription_;
+  rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr
+      joint_states_subscriber_;
+  rclcpp::Subscription<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
+      amcl_pose_subscription_;
 
   // Service servers.
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr start_slam_service_;

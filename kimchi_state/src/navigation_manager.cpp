@@ -56,11 +56,8 @@ void NavigationManager::startSlam() {
 }
 
 void NavigationManager::stopSlam() {
-  std::thread stop_slam_thread([this]() {
-    slam_toolbox_client_->pause();
-  });
+  std::thread stop_slam_thread([this]() { slam_toolbox_client_->pause(); });
   stop_slam_thread.detach();
-
 }
 
 void NavigationManager::startLocalization() {
@@ -74,7 +71,8 @@ void NavigationManager::startLocalization() {
     RCLCPP_INFO(node_->get_logger(),
                 "[NavigationManager] Localization already active.");
     return;
-  } else if (client_loc_status == nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+  } else if (client_loc_status ==
+             nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
     while (client_localization_->is_active(wait_duration) ==
            nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
       RCLCPP_INFO(node_->get_logger(),
@@ -103,18 +101,17 @@ void NavigationManager::startNavigation() {
     RCLCPP_INFO(node_->get_logger(),
                 "[NavigationManager] Navigation already active.");
     return;
-  } else if (client_nav_status == nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+  } else if (client_nav_status ==
+             nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
     while (client_navigation_->is_active(wait_duration) ==
-          nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+           nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
       RCLCPP_INFO(node_->get_logger(),
                   "[NavigationManager] Waiting for "
                   "lifecycle_manager_navigation to be configured");
     }
   }
 
-  std::thread startup_nav_thread([this]() {
-    client_navigation_->startup();
-  });
+  std::thread startup_nav_thread([this]() { client_navigation_->startup(); });
 
   startup_nav_thread.detach();
 }
@@ -129,43 +126,48 @@ void NavigationManager::startLocating(const Point2D& point) {
   localize_goal.pose_estimate.x = point.x;
   localize_goal.pose_estimate.y = point.y;
 
-  auto goal_handle_future = global_localization_action_client_ptr_->async_send_goal(localize_goal);
-  if (goal_handle_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was not accepted by server in time.");
+  auto goal_handle_future =
+      global_localization_action_client_ptr_->async_send_goal(localize_goal);
+  if (goal_handle_future.wait_for(std::chrono::seconds(5)) !=
+      std::future_status::ready) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "[NavigationManager] LocalizationGoal was not accepted by "
+                 "server in time.");
     mission_observer_->onLocalizationCancelled();
   }
 
   auto goal_handle = goal_handle_future.get();
   if (!goal_handle) {
-    RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was rejected by server.");
+    RCLCPP_ERROR(
+        node_->get_logger(),
+        "[NavigationManager] LocalizationGoal was rejected by server.");
     mission_observer_->onLocalizationCancelled();
   }
 
-  auto result_future = global_localization_action_client_ptr_->async_get_result(goal_handle);
+  auto result_future =
+      global_localization_action_client_ptr_->async_get_result(goal_handle);
   mission_observer_->onLocalizationStarted();
-  RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Goal accepted. Waiting for result for up to %d seconds...", kMaxGlobalLocalizationWaitTimeSeconds);
+  RCLCPP_INFO(node_->get_logger(),
+              "[Worker Thread] Goal accepted. Waiting for result for up to %d "
+              "seconds...",
+              kMaxGlobalLocalizationWaitTimeSeconds);
 
   // Block and wait for the result for a maximum of 30 seconds.
-  std::future_status status = result_future.wait_for(std::chrono::seconds(kMaxGlobalLocalizationWaitTimeSeconds));
+  std::future_status status = result_future.wait_for(
+      std::chrono::seconds(kMaxGlobalLocalizationWaitTimeSeconds));
 
-  if (status == std::future_status::ready)
-  {
+  if (status == std::future_status::ready) {
     // Result was received within the 30-second window
     auto result = result_future.get();
-    RCLCPP_INFO(
-        node_->get_logger(),
-        "[NavigationManager] Robot localized!");
+    RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Robot localized!");
     mission_observer_->onLocalizationSucceded();
-  }
-  else
-  {
+  } else {
     // The future timed out after 30 seconds
-    RCLCPP_WARN(
-        node_->get_logger(),
-        "[ERROR NavigationManager] Robot not localized in 1 minute.");
+    RCLCPP_WARN(node_->get_logger(),
+                "[ERROR NavigationManager] Robot not localized in 1 minute.");
 
-    RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Sending cancel request to the server.");
+    RCLCPP_INFO(node_->get_logger(),
+                "[Worker Thread] Sending cancel request to the server.");
     global_localization_action_client_ptr_->async_cancel_goal(goal_handle);
     mission_observer_->onLocalizationCancelled();
   }

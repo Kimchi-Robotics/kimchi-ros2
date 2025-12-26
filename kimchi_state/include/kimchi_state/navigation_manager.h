@@ -7,10 +7,9 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "kimchi_interfaces/action/localizing.hpp"
+#include "kimchi_navigation/global_localization.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
-
-#include "kimchi_navigation/global_localization.hpp"
 
 /**
  * Class to manage navigation-related functionalities.
@@ -32,7 +31,7 @@ class NavigationManager {
     virtual void onNav2LocalizationStarted() = 0;
     virtual void onSlamStarted() = 0;
 
-   /**
+    /**
      * Called when the robot starts a new mission.
      * @param path The initial path for the mission.
      */
@@ -70,7 +69,6 @@ class NavigationManager {
      * Called when the robot gets localized correctly.
      */
     virtual void onLocalizationSucceded() = 0;
-
   };
 
   NavigationManager(std::shared_ptr<rclcpp::Node> node,
@@ -135,11 +133,11 @@ class NavigationManager {
       navigate_to_pose_action_client_ptr_;
 
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-    client_localization_;
+      client_localization_;
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-    slam_toolbox_client_;
+      slam_toolbox_client_;
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-    client_navigation_;
+      client_navigation_;
 
   const int kMaxGlobalLocalizationWaitTimeSeconds{30};
 };
