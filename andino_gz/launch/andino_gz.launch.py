@@ -9,8 +9,6 @@ from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution, PythonExpression, TextSubstitution
 from launch_ros.actions import Node, PushRosNamespace, SetRemap
 
-from nav2_common.launch import ParseMultiRobotPose
-
 from andino_gz.launch_tools.substitutions import TextJoin
 
 
@@ -92,139 +90,128 @@ def generate_launch_description():
             ),
         ]
     )
-
-    robots_list = ParseMultiRobotPose('robots').value()
-    # When no robots are specified, spawn a single robot at the origin.
-    # The default value isn't getting parsed correctly because ParseMultiRobotPose checks sys.args
-    # instead of using launch argument.
-    # TODO: Implement our ParseMultiRobotPose substitution for getting robot's pose correctly.
-    log_robots_by_user = LogInfo(msg="Robots provided by user.")
-    if (robots_list == {}):
-        log_robots_by_user = LogInfo(msg="No robots provided, using default:")
-        robots_list = {"andino": {"x": 0., "y": 0., "z": 0.1, "yaw": 0.}}
-    log_number_robots = LogInfo(msg="Robots to spawn: " + str(robots_list))
     spawn_robots_group = []
-    more_than_one_robot = PythonExpression([TextSubstitution(text=str(len(robots_list.keys()))), ' > 1'])
-    one_robot = PythonExpression([TextSubstitution(text=str(len(robots_list.keys()))), ' == 1'])
-    for robot_name in robots_list:
-        init_pose = robots_list[robot_name]
-        # As it is scoped and not forwarding, the launch configuration in this context gets cleared.
-        robots_group = GroupAction(
-            scoped=True, forwarding=False,
-            launch_configurations={
-                'rviz': rviz,
-                'ros_bridge': ros_bridge,
-                'nav2': nav2_flag,
-            },
-            actions=[
-                LogInfo(msg="Group for robot: " + robot_name),
-                PushRosNamespace(
-                    condition=IfCondition(more_than_one_robot),
-                    namespace=robot_name),
-                # Spawn the robot and the Robot State Publisher node.
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource(
-                        os.path.join(pkg_andino_gz, 'launch', 'include', 'spawn_robot.launch.py')
-                    ),
-                    launch_arguments={
-                        'entity': robot_name,
-                        'initial_pose_x': str(init_pose['x']),
-                        'initial_pose_y': str(init_pose['y']),
-                        'initial_pose_z': str(init_pose['z']),
-                        'initial_pose_yaw': str(init_pose['yaw']),
-                        'robot_description_topic': 'robot_description',
-                        'use_sim_time': 'true',
-                    }.items(),
+    more_than_one_robot = PythonExpression([TextSubstitution(text=str(1)), ' > 1'])
+    one_robot = PythonExpression([TextSubstitution(text=str(1)), ' == 1'])
+    init_pose = {"x": 0., "y": 0., "z": 0.1, "yaw": 0.}
+    robot_name = 'andino'
+    # As it is scoped and not forwarding, the launch configuration in this context gets cleared.
+    robots_group = GroupAction(
+        scoped=True, forwarding=False,
+        launch_configurations={
+            'rviz': rviz,
+            'ros_bridge': ros_bridge,
+            'nav2': nav2_flag,
+        },
+        actions=[
+            LogInfo(msg="Group for robot: " + robot_name),
+            PushRosNamespace(
+                condition=IfCondition(more_than_one_robot),
+                namespace=robot_name),
+            # Spawn the robot and the Robot State Publisher node.
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(pkg_andino_gz, 'launch', 'include', 'spawn_robot.launch.py')
                 ),
-                # RViz with nav2
-                Node(
-                    condition=IfCondition(PythonExpression([rviz, ' and ', LaunchConfiguration('nav2')])),
-                    package='rviz2',
-                    executable='rviz2',
-                    arguments=['-d', os.path.join(pkg_andino_gz, 'rviz', 'andino_gz_nav2.rviz')],
-                    parameters=[{'use_sim_time': True}],
-                    remappings=[
-                        ('/tf', 'tf'),
-                        ('/tf_static', 'tf_static'),
-                    ],
+                launch_arguments={
+                    'entity': robot_name,
+                    'initial_pose_x': str(init_pose['x']),
+                    'initial_pose_y': str(init_pose['y']),
+                    'initial_pose_z': str(init_pose['z']),
+                    'initial_pose_yaw': str(init_pose['yaw']),
+                    'robot_description_topic': 'robot_description',
+                    'use_sim_time': 'true',
+                }.items(),
+            ),
+            # RViz with nav2
+            Node(
+                condition=IfCondition(PythonExpression([rviz, ' and ', LaunchConfiguration('nav2')])),
+                package='rviz2',
+                executable='rviz2',
+                arguments=['-d', os.path.join(pkg_andino_gz, 'rviz', 'andino_gz_nav2.rviz')],
+                parameters=[{'use_sim_time': True}],
+                remappings=[
+                    ('/tf', 'tf'),
+                    ('/tf_static', 'tf_static'),
+                ],
+            ),
+            # RViz without nav2
+            Node(
+                condition=IfCondition(PythonExpression([rviz, ' and not ', LaunchConfiguration('nav2')])),
+                package='rviz2',
+                executable='rviz2',
+                arguments=['-d', os.path.join(pkg_andino_gz, 'rviz', 'andino_gz.rviz')],
+                parameters=[{'use_sim_time': True}],
+                remappings=[
+                    ('/tf', 'tf'),
+                    ('/tf_static', 'tf_static'),
+                ],
+            ),
+            # Run ros_gz bridge
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(pkg_andino_gz, 'launch', 'include', 'gz_ros_bridge.launch.py')
                 ),
-                # RViz without nav2
-                Node(
-                    condition=IfCondition(PythonExpression([rviz, ' and not ', LaunchConfiguration('nav2')])),
-                    package='rviz2',
-                    executable='rviz2',
-                    arguments=['-d', os.path.join(pkg_andino_gz, 'rviz', 'andino_gz.rviz')],
-                    parameters=[{'use_sim_time': True}],
-                    remappings=[
-                        ('/tf', 'tf'),
-                        ('/tf_static', 'tf_static'),
-                    ],
+                launch_arguments={
+                    'entity': robot_name,
+                }.items(),
+                condition=IfCondition(LaunchConfiguration('ros_bridge')),
+            ),
+        ]
+    )
+    nav_group = GroupAction(
+        scoped=True, forwarding=False,
+        launch_configurations={
+            'rviz': rviz,
+            'ros_bridge': ros_bridge,
+            'map': map_path,
+            'params_file': params_file,
+            'nav2': nav2_flag,
+        },
+        actions=[
+            # Remapping scan topics for Nav2 local and global costmap.
+            # As we use relative values in the param file for supporting multiple robots,
+            # the scan topic needs to be remapped otherwise goes under global-costmap/scan topic.
+            SetRemap(src='/' + robot_name + '/global_costmap/scan', dst='/' + robot_name + '/scan', condition=IfCondition(PythonExpression([more_than_one_robot, ' and ', LaunchConfiguration('nav2')]))),
+            SetRemap(src='/' + robot_name + '/local_costmap/scan', dst='/' + robot_name + '/scan', condition=IfCondition(PythonExpression([more_than_one_robot, ' and ', LaunchConfiguration('nav2')]))),
+            # Nav2 Bringup for multiple robots
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')
                 ),
-                # Run ros_gz bridge
-                IncludeLaunchDescription(
-                    PythonLaunchDescriptionSource(
-                        os.path.join(pkg_andino_gz, 'launch', 'include', 'gz_ros_bridge.launch.py')
-                    ),
-                    launch_arguments={
-                        'entity': robot_name,
-                    }.items(),
-                    condition=IfCondition(LaunchConfiguration('ros_bridge')),
+                launch_arguments={
+                'namespace': robot_name,
+                'use_namespace': 'True',
+                'map': LaunchConfiguration('map'),
+                'autostart': 'True',
+                'use_sim_time': 'True',
+                'params_file': LaunchConfiguration('params_file'),
+                }.items(),
+                condition=IfCondition(PythonExpression([more_than_one_robot, ' and ', LaunchConfiguration('nav2')])),
+            ),
+            SetRemap(src='/global_costmap/scan', dst='/scan', condition=IfCondition(PythonExpression([one_robot, ' and ', LaunchConfiguration('nav2')]))),
+            SetRemap(src='/local_costmap/scan', dst='/scan', condition=IfCondition(PythonExpression([one_robot, ' and ', LaunchConfiguration('nav2')]))),
+            # Nav2 Bringup for single robot
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')
                 ),
-            ]
+                launch_arguments={
+                'map': LaunchConfiguration('map'),
+                'autostart': 'True',
+                'use_sim_time': 'True',
+                'params_file': LaunchConfiguration('params_file'),
+                }.items(),
+                condition=IfCondition(PythonExpression([one_robot, ' and ', LaunchConfiguration('nav2')])),
+            ),
+        ]
         )
-        nav_group = GroupAction(
-          scoped=True, forwarding=False,
-          launch_configurations={
-              'rviz': rviz,
-              'ros_bridge': ros_bridge,
-              'map': map_path,
-              'params_file': params_file,
-              'nav2': nav2_flag,
-          },
-          actions=[
-              # Remapping scan topics for Nav2 local and global costmap.
-              # As we use relative values in the param file for supporting multiple robots,
-              # the scan topic needs to be remapped otherwise goes under global-costmap/scan topic.
-              SetRemap(src='/' + robot_name + '/global_costmap/scan', dst='/' + robot_name + '/scan', condition=IfCondition(PythonExpression([more_than_one_robot, ' and ', LaunchConfiguration('nav2')]))),
-              SetRemap(src='/' + robot_name + '/local_costmap/scan', dst='/' + robot_name + '/scan', condition=IfCondition(PythonExpression([more_than_one_robot, ' and ', LaunchConfiguration('nav2')]))),
-              # Nav2 Bringup for multiple robots
-              IncludeLaunchDescription(
-                  PythonLaunchDescriptionSource(
-                      os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')
-                  ),
-                  launch_arguments={
-                    'namespace': robot_name,
-                    'use_namespace': 'True',
-                    'map': LaunchConfiguration('map'),
-                    'autostart': 'True',
-                    'use_sim_time': 'True',
-                    'params_file': LaunchConfiguration('params_file'),
-                  }.items(),
-                  condition=IfCondition(PythonExpression([more_than_one_robot, ' and ', LaunchConfiguration('nav2')])),
-              ),
-              SetRemap(src='/global_costmap/scan', dst='/scan', condition=IfCondition(PythonExpression([one_robot, ' and ', LaunchConfiguration('nav2')]))),
-              SetRemap(src='/local_costmap/scan', dst='/scan', condition=IfCondition(PythonExpression([one_robot, ' and ', LaunchConfiguration('nav2')]))),
-              # Nav2 Bringup for single robot
-              IncludeLaunchDescription(
-                  PythonLaunchDescriptionSource(
-                      os.path.join(pkg_nav2_bringup, 'launch', 'bringup_launch.py')
-                  ),
-                  launch_arguments={
-                    'map': LaunchConfiguration('map'),
-                    'autostart': 'True',
-                    'use_sim_time': 'True',
-                    'params_file': LaunchConfiguration('params_file'),
-                  }.items(),
-                  condition=IfCondition(PythonExpression([one_robot, ' and ', LaunchConfiguration('nav2')])),
-              ),
-            ]
-          )
-        spawn_robots_group.append(robots_group)
-        spawn_robots_group.append(nav_group)
+    spawn_robots_group.append(robots_group)
+    spawn_robots_group.append(nav_group)
 
     ld = LaunchDescription()
-    ld.add_action(log_robots_by_user)
-    ld.add_action(log_number_robots)
+    # ld.add_action(log_robots_by_user)
+    # ld.add_action(log_number_robots)
     ld.add_action(ros_bridge_arg)
     ld.add_action(rviz_arg)
     ld.add_action(world_name_arg)

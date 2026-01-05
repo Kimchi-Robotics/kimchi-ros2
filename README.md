@@ -1,4 +1,4 @@
-## ROS2 jazzy guidelines
+## ROS2 kilted guidelines
 
 ## Build
 
@@ -24,7 +24,7 @@ For NVIDIA GPU support, `nvidia-container-toolkit` should be installed. *Skip th
 
 #### Building image and running container
 
-- Build the docker image whose name is `ros2_jazzy`:
+- Build the docker image whose name is `ros2_kilted`:
 
 ```sh
 ./docker/build.sh
@@ -36,7 +36,7 @@ You can also try to set a specific image name:
 ./docker/build.sh -i my_fancy_image_name
 ```
 
-- Run a docker container from `ros2_jazzy` called `ros2_jazzy_container`:
+- Run a docker container from `ros2_kilted` called `ros2_kilted_container`:
 
 ```sh
 ./docker/run.sh
@@ -57,7 +57,7 @@ You can also try to set specific image and container names:
 - Inside the container, install dependencies via `rosdep`:
 
   ```sh
-  rosdep install -i -y --rosdistro jazzy --from-paths src
+  rosdep install -i -y --rosdistro kilted --from-paths src
   ```
 
 Note that the repository is mounted into a workspace. That is convenient if you

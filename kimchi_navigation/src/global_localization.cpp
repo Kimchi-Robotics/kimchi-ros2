@@ -37,7 +37,7 @@ GlobalLocalizationServer::GlobalLocalizationServer()
       this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>(
           "/initialpose", qos_profile);
 
-  command_robot_pub_ = this->create_publisher<geometry_msgs::msg::Twist>(
+  command_robot_pub_ = this->create_publisher<geometry_msgs::msg::TwistStamped>(
       "/cmd_vel", qos_profile);
 
   // Create a subscription to the /amcl_pose topic
@@ -88,15 +88,19 @@ void GlobalLocalizationServer::cleanup() {
 }
 
 void GlobalLocalizationServer::RotateRobot() {
-  geometry_msgs::msg::Twist robot_rotation;
-  robot_rotation.angular.z = 1.0;
+  geometry_msgs::msg::TwistStamped robot_rotation;
+  robot_rotation.header.stamp = this->now();
+  robot_rotation.header.frame_id = "base_link";
+  robot_rotation.twist.angular.z = 1.0;
 
   command_robot_pub_->publish(robot_rotation);
 }
 
 void GlobalLocalizationServer::StopRobot() {
-  geometry_msgs::msg::Twist robot_rotation;
-  robot_rotation.angular.z = 0.0;
+  geometry_msgs::msg::TwistStamped robot_rotation;
+  robot_rotation.header.stamp = this->now();
+  robot_rotation.header.frame_id = "base_link";
+  robot_rotation.twist.angular.z = 0.0;
 
   command_robot_pub_->publish(robot_rotation);
 }

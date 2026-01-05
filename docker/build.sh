@@ -36,12 +36,12 @@ set -e
 function show_help() {
   echo $'\nUsage:\t build.sh [OPTIONS] \n
   Options:\n
-  \t-i --image_name\t\t Name of the image to be built (default ros2_jazzy_andino_gz).\n
+  \t-i --image_name\t\t Name of the image to be built (default ros2_kilted_andino_gz).\n
   Example:\n
   \tbuild.sh --image_name custom_image_name\n'
 }
 
-echo "Building the docker image for ros2 jazzy andino gazebo development."
+echo "Building the docker image for ros2 kilted andino gazebo development."
 
 SCRIPT_FOLDER_PATH="$(cd "$(dirname "$0")"; pwd)"
 CONTEXT_FOLDER_PATH="$(cd "$(dirname "$0")"; cd .. ; pwd)"
@@ -58,7 +58,7 @@ done
 
 # Update the arguments to default values if needed.
 OS_VERSION="noble"
-IMAGE_NAME=${IMAGE_NAME:-ros2_jazzy_andino_gz}
+IMAGE_NAME=${IMAGE_NAME:-ros2_kilted_andino_gz}
 DOCKERFILE_PATH=$SCRIPT_FOLDER_PATH/Dockerfile
 
 USERID=$(id -u)

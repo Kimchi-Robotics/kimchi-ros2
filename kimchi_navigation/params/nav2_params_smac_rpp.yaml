@@ -67,10 +67,6 @@ bt_navigator:
     # plugin_lib_names is used to add custom BT plugins to the executor (vector of strings).
     # Built-in plugins are added automatically
 
-    error_code_names:
-      - compute_path_error_code
-      - follow_path_error_code
-
 controller_server:
   ros__parameters:
     controller_frequency: 20.0
@@ -229,7 +225,7 @@ planner_server:
       cost_penalty: 2.0                   # Penalty to apply to higher cost areas when adding into the obstacle map dynamic programming distance expansion heuristic. This drives the robot more towards the center of passages. A value between 1.3 - 3.5 is reasonable.
       rotation_penalty: 2.0               # Penalty to apply to in-place rotations, if minimum control set contains them
       retrospective_penalty: 0.015
-      lattice_filepath: "/opt/ros/jazzy/share/nav2_smac_planner/sample_primitives/5cm_resolution/0.5m_turning_radius/diff/output.json"                # The filepath to the state lattice graph
+      lattice_filepath: "/opt/ros/kilted/share/nav2_smac_planner/sample_primitives/5cm_resolution/0.5m_turning_radius/diff/output.json"                # The filepath to the state lattice graph
       lookup_table_size: 20.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: false     # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
       allow_reverse_expansion: true      # If true, allows the robot to use the primitives to expand in the mirrored opposite direction of the current robot's orientation (to reverse).

@@ -1,4 +1,4 @@
-FROM osrf/ros:jazzy-desktop-full
+FROM osrf/ros:kilted-desktop-full
 
 # Arguments for building
 ARG USERID
@@ -25,24 +25,11 @@ RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
 # ROS2 dependencies built from source
 #####################################
 
-# Prepare worksapce for ros2 packages built in the container
-RUN mkdir -p /home/$USER/ros_deps_ws/src
-WORKDIR /home/$USER/ros_deps_ws/src
-# Clone andino main repo
-RUN git clone https://github.com/Ekumen-OS/andino.git -b jazzy
-WORKDIR /home/$USER/ros_deps_ws
-# Rosdep install
-RUN . /opt/ros/jazzy/setup.sh && rosdep install -y -i --from-paths src
-# Build
-RUN . /opt/ros/jazzy/setup.sh && colcon build --cmake-args -DCMAKE_BUILD_TYPE=Release
-# Adds overlay to the bashrc
-RUN echo "source /home/$USER/ros_deps_ws/install/setup.bash" >> /home/$USER/.bashrc
-
-# Add the Gazebo repository and install Gazebo Harmonic
-RUN sudo sh -c 'echo "deb http://packages.osrfoundation.org/gazebo/ubuntu-stable `lsb_release -cs` main" > /etc/apt/sources.list.d/gazebo-stable.list'
-RUN wget http://packages.osrfoundation.org/gazebo.key -O - | sudo apt-key add -
+# Add the Gazebo repository and install Gazebo Ionic
+RUN sudo curl https://packages.osrfoundation.org/gazebo.gpg --output /usr/share/keyrings/pkgs-osrf-archive-keyring.gpg
+RUN echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/pkgs-osrf-archive-keyring.gpg] https://packages.osrfoundation.org/gazebo/ubuntu-stable $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/gazebo-stable.list > /dev/null
 RUN sudo apt-get update
-RUN sudo apt-get install gz-harmonic -y
+RUN sudo apt-get install gz-ionic -y
 
 # Create a user with passwordless sudo
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
@@ -66,8 +53,8 @@ USER $USER
 # Creates the src folder of the workspace.
 RUN mkdir -p /home/$USER/ws/src
 
-# Adds to bashrc the ros jazzy overlay sourcing.
-RUN echo "source /opt/ros/jazzy/setup.bash" >> /home/$USER/.bashrc
+# Adds to bashrc the ros kilted overlay sourcing.
+RUN echo "source /opt/ros/kilted/setup.bash" >> /home/$USER/.bashrc
 
 # Updates
 RUN sudo apt upgrade -y

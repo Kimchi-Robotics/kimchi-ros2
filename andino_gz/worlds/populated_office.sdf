@@ -76,11 +76,6 @@
     </include>
     <include>
       <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Office Desk</uri>
-      <name>Desk</name>
-      <pose>8.25108 6.47514 0 0 0 -3.13045</pose>
-    </include>
-    <include>
-      <uri>https://fuel.gazebosim.org/1.0/OpenRobotics/models/Office Desk</uri>
       <name>Desk_0</name>
       <pose>9.04683 6.49999 0 0 -0 0</pose>
     </include>
