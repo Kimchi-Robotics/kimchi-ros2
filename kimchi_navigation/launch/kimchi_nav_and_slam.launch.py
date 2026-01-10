@@ -94,6 +94,9 @@ def generate_launch_description():
 
     map_saver_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(os.path.join(pkg_nav2_map_server, "launch", "map_saver_server.launch.py")),
+        launch_arguments={
+            'use_sim_time': LaunchConfiguration('use_sim_time'),
+        }.items(),
     )
 
     # Global Localization

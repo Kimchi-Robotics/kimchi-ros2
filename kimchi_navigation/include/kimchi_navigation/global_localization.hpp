@@ -4,7 +4,7 @@
 #include <chrono>
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
-#include <geometry_msgs/msg/twist_stamped.hpp>
+#include <geometry_msgs/msg/twist.hpp>
 #include <memory>
 #include <rclcpp/rclcpp.hpp>
 
@@ -85,7 +85,7 @@ class GlobalLocalizationServer : public rclcpp::Node {
 
   rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr
       initial_pose_publisher_;
-  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr command_robot_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr command_robot_pub_;
 
   rclcpp_action::Server<GlobalLocalization>::SharedPtr action_server_;
 

@@ -12,7 +12,7 @@ from kimchi_interfaces.srv import ProccessSelectedPosition as ProccessSelectedPo
 from kimchi_interfaces.srv import KimchiStateServerCommand as KimchiStateServerCommandSrv
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
 
-from geometry_msgs.msg import TwistStamped
+from geometry_msgs.msg import Twist
 from std_srvs.srv import Trigger
 from nav_msgs.msg import Path
 
@@ -57,7 +57,7 @@ class GrpcBridgeNode(Node):
             qos_profile)
 
         # Create velocity publisher
-        self._vel_publisher = self.create_publisher(TwistStamped, self._vel_topic, 10)
+        self._vel_publisher = self.create_publisher(Twist, self._vel_topic, 10)
         self._map_info_client = self.create_client(
             MapInfoSrv, '/kimchi_map/get_map_info')
 
@@ -141,10 +141,9 @@ class GrpcBridgeNode(Node):
         self.get_logger().info('Path listener set')
 
     def publish_velocity(self, linear_percentage, angular_percentage):
-        msg = TwistStamped()
-        msg.header.frame_id = self._robot_frame
-        msg.twist.linear.x = self._max_linear_vel_ms * linear_percentage
-        msg.twist.angular.z = self._man_angular_vel_rad * angular_percentage
+        msg = Twist()
+        msg.linear.x = self._max_linear_vel_ms * linear_percentage
+        msg.angular.z = self._man_angular_vel_rad * angular_percentage
         self._vel_publisher.publish(msg)
 
     def send_command(self, command):
