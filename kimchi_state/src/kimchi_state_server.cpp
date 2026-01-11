@@ -5,13 +5,9 @@
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
-#include <chrono>
-#include <filesystem>
-#include <functional>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <thread>
 
 #include "rclcpp/wait_for_message.hpp"
 
@@ -43,6 +39,17 @@ std::string toString(RobotState robot_state) {
   }
   return "UNKNOWN_STATE";
 }
+
+BumperObstaclePublisher::BumperSide getBumperSide(bool left_pressed, bool right_pressed) {
+  if (left_pressed && right_pressed) {
+    return BumperObstaclePublisher::BumperSide::BOTH;
+  } else if (left_pressed) {
+    return BumperObstaclePublisher::BumperSide::LEFT;
+  } else {
+    return BumperObstaclePublisher::BumperSide::RIGHT;
+  }
+}
+
 }  // namespace
 
 std::shared_ptr<KimchiStateServer> KimchiStateServer::Create(
@@ -105,6 +112,10 @@ void KimchiStateServer::onGoalCancelled(const Point2D &point) {
               "[KimchiStateServer] Goal cancelled: (%f, %f)", point.x, point.y);
 }
 
+void KimchiStateServer::onMissionPaused() {
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission paused");
+}
+
 void KimchiStateServer::onMissionFinished() {
   changeState(RobotState::IDLE);
   RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Mission finished");
@@ -126,6 +137,8 @@ void KimchiStateServer::initialize() {
   state_publisher_timer_ = node_->create_wall_timer(
       std::chrono::seconds(1),
       std::bind(&KimchiStateServer::statePublisherTimerCallback, this));
+  cmd_vel_publisher_ =
+      node_->create_publisher<geometry_msgs::msg::Twist>("/cmd_vel", 10);
 
   // Subscribe to the map info service
   get_map_info_client_ = node_->create_client<kimchi_interfaces::srv::MapInfo>(
@@ -138,6 +151,11 @@ void KimchiStateServer::initialize() {
   start_slam_service_ = node_->create_service<std_srvs::srv::Trigger>(
       "/kimchi_state_server/start_slam",
       std::bind(&KimchiStateServer::startSlamCallback, this,
+                std::placeholders::_1, std::placeholders::_2));
+
+  mock_bumper_service_ = node_->create_service<std_srvs::srv::Trigger>(
+      "/kimchi_state_server/mock_bumper",
+      std::bind(&KimchiStateServer::mockBumperCallback, this,
                 std::placeholders::_1, std::placeholders::_2));
 
   start_navigation_service_ = node_->create_service<std_srvs::srv::Trigger>(
@@ -164,8 +182,8 @@ void KimchiStateServer::initialize() {
                     std::placeholders::_1, std::placeholders::_2));
 
   joint_states_subscriber_ =
-      node_->create_subscription<sensor_msgs::msg::JointState>(
-          "/joint_states", 10,
+      node_->create_subscription<control_msgs::msg::DynamicJointState>(
+          "/dynamic_joint_states", 10,
           std::bind(&KimchiStateServer::jointStatesCallback, this,
                     std::placeholders::_1));
 
@@ -176,8 +194,10 @@ void KimchiStateServer::initialize() {
                     std::placeholders::_1));
 
   // Initialize tf2 buffer and listener
-  tf_buffer_ = std::make_unique<tf2_ros::Buffer>(node_->get_clock());
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
+  bumper_obstacle_publisher_ = std::make_unique<BumperObstaclePublisher>(
+      "map", "odom", "left_bumper_joint_link", "right_bumper_joint_link", node_, tf_buffer_);
 
   // Create a timer to periodically check the transform
   tf_timer_ = node_->create_wall_timer(
@@ -249,8 +269,9 @@ void KimchiStateServer::callGetMapInfoService() {
       changeState(RobotState::NO_MAP);
     }
   } else {
-    RCLCPP_ERROR(rclcpp::get_logger("rclcpp"),
-                 "Failed to call service /kimchi_map/get_map_info");
+    RCLCPP_ERROR(
+        rclcpp::get_logger("rclcpp"),
+        "[KimchiStateServer] Failed to call service /kimchi_map/get_map_info");
   }
 }
 
@@ -369,33 +390,111 @@ KimchiStateServer::saveMap() {
 
 void KimchiStateServer::changeState(RobotState new_state) {
   state_ = new_state;
-  RCLCPP_INFO(node_->get_logger(), "State changed to: %s",
+  RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] State changed to: %s",
               toString(state_).c_str());
 }
 
-// TODO(lneumarkt): Implement behavior based on bumper and button states
 void KimchiStateServer::jointStatesCallback(
-    const sensor_msgs::msg::JointState::SharedPtr msg) {
-  for (size_t i = 0; i < msg->name.size(); ++i) {
-    const std::string &joint_name = msg->name[i];
-
+    const control_msgs::msg::DynamicJointState::SharedPtr msg) {
+  for (size_t i = 0; i < msg->joint_names.size(); ++i) {
+    const std::string &joint_name = msg->joint_names[i];
     // For all three joints, we consider a position of non-zero as "pressed"
     if (joint_name == "button_joint") {
-      button_state_ = msg->position[i] > 0.01;
+      button_pressed_ = msg->interface_values[i].values[0] > 0.01;
       RCLCPP_DEBUG(node_->get_logger(), "Button state: %s",
-                   button_state_ ? "PRESSED" : "NOT_PRESSED");
-      if (state_ == RobotState::GOAL_REACHED && button_state_) {
+                   button_pressed_ ? "PRESSED" : "NOT_PRESSED");
+      if (state_ == RobotState::GOAL_REACHED && button_pressed_) {
         navigation_manager_->goToNextGoal();
       }
     } else if (joint_name == "left_bumper_joint") {
-      left_bumper_state_ = msg->position[i] > 0.01;
+      left_bumper_pressed_ = msg->interface_values[i].values[0] > 0.01;
       RCLCPP_DEBUG(node_->get_logger(), "Left bumper state: %s",
-                   left_bumper_state_ ? "PRESSED" : "NOT_PRESSED");
+                   left_bumper_pressed_ ? "PRESSED" : "NOT_PRESSED");
     } else if (joint_name == "right_bumper_joint") {
-      right_bumper_state_ = msg->position[i] > 0.01;
+      right_bumper_pressed_ = msg->interface_values[i].values[0] > 0.01;
       RCLCPP_DEBUG(node_->get_logger(), "Right bumper state: %s",
-                   right_bumper_state_ ? "PRESSED" : "NOT_PRESSED");
+                   right_bumper_pressed_ ? "PRESSED" : "NOT_PRESSED");
     }
+
+    if ((left_bumper_pressed_ || right_bumper_pressed_) && state_ == RobotState::NAVIGATING) {
+      onBumperPressed(left_bumper_pressed_, right_bumper_pressed_);
+    }
+  }
+}
+
+void KimchiStateServer::mockBumperCallback(
+    const std_srvs::srv::Trigger::Request::SharedPtr /*request*/,
+    std_srvs::srv::Trigger::Response::SharedPtr response) {
+  RCLCPP_ERROR(node_->get_logger(),
+               "[KimchiStateServer] Mocking bumper press.");
+
+  onBumperPressed(true /* Left bumper */, true /* Right bumper */);
+  response->success = true;
+  response->message = "Mocked left bumper press.";
+}
+
+void KimchiStateServer::onBumperPressed(bool left_bumper_pressed, bool right_bumper_pressed) {
+  if (!left_bumper_pressed && !right_bumper_pressed) {
+    RCLCPP_WARN(node_->get_logger(), "[KimchiStateServer] No bumper pressed.");
+    return;
+  }
+
+  RCLCPP_INFO(node_->get_logger(),
+               "[KimchiStateServer] Bumper pressed! Cancelling goal and "
+               "entering RECOVERING state.");
+  // Stop the robot if it's navigating.
+  if (state_ == RobotState::NAVIGATING) {
+    geometry_msgs::msg::Twist robot_vel_stop;
+    robot_vel_stop.linear.x = 0.0;
+    cmd_vel_publisher_->publish(robot_vel_stop);
+    RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Robot Stopped.");
+    navigation_manager_->pauseCurrentGoal();
+    RCLCPP_INFO(node_->get_logger(),
+                 "[KimchiStateServer] Paused current goal.");
+  }
+
+  changeState(RobotState::RECOVERING);
+  std::thread go_back_and_resume_thread([this, left_bumper_pressed, right_bumper_pressed]() {
+    BumperObstaclePublisher::BumperSide bumper_side = getBumperSide(left_bumper_pressed, right_bumper_pressed);
+    // Mark obstacle in the local costmap.
+    bumper_obstacle_publisher_->markObstacles(bumper_side);
+    RCLCPP_INFO(node_->get_logger(), "[KimchiStateServer] Marked obstacle.");
+    // Wait a second for other vel publishers to stop before going back and
+    // resuming
+    auto waiting_time = std::chrono::milliseconds(1000);
+    std::this_thread::sleep_for(waiting_time);
+    goBackAndResume();
+  });
+  go_back_and_resume_thread.detach();
+}
+
+void KimchiStateServer::goBackAndResume() {
+  RCLCPP_ERROR(node_->get_logger(),
+               "[TESTING][KimchiStateServer] Going back and resuming.");
+
+  // Logic to go back and resume navigation
+  geometry_msgs::msg::Twist robot_vel_backward;
+  robot_vel_backward.linear.x = -0.2;
+
+  for (int i = 0; i < 30; ++i) {
+    cmd_vel_publisher_->publish(robot_vel_backward);
+    auto waiting_time = std::chrono::milliseconds(100);
+    std::this_thread::sleep_for(waiting_time);
+  }
+
+  geometry_msgs::msg::Twist robot_vel_stop;
+  robot_vel_stop.linear.x = 0.0;
+  cmd_vel_publisher_->publish(robot_vel_stop);
+
+  if (navigation_manager_->goals().empty()) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[KimchiStateServer] No goals to resume navigation to. "
+                "Changing state to IDLE.");
+    changeState(RobotState::IDLE);
+  } else {
+    RCLCPP_INFO(node_->get_logger(),
+                "[KimchiStateServer] Resuming navigation to next goal.");
+    navigation_manager_->goToNextGoal();
   }
 }
 
@@ -443,7 +542,7 @@ void KimchiStateServer::AmclPoseCallback(
        current_orientation_uncertainty > 0.50) &&
       state_ == RobotState::IDLE) {
     RCLCPP_WARN(node_->get_logger(),
-                "[GlobalLocalizationServer] Robot Kidnapped! "
+                "[KimchiStateServer] Robot Kidnapped! "
                 "Pos uncertainty: %.3f (>0.8), Orient: %.3f (>0.25)",
                 current_position_uncertainty, current_orientation_uncertainty);
     changeState(RobotState::LOST);
@@ -455,7 +554,7 @@ int main(int argc, char *argv[]) {
   std::shared_ptr<KimchiStateServer> kimchi_state_server =
       KimchiStateServer::Create(rclcpp::NodeOptions());
   rclcpp::executors::MultiThreadedExecutor executor(rclcpp::ExecutorOptions(),
-                                                    4);
+                                                    5);
   executor.add_node(kimchi_state_server->getNode());
   executor.spin();
   rclcpp::shutdown();

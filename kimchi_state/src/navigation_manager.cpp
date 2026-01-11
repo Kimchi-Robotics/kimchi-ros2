@@ -9,7 +9,10 @@
 
 NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
                                      std::shared_ptr<MissionObserver> observer)
-    : node_(node), mission_observer_(observer), current_goal_(nullptr) {
+    : node_(node),
+      mission_observer_(observer),
+      current_goal_(nullptr),
+      paused_(false) {
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] NavigationManager initialized.");
 
@@ -91,7 +94,7 @@ void NavigationManager::startLocalization() {
 void NavigationManager::stopLocalization() {}
 
 void NavigationManager::startNavigation() {
-  RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Navigation");
+  RCLCPP_INFO(node_->get_logger(), "[Navigation Manager] Start Navigation");
 
   std::chrono::seconds wait_duration(1);
 
@@ -119,7 +122,7 @@ void NavigationManager::startNavigation() {
 void NavigationManager::startLocating(const Point2D& point) {
   using namespace std::placeholders;
 
-  RCLCPP_DEBUG(node_->get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
                "[NavigationManager] Goal received: (%f, %f)", point.x, point.y);
 
   auto localize_goal = GlobalLocalization::Goal();
@@ -204,6 +207,16 @@ void NavigationManager::cancelCurrentGoal() {
   navigate_to_pose_action_client_ptr_->async_cancel_all_goals();
 }
 
+void NavigationManager::pauseCurrentGoal() {
+  if (current_goal_ == nullptr) {
+    RCLCPP_INFO(node_->get_logger(), "No current goal to pause.");
+    return;
+  }
+
+  cancelCurrentGoal();
+  paused_ = true;
+}
+
 void NavigationManager::goToNextGoal() {
   using namespace std::placeholders;
   if (goals_.empty()) {
@@ -212,8 +225,10 @@ void NavigationManager::goToNextGoal() {
     return;
   }
 
-  if (!navigate_to_pose_action_client_ptr_->wait_for_action_server(std::chrono::seconds(5))) {
-    RCLCPP_ERROR(node_->get_logger(), "/navigate_to_pose action server not available after waiting");
+  if (!navigate_to_pose_action_client_ptr_->wait_for_action_server(
+          std::chrono::seconds(5))) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "/navigate_to_pose action server not available after waiting");
     while (!goals_.empty()) goals_.pop();
     return;
   }
@@ -238,7 +253,6 @@ void NavigationManager::goToNextGoal() {
                                                        send_goal_options);
 
   current_goal_ = std::make_unique<Point2D>(goals_.front());
-  goals_.pop();
 }
 
 void NavigationManager::onNewGoal() {
@@ -257,7 +271,10 @@ void NavigationManager::navigateToPoseGoalResponseCallback(
     RCLCPP_ERROR(
         node_->get_logger(),
         "[NavigationManager] Goal was rejected by navigateToPose server");
-    while (!goals_.empty()) { goals_.pop(); }
+    while (!goals_.empty()) {
+      current_goal_ = nullptr;
+      goals_.pop();
+    }
     mission_observer_->onMissionFinished();
   } else {
     RCLCPP_INFO(node_->get_logger(),
@@ -275,9 +292,16 @@ void NavigationManager::navigateToPoseResultCallback(
           node_->get_logger(),
           "[NavigationManager] navigateToPoseResultCallback: Goal reached!");
 
+      goals_.pop();
       if (goals_.empty()) {
+        RCLCPP_INFO(node_->get_logger(),
+                    "[NavigationManager] navigateToPoseResultCallback: No more "
+                    "goals to process");
         mission_observer_->onMissionFinished();
       } else {
+        RCLCPP_INFO(node_->get_logger(),
+                    "[NavigationManager] navigateToPoseResultCallback: "
+                    "Processing next goal");
         mission_observer_->onGoalReached(*current_goal_);
       }
       current_goal_.reset();  // Clear the current goal after success
@@ -289,6 +313,14 @@ void NavigationManager::navigateToPoseResultCallback(
                    "aborted. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+      if (!paused_) {
+        goals_.pop();
+      } else {
+        mission_observer_->onMissionPaused();
+        paused_ = false;  // Reset paused state
+        return;
+      }
+
       if (goals_.empty()) {
         mission_observer_->onMissionFinished();
       } else {
@@ -303,6 +335,15 @@ void NavigationManager::navigateToPoseResultCallback(
                    "canceled. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+
+      if (!paused_) {
+        goals_.pop();
+      } else {
+        mission_observer_->onMissionPaused();
+        paused_ = false;  // Reset paused state
+        return;
+      }
+
       if (goals_.empty()) {
         mission_observer_->onMissionFinished();
       } else {

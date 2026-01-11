@@ -16,8 +16,8 @@
         <plugin>kimchi_base/DiffDriveKimchi</plugin>
         <param name="left_wheel_name">${hardware_props['left_wheel_name']}</param>
         <param name="right_wheel_name">${hardware_props['right_wheel_name']}</param>
-        <param name="left_bumper_name">${hardware_props['left_bumper_name']}</param>
-        <param name="right_bumper_name">${hardware_props['right_bumper_name']}</param>
+        <param name="left_bumper_name">${hardware_props['bumpers']['left']['name']}</param>
+        <param name="right_bumper_name">${hardware_props['bumpers']['right']['name']}</param>
         <param name="button_name">${hardware_props['button_name']}</param>
         <param name="serial_device">${hardware_props['serial_device']}</param>
         <param name="baud_rate">${hardware_props['baud_rate']}</param>
@@ -41,15 +41,15 @@
         <state_interface name="position"/>
       </joint>
       <!-- Bumpers and button -->
-      <joint name="${hardware_props['left_bumper_name']}">
+      <gpio name="${hardware_props['bumpers']['left']['name']}">
         <state_interface name="position"/>
-      </joint>
-      <joint name="${hardware_props['right_bumper_name']}">
+      </gpio>
+      <gpio name="${hardware_props['bumpers']['right']['name']}">
         <state_interface name="position"/>
-      </joint>
-      <joint name="${hardware_props['button_name']}">
+      </gpio>
+      <gpio name="${hardware_props['button_name']}">
         <state_interface name="position"/>
-      </joint>
+      </gpio>
     </ros2_control>
 
   </xacro:macro>

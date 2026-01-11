@@ -87,7 +87,8 @@ def generate_launch_description():
         parameters=[{
             'node_names': ['slam_toolbox'],  # List of nodes to manage
             'autostart': False,  # Automatically start the lifecycle
-            'bond_timeout': 4.0
+            'bond_timeout': 4.0,
+            'use_sim_time': LaunchConfiguration("use_sim_time"),
         }],
         output='screen'
     )

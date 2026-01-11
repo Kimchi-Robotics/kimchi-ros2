@@ -87,7 +87,7 @@ def generate_launch_description():
         launch_arguments={
             "serial_port": '/dev/ttyUSB_LIDAR',
         }.items(),
-                condition=IfCondition(rplidar)
+        condition=IfCondition(rplidar)
     )
 
     kimchi_state_server_launch = IncludeLaunchDescription(
