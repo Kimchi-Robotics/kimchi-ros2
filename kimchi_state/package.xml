@@ -17,6 +17,7 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>sensor_msgs</depend>
+  <depend>control_msgs</depend>
   <depend>kimchi_interfaces</depend>
   <depend>kimchi_navigation</depend>
   <depend>lifecycle_msgs</depend>

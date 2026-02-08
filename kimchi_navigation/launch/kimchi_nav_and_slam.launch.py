@@ -10,6 +10,7 @@ from lifecycle_msgs.msg import Transition
 from launch_ros.actions import LifecycleNode
 from launch_ros.events.lifecycle import ChangeState
 from launch.events import matches_action
+from pathlib import Path
 
 def generate_launch_description():
     pkg_kimchi_nav = get_package_share_directory("kimchi_navigation")
@@ -32,16 +33,16 @@ def generate_launch_description():
 
     map_argunment = DeclareLaunchArgument(
         "map",
-        default_value="",
+        default_value=str(Path("kimchi_map.yaml").absolute()),
         description="Full path to the map file to use",
     )
 
     navigation_launch = IncludeLaunchDescription(
-        PythonLaunchDescriptionSource(os.path.join(pkg_nav2_bringup, "launch", "navigation_launch.py")),
+        PythonLaunchDescriptionSource(os.path.join(pkg_kimchi_nav, "launch", "nav2_navigation_launch.py")),
         launch_arguments={
             'params_file': os.path.join(pkg_kimchi_nav, 'params', 'nav2_params.yaml'),
             'use_sim_time': LaunchConfiguration('use_sim_time'),
-            'autostart': 'true',
+            'autostart': 'false',
             'log_level': 'info',
         }.items(),
     )
@@ -86,7 +87,8 @@ def generate_launch_description():
         parameters=[{
             'node_names': ['slam_toolbox'],  # List of nodes to manage
             'autostart': False,  # Automatically start the lifecycle
-            'bond_timeout': 4.0
+            'bond_timeout': 4.0,
+            'use_sim_time': LaunchConfiguration("use_sim_time"),
         }],
         output='screen'
     )

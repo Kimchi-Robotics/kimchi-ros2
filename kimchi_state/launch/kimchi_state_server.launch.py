@@ -19,7 +19,9 @@ def generate_launch_description():
     kimchi_state_server_node = Node(
         package="kimchi_state",
         executable="kimchi_state_server",
+        # prefix=['xterm -e gdb -ex run --args'],
         arguments=['--ros-args', '--log-level', 'INFO'],
+        parameters=[{'use_sim_time': LaunchConfiguration('use_sim_time')}]
     )
 
     kimchi_map_handler_node = Node(

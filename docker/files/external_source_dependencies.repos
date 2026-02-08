@@ -3,3 +3,7 @@ repositories:
     type: git
     url: https://github.com/glpuga/reusable_random_walker.git
     version: 401178ab1296c5bb3d3cddb62f18ce9e338d827f
+  nav2_virtual_layer:
+    type: git
+    url: https://github.com/sherif1152/nav2-virtual-layer.git
+    version: e1a3a04c2a53fcf4c440d4270a813351208895d5

@@ -9,7 +9,10 @@
 
 NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
                                      std::shared_ptr<MissionObserver> observer)
-    : node_(node), mission_observer_(observer), current_goal_(nullptr) {
+    : node_(node),
+      mission_observer_(observer),
+      current_goal_(nullptr),
+      paused_(false) {
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] NavigationManager initialized.");
 
@@ -21,6 +24,10 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
       std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
           "lifecycle_manager_localization", node_);
 
+  client_navigation_ =
+      std::make_unique<nav2_lifecycle_manager::LifecycleManagerClient>(
+          "lifecycle_manager_navigation", node_);
+
   global_localization_action_client_ptr_ =
       rclcpp_action::create_client<GlobalLocalization>(node_,
                                                        "global_localization");
@@ -30,18 +37,18 @@ NavigationManager::NavigationManager(std::shared_ptr<rclcpp::Node> node,
 }
 
 void NavigationManager::startSlam() {
+  std::chrono::seconds wait_duration(1);
+
   RCLCPP_INFO(node_->get_logger(),
               "[NavigationManager] Waiting for slam_toolbox service");
-  std::chrono::milliseconds wait_duration(100);  
   // If is_active() returns TIMEOUT it means the lifecycle manager is not
   // configured yet. Waiting for it to be configured is a must before calling
   // the startup service.
-  while (slam_toolbox_client_->is_active(std::chrono::nanoseconds(100000)) ==
+  while (slam_toolbox_client_->is_active(wait_duration) ==
          nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
     RCLCPP_INFO(node_->get_logger(),
                 "[NavigationManager] Waiting for "
                 "slam_toolbox_lifecycle_manager to be configured");
-    std::this_thread::sleep_for(wait_duration);
   }
 
   std::thread activate_slam_thread([this]() {
@@ -52,86 +59,118 @@ void NavigationManager::startSlam() {
 }
 
 void NavigationManager::stopSlam() {
-  std::thread stop_slam_thread([this]() {
-    slam_toolbox_client_->pause();
-  });
+  std::thread stop_slam_thread([this]() { slam_toolbox_client_->pause(); });
   stop_slam_thread.detach();
-
 }
 
-void NavigationManager::startNavigation() {
-  RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Navigation");
+void NavigationManager::startLocalization() {
+  RCLCPP_ERROR(node_->get_logger(), "[Navigation Manager] Start Localization");
 
-  std::chrono::milliseconds wait_duration(100);
+  std::chrono::seconds wait_duration(1);
 
-  // If is_active() returns TIMEOUT it means the lifecycle manager is not
-  // configured yet. Waiting for it to be configured is a must before calling
-  // the startup service.
-  while (client_localization_->is_active(std::chrono::nanoseconds(100000)) ==
-         nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+  auto client_loc_status = client_localization_->is_active(wait_duration);
+
+  if (client_loc_status == nav2_lifecycle_manager::SystemStatus::ACTIVE) {
     RCLCPP_INFO(node_->get_logger(),
-                "[NavigationManager] Waiting for "
-                "lifecycle_manager_localization to be configured");
-    std::this_thread::sleep_for(wait_duration);
+                "[NavigationManager] Localization already active.");
+    return;
+  } else if (client_loc_status ==
+             nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    while (client_localization_->is_active(wait_duration) ==
+           nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+      RCLCPP_INFO(node_->get_logger(),
+                  "[NavigationManager] Waiting for "
+                  "lifecycle_manager_localization to be configured");
+    }
   }
 
   std::thread startup_loc_thread([this]() {
     client_localization_->startup();
     mission_observer_->onNav2LocalizationStarted();
   });
-
   startup_loc_thread.detach();
 }
 
-void NavigationManager::stopNavigation() {}
+void NavigationManager::stopLocalization() {}
+
+void NavigationManager::startNavigation() {
+  RCLCPP_INFO(node_->get_logger(), "[Navigation Manager] Start Navigation");
+
+  std::chrono::seconds wait_duration(1);
+
+  auto client_nav_status = client_navigation_->is_active(wait_duration);
+
+  if (client_nav_status == nav2_lifecycle_manager::SystemStatus::ACTIVE) {
+    RCLCPP_INFO(node_->get_logger(),
+                "[NavigationManager] Navigation already active.");
+    return;
+  } else if (client_nav_status ==
+             nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+    while (client_navigation_->is_active(wait_duration) ==
+           nav2_lifecycle_manager::SystemStatus::TIMEOUT) {
+      RCLCPP_INFO(node_->get_logger(),
+                  "[NavigationManager] Waiting for "
+                  "lifecycle_manager_navigation to be configured");
+    }
+  }
+
+  std::thread startup_nav_thread([this]() { client_navigation_->startup(); });
+
+  startup_nav_thread.detach();
+}
 
 void NavigationManager::startLocating(const Point2D& point) {
   using namespace std::placeholders;
 
-  RCLCPP_DEBUG(node_->get_logger(),
+  RCLCPP_INFO(node_->get_logger(),
                "[NavigationManager] Goal received: (%f, %f)", point.x, point.y);
 
   auto localize_goal = GlobalLocalization::Goal();
   localize_goal.pose_estimate.x = point.x;
   localize_goal.pose_estimate.y = point.y;
 
-  auto goal_handle_future = global_localization_action_client_ptr_->async_send_goal(localize_goal);
-  if (goal_handle_future.wait_for(std::chrono::seconds(5)) != std::future_status::ready)
-  {
-    RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was not accepted by server in time.");
+  auto goal_handle_future =
+      global_localization_action_client_ptr_->async_send_goal(localize_goal);
+  if (goal_handle_future.wait_for(std::chrono::seconds(5)) !=
+      std::future_status::ready) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "[NavigationManager] LocalizationGoal was not accepted by "
+                 "server in time.");
     mission_observer_->onLocalizationCancelled();
   }
 
   auto goal_handle = goal_handle_future.get();
   if (!goal_handle) {
-    RCLCPP_ERROR(node_->get_logger(), "[NavigationManager] LocalizationGoal was rejected by server.");
+    RCLCPP_ERROR(
+        node_->get_logger(),
+        "[NavigationManager] LocalizationGoal was rejected by server.");
     mission_observer_->onLocalizationCancelled();
   }
 
-  auto result_future = global_localization_action_client_ptr_->async_get_result(goal_handle);
+  auto result_future =
+      global_localization_action_client_ptr_->async_get_result(goal_handle);
   mission_observer_->onLocalizationStarted();
-  RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Goal accepted. Waiting for result for up to %d seconds...", kMaxGlobalLocalizationWaitTimeSeconds);
+  RCLCPP_INFO(node_->get_logger(),
+              "[Worker Thread] Goal accepted. Waiting for result for up to %d "
+              "seconds...",
+              kMaxGlobalLocalizationWaitTimeSeconds);
 
   // Block and wait for the result for a maximum of 30 seconds.
-  std::future_status status = result_future.wait_for(std::chrono::seconds(kMaxGlobalLocalizationWaitTimeSeconds));
+  std::future_status status = result_future.wait_for(
+      std::chrono::seconds(kMaxGlobalLocalizationWaitTimeSeconds));
 
-  if (status == std::future_status::ready)
-  {
+  if (status == std::future_status::ready) {
     // Result was received within the 30-second window
     auto result = result_future.get();
-    RCLCPP_INFO(
-        node_->get_logger(),
-        "[NavigationManager] Robot localized!");
+    RCLCPP_INFO(node_->get_logger(), "[NavigationManager] Robot localized!");
     mission_observer_->onLocalizationSucceded();
-  }
-  else
-  {
+  } else {
     // The future timed out after 30 seconds
-    RCLCPP_WARN(
-        node_->get_logger(),
-        "[ERROR NavigationManager] Robot not localized in 1 minute.");
+    RCLCPP_WARN(node_->get_logger(),
+                "[ERROR NavigationManager] Robot not localized in 1 minute.");
 
-    RCLCPP_INFO(node_->get_logger(), "[Worker Thread] Sending cancel request to the server.");
+    RCLCPP_INFO(node_->get_logger(),
+                "[Worker Thread] Sending cancel request to the server.");
     global_localization_action_client_ptr_->async_cancel_goal(goal_handle);
     mission_observer_->onLocalizationCancelled();
   }
@@ -168,11 +207,29 @@ void NavigationManager::cancelCurrentGoal() {
   navigate_to_pose_action_client_ptr_->async_cancel_all_goals();
 }
 
+void NavigationManager::pauseCurrentGoal() {
+  if (current_goal_ == nullptr) {
+    RCLCPP_INFO(node_->get_logger(), "No current goal to pause.");
+    return;
+  }
+
+  cancelCurrentGoal();
+  paused_ = true;
+}
+
 void NavigationManager::goToNextGoal() {
   using namespace std::placeholders;
   if (goals_.empty()) {
     RCLCPP_DEBUG(node_->get_logger(),
                  "[NavigationManager] No goals to navigate to.");
+    return;
+  }
+
+  if (!navigate_to_pose_action_client_ptr_->wait_for_action_server(
+          std::chrono::seconds(5))) {
+    RCLCPP_ERROR(node_->get_logger(),
+                 "/navigate_to_pose action server not available after waiting");
+    while (!goals_.empty()) goals_.pop();
     return;
   }
 
@@ -196,7 +253,6 @@ void NavigationManager::goToNextGoal() {
                                                        send_goal_options);
 
   current_goal_ = std::make_unique<Point2D>(goals_.front());
-  goals_.pop();
 }
 
 void NavigationManager::onNewGoal() {
@@ -215,6 +271,11 @@ void NavigationManager::navigateToPoseGoalResponseCallback(
     RCLCPP_ERROR(
         node_->get_logger(),
         "[NavigationManager] Goal was rejected by navigateToPose server");
+    while (!goals_.empty()) {
+      current_goal_ = nullptr;
+      goals_.pop();
+    }
+    mission_observer_->onMissionFinished();
   } else {
     RCLCPP_INFO(node_->get_logger(),
                 "[NavigationManager] Goal accepted by navigateToPose server, "
@@ -231,9 +292,16 @@ void NavigationManager::navigateToPoseResultCallback(
           node_->get_logger(),
           "[NavigationManager] navigateToPoseResultCallback: Goal reached!");
 
+      goals_.pop();
       if (goals_.empty()) {
+        RCLCPP_INFO(node_->get_logger(),
+                    "[NavigationManager] navigateToPoseResultCallback: No more "
+                    "goals to process");
         mission_observer_->onMissionFinished();
       } else {
+        RCLCPP_INFO(node_->get_logger(),
+                    "[NavigationManager] navigateToPoseResultCallback: "
+                    "Processing next goal");
         mission_observer_->onGoalReached(*current_goal_);
       }
       current_goal_.reset();  // Clear the current goal after success
@@ -245,13 +313,37 @@ void NavigationManager::navigateToPoseResultCallback(
                    "aborted. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
-      return;
+      if (!paused_) {
+        goals_.pop();
+      } else {
+        mission_observer_->onMissionPaused();
+        paused_ = false;  // Reset paused state
+        return;
+      }
+
+      if (goals_.empty()) {
+        mission_observer_->onMissionFinished();
+      } else {
+        mission_observer_->onGoalReached(*current_goal_);
+      }
+      current_goal_.reset();  // Clear the current goal after success
+
+      break;
     case rclcpp_action::ResultCode::CANCELED:
       RCLCPP_DEBUG(node_->get_logger(),
                    "[NavigationManager] navigateToPoseResultCallback: Goal was "
                    "canceled. Error "
                    "code: %i. Message: %s",
                    result.result->error_code, result.result->error_msg.c_str());
+
+      if (!paused_) {
+        goals_.pop();
+      } else {
+        mission_observer_->onMissionPaused();
+        paused_ = false;  // Reset paused state
+        return;
+      }
+
       if (goals_.empty()) {
         mission_observer_->onMissionFinished();
       } else {
