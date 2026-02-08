@@ -111,6 +111,7 @@ def generate_launch_description():
         # Launch this after AMCL is started
         on_exit=LogInfo(msg="Initial pose estimator has completed its task"),
     )
+
     # RViz
     rviz = Node(
         package="rviz2",
