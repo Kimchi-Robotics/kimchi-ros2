@@ -17,6 +17,7 @@ find_package(rclcpp_components REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(control_msgs REQUIRED)
 find_package(std_srvs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
@@ -25,7 +26,7 @@ find_package(nav2_lifecycle_manager REQUIRED)
 find_package(kimchi_interfaces REQUIRED)
 find_package(kimchi_navigation REQUIRED)
 
-add_executable(kimchi_state_server src/kimchi_state_server.cpp src/navigation_manager.cpp)
+add_executable(kimchi_state_server src/kimchi_state_server.cpp src/navigation_manager.cpp src/bumper_obstacle_publisher.cpp)
 ament_target_dependencies(kimchi_state_server PUBLIC
   "rclcpp"
   "rclcpp_action"
@@ -33,6 +34,7 @@ ament_target_dependencies(kimchi_state_server PUBLIC
   "std_msgs"
   "geometry_msgs"
   "sensor_msgs"
+  "control_msgs"
   "kimchi_interfaces"
   "std_srvs"
   "nav2_msgs"

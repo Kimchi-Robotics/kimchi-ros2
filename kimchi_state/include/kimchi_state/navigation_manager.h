@@ -7,9 +7,10 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include "kimchi_interfaces/action/localizing.hpp"
-#include "kimchi_navigation/global_localization.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
 #include "point_2d.h"
+
+#include "kimchi_navigation/global_localization.hpp"
 
 /**
  * Class to manage navigation-related functionalities.
@@ -31,7 +32,7 @@ class NavigationManager {
     virtual void onNav2LocalizationStarted() = 0;
     virtual void onSlamStarted() = 0;
 
-    /**
+   /**
      * Called when the robot starts a new mission.
      * @param path The initial path for the mission.
      */
@@ -69,6 +70,11 @@ class NavigationManager {
      * Called when the robot gets localized correctly.
      */
     virtual void onLocalizationSucceded() = 0;
+
+    /**
+     * Called when the mission is paused.
+     */
+    virtual void onMissionPaused() = 0;
   };
 
   NavigationManager(std::shared_ptr<rclcpp::Node> node,
@@ -96,11 +102,13 @@ class NavigationManager {
   void addGoalToMission(const Point2D& point);
   void goToNextGoal();
   void cancelCurrentGoal();
+  void pauseCurrentGoal();
   void cancelMission();
 
   // Localizes the robot around a given pose.
   void localizeAround(const Point2D& point);
 
+  const std::queue<Point2D>& goals() const { return goals_; }
  private:
   using GlobalLocalization = kimchi_interfaces::action::Localizing;
   using GoalHandleGlobalLocalization =
@@ -127,17 +135,22 @@ class NavigationManager {
   std::unique_ptr<Point2D> current_goal_;
   std::queue<Point2D> goals_;
 
+  // This is a little triquiñuela to handle the case when the navigation is paused.
+  // It is required because actions don't provide a pause option. When pausing, we cancel the current goal,
+  // but we don't want to pop it from the queue. When resuming, we want to continue to the same goal.
+  bool paused_;
+
   rclcpp_action::Client<GlobalLocalization>::SharedPtr
       global_localization_action_client_ptr_;
   rclcpp_action::Client<NavigateToPose>::SharedPtr
       navigate_to_pose_action_client_ptr_;
 
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-      client_localization_;
+    client_localization_;
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-      slam_toolbox_client_;
+    slam_toolbox_client_;
   std::unique_ptr<nav2_lifecycle_manager::LifecycleManagerClient>
-      client_navigation_;
+    client_navigation_;
 
   const int kMaxGlobalLocalizationWaitTimeSeconds{30};
 };
