@@ -37,9 +37,9 @@ GlobalLocalizationServer::GlobalLocalizationServer()
       std::bind(&GlobalLocalizationServer::handleAccepted, this, _1));
 
   // Declare parameters for convergence thresholds
-  this->declare_parameter<double>("position_covariance_threshold",
+  node_->declare_parameter<double>("position_covariance_threshold",
                                   0.5);  // meters^2
-  this->declare_parameter<double>("orientation_covariance_threshold",
+  node_->declare_parameter<double>("orientation_covariance_threshold",
                                   0.05);  // radians^2
 
   // Get the configured thresholds
@@ -270,7 +270,6 @@ void GlobalLocalizationServer::CheckForObstacles() {
   }
 
   double min_range = lidar_reading_->range_max;
-  int min_index = -1;
 
   for (size_t i = 0; i < lidar_reading_->ranges.size(); ++i) {
     if (std::isfinite(lidar_reading_->ranges[i]) &&
