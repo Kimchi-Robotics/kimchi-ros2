@@ -96,9 +96,9 @@ def plot_odometry(df_odom, output_dir):
                      markersize=10, label='Start')
     axes[0, 0].plot(df_odom['pos_x'].iloc[-1], df_odom['pos_y'].iloc[-1], 'ro', 
                      markersize=10, label='End')
-    axes[0, 0].set_xlabel('X Position (m)')
-    axes[0, 0].set_ylabel('Y Position (m)')
-    axes[0, 0].set_title('Robot Trajectory')
+    axes[0, 0].set_xlabel('X (m)')
+    axes[0, 0].set_ylabel('Y (m)')
+    axes[0, 0].set_title('Trayectoria del Robot')
     axes[0, 0].grid(True)
     axes[0, 0].legend()
     axes[0, 0].axis('equal')
@@ -106,25 +106,25 @@ def plot_odometry(df_odom, output_dir):
     # Plot 2: Position over time
     axes[0, 1].plot(df_odom['time'], df_odom['pos_x'], 'r-', label='X')
     axes[0, 1].plot(df_odom['time'], df_odom['pos_y'], 'g-', label='Y')
-    axes[0, 1].set_xlabel('Time (s)')
-    axes[0, 1].set_ylabel('Position (m)')
-    axes[0, 1].set_title('Position vs Time')
+    axes[0, 1].set_xlabel('Tiempo (s)')
+    axes[0, 1].set_ylabel('Posición (m)')
+    axes[0, 1].set_title('Posición vs Tiempo')
     axes[0, 1].grid(True)
     axes[0, 1].legend()
     
     # Plot 3: Yaw angle over time
     axes[1, 0].plot(df_odom['time'], np.degrees(df_odom['yaw']), 'b-', linewidth=2)
-    axes[1, 0].set_xlabel('Time (s)')
-    axes[1, 0].set_ylabel('Yaw Angle (degrees)')
-    axes[1, 0].set_title('Yaw Angle vs Time')
+    axes[1, 0].set_xlabel('Tiempo (s)')
+    axes[1, 0].set_ylabel('Ángulo de Yaw (grados)')
+    axes[1, 0].set_title('Ángulo de Yaw vs Tiempo')
     axes[1, 0].grid(True)
     
     # Plot 4: Velocities over time
-    axes[1, 1].plot(df_odom['time'], df_odom['linear_vel_x'], 'r-', label='Linear X')
-    axes[1, 1].plot(df_odom['time'], df_odom['angular_vel_z'], 'b-', label='Angular Z')
-    axes[1, 1].set_xlabel('Time (s)')
-    axes[1, 1].set_ylabel('Velocity (m/s or rad/s)')
-    axes[1, 1].set_title('Velocities vs Time (from Odometry)')
+    axes[1, 1].plot(df_odom['time'], df_odom['linear_vel_x'], 'r-', label='Velocidad Lineal X')
+    axes[1, 1].plot(df_odom['time'], df_odom['angular_vel_z'], 'b-', label='Velocidad Angular Z')
+    axes[1, 1].set_xlabel('Tiempo (s)')
+    axes[1, 1].set_ylabel('Velocidad (m/s o rad/s)')
+    axes[1, 1].set_title('Velocidades vs Tiempo (desde Odometría)')
     axes[1, 1].grid(True)
     axes[1, 1].legend()
     
@@ -160,9 +160,9 @@ def plot_cmd_vel(df_cmd, output_dir):
     
     # Plot 2: Angular velocities
     axes[1].plot(df_cmd['time'], df_cmd['angular_vel_z'], 'b-', label='Angular Z')
-    axes[1].set_xlabel('Time (s)')
-    axes[1].set_ylabel('Angular Velocity (rad/s)')
-    axes[1].set_title('Angular Velocity Commands')
+    axes[1].set_xlabel('Tiempo (s)')
+    axes[1].set_ylabel('Velocidad Angular (rad/s)')
+    axes[1].set_title('Comandos de Velocidad Angular')
     axes[1].grid(True)
     axes[1].legend()
     
@@ -181,34 +181,45 @@ def plot_comparison(df_odom, df_cmd, output_dir):
     
     # Create time columns
     df_odom['time'] = df_odom['timestamp_sec'] + df_odom['timestamp_nsec'] * 1e-9
-    df_odom['time'] = df_odom['time'] - df_odom['time'].iloc[0]
-    
     df_cmd['time'] = df_cmd['timestamp_sec'] + df_cmd['timestamp_nsec'] * 1e-9
-    df_cmd['time'] = df_cmd['time'] - df_cmd['time'].iloc[0]
+
+    # Setting the same start point for both datasets 
+    start_plot_time = min(df_odom['time'].iloc[0], df_cmd['time'].iloc[0])
+
+    df_odom['time'] = df_odom['time'] - start_plot_time
+    df_cmd['time'] = df_cmd['time'] - start_plot_time
+
+    print(df_odom['time'].iloc[0])
+    print(df_odom['time'][0])
     
+
+    print(df_cmd['time'].iloc[0])
+    print(df_cmd['time'][0])
+
+
     # Create plots
     fig, axes = plt.subplots(2, 1, figsize=(15, 8))
-    fig.suptitle('Commanded vs Actual Velocities', fontsize=16)
+    fig.suptitle('Velocidades Comandadas vs Reales', fontsize=16)
     
     # Plot 1: Linear velocity comparison
     axes[0].plot(df_cmd['time'], df_cmd['linear_vel_x'], 'r--', 
-                 label='Commanded Linear X', linewidth=2)
+                 label='Comando de Velocidad Lineal X', linewidth=2)
     axes[0].plot(df_odom['time'], df_odom['linear_vel_x'], 'b-', 
-                 label='Actual Linear X', linewidth=1, alpha=0.7)
-    axes[0].set_xlabel('Time (s)')
-    axes[0].set_ylabel('Linear Velocity (m/s)')
-    axes[0].set_title('Linear Velocity: Commanded vs Actual')
+                 label='Velocidad Lineal X Real', linewidth=1, alpha=0.7)
+    axes[0].set_xlabel('Tiempo (s)')
+    axes[0].set_ylabel('Velocidad Lineal (m/s)')
+    axes[0].set_title('Velocidad Lineal: Comandada vs Real')
     axes[0].grid(True)
     axes[0].legend()
     
     # Plot 2: Angular velocity comparison
     axes[1].plot(df_cmd['time'], df_cmd['angular_vel_z'], 'r--', 
-                 label='Commanded Angular Z', linewidth=2)
+                 label='Comando de Velocidad Angular Z', linewidth=2)
     axes[1].plot(df_odom['time'], df_odom['angular_vel_z'], 'b-', 
-                 label='Actual Angular Z', linewidth=1, alpha=0.7)
-    axes[1].set_xlabel('Time (s)')
-    axes[1].set_ylabel('Angular Velocity (rad/s)')
-    axes[1].set_title('Angular Velocity: Commanded vs Actual')
+                 label='Velocidad Angular Z Real', linewidth=1, alpha=0.7)
+    axes[1].set_xlabel('Tiempo (s)')
+    axes[1].set_ylabel('Velocidad Angular (rad/s)')
+    axes[1].set_title('Velocidad Angular: Comandada vs Real')
     axes[1].grid(True)
     axes[1].legend()
     
@@ -260,8 +271,8 @@ def main():
     if df_odom is not None:
         plot_odometry(df_odom, output_dir)
     
-    if df_cmd is not None:
-        plot_cmd_vel(df_cmd, output_dir)
+    # if df_cmd is not None:
+    #     plot_cmd_vel(df_cmd, output_dir)
     
     if df_odom is not None and df_cmd is not None:
         plot_comparison(df_odom, df_cmd, output_dir)
