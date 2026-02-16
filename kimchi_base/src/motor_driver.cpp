@@ -79,7 +79,7 @@ std::optional<MotorDriver::HardwareData> MotorDriver::ReadHardwareData() {
   // Check if all delimiters were found
   if (del_pos_1 == std::string::npos || del_pos_2 == std::string::npos || del_pos_3 == std::string::npos ||
       del_pos_4 == std::string::npos) {
-      std::cerr << "Error: Not enough delimiters found in response" << std::endl;
+      std::cerr << "Error: Not enough delimiters found in response. msg: " << response << std::endl;
       return std::nullopt;
   }
 
