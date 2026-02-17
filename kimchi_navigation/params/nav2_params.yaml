@@ -1,10 +1,10 @@
 amcl:
   ros__parameters:
-    alpha1: 0.2
-    alpha2: 0.2
-    alpha3: 0.2
-    alpha4: 0.2
-    alpha5: 0.2
+    alpha1: 0.1
+    alpha2: 0.1
+    alpha3: 0.1
+    alpha4: 0.1
+    alpha5: 0.1
     base_frame_id: "base_footprint"
     beam_skip_distance: 0.5
     beam_skip_error_threshold: 0.9
@@ -22,16 +22,16 @@ amcl:
     odom_frame_id: "odom"
     pf_err: 0.05
     pf_z: 0.99
-    recovery_alpha_fast: 0.0
-    recovery_alpha_slow: 0.0
+    recovery_alpha_fast: 0.1
+    recovery_alpha_slow: 0.001
     resample_interval: 1
     robot_model_type: "nav2_amcl::DifferentialMotionModel"
     save_pose_rate: 0.5
     sigma_hit: 0.2
     tf_broadcast: true
     transform_tolerance: 0.5
-    update_min_a: 0.2
-    update_min_d: 0.25
+    update_min_a: 0.1
+    update_min_d: 0.1
     z_hit: 0.5
     z_max: 0.05
     z_rand: 0.5
@@ -338,7 +338,7 @@ planner_server:
       lattice_filepath: "/opt/ros/jazzy/share/nav2_smac_planner/sample_primitives/5cm_resolution/0.5m_turning_radius/diff/output.json"                # The filepath to the state lattice graph
       lookup_table_size: 20.0             # Size of the dubin/reeds-sheep distance window to cache, in meters.
       cache_obstacle_heuristic: true      # Cache the obstacle map dynamic programming distance expansion heuristic between subsequent replannings of the same goal location. Dramatically speeds up replanning performance (40x) if costmap is largely static.
-      allow_reverse_expansion: false      # If true, allows the robot to use the primitives to expand in the mirrored opposite direction of the current robot's orientation (to reverse).
+      allow_reverse_expansion: true      # If true, allows the robot to use the primitives to expand in the mirrored opposite direction of the current robot's orientation (to reverse).
       coarse_search_resolution: 1         # Number of bins to skip when doing a coarse search for the path. Only used for all_direction goal heading mode.
       goal_heading_mode: "DEFAULT"        # DEFAULT, BIDIRECTIONAL, ALL_DIRECTION
       smooth_path: True                   # If true, does a simple and quick smoothing post-processing to the path
