@@ -95,6 +95,7 @@ class KimchiStateServer
    */
   void callGetMapInfoService();
   std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr> saveMap();
+  std::shared_future<std_srvs::srv::Trigger::Response::SharedPtr> finishMap();
   void changeState(RobotState new_state);
   void startLocalization();
   void startNavigation();
@@ -177,6 +178,7 @@ class KimchiStateServer
   rclcpp::Client<nav2_msgs::srv::SaveMap>::SharedPtr save_map_client_;
   rclcpp::Client<kimchi_interfaces::srv::MapInfo>::SharedPtr
       get_map_info_client_;
+  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr finish_map_client_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;

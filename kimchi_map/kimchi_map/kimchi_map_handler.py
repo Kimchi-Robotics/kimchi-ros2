@@ -1,9 +1,11 @@
 import os
 from time import sleep
 import base64
+from urllib import response
 import yaml
 from threading import Thread, Lock
 import sys
+import yaml
 
 import rclpy
 from rclpy.node import Node
@@ -12,8 +14,10 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, HistoryPolicy, DurabilityPo
 from nav2_msgs.srv import SaveMap
 from geometry_msgs.msg import Pose2D
 from kimchi_interfaces.msg import RobotState as RobotStateMsg
+from std_srvs.srv import Trigger
 
 from kimchi_map.map_info import MapInfo
+from kimchi_map.map_post_processing import clean_and_save_map
 from kimchi_interfaces.srv import MapInfo as MapInfoSrv
 from kimchi_grpc_server.robot_state import RobotState
 
@@ -48,6 +52,9 @@ class KimchiMapHandler(Node):
 
         self._get_map_info_service = self.create_service(
             MapInfoSrv, '/kimchi_map/get_map_info', self.get_map_info_callback)
+
+        self._finish_map_service = self.create_service(
+            Trigger, '/kimchi_map/finish_map', self.finish_map_callback)
 
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -90,10 +97,10 @@ class KimchiMapHandler(Node):
             return
 
         self._robot_state = new_state
-        if self._map_saver_thread.is_alive() and self._robot_state != RobotState.MAPPING_WITH_TELEOP and self._robot_state != RobotState.MAPPING_WITH_EXPLORATION:
-            self.get_logger().info('Stopping map saving thread')
-            self._keep_saving_map = False
-            self._map_saver_thread.join()
+        # if self._map_saver_thread.is_alive() and self._robot_state != RobotState.MAPPING_WITH_TELEOP and self._robot_state != RobotState.MAPPING_WITH_EXPLORATION:
+        #     self.get_logger().info('Stopping map saving thread')
+        #     self._keep_saving_map = False
+        #     self._map_saver_thread.join()
 
         # Handle state change
         if new_state == RobotState.NO_MAP:
@@ -149,6 +156,36 @@ class KimchiMapHandler(Node):
             return None
 
         return map_bytes
+
+    def finish_map_callback(self, request, response):
+        self.get_logger().info('Stopping map saving thread')
+        self._keep_saving_map = False
+        self._map_saver_thread.join()
+        self.get_logger().info('Cleaning map')
+        
+        current_map_path = os.path.abspath(f"current_mapping_map.{self._map_file_format}")
+        final_map_path = os.path.abspath(f"{self._map_file_name}.{self._map_file_format}")
+        clean_and_save_map(
+            input_path=current_map_path,
+            min_area=1,
+            kernel_size=3,
+            morph_iterations=0,
+            free_thresh=230,
+            occupied_thresh=50,
+            output_path=final_map_path
+        )
+        # Read
+        with open(os.path.abspath(f"current_mapping_map.yaml")) as f:
+            data = yaml.safe_load(f)
+
+        # Modify
+        data["image"] = final_map_path
+
+        # Write
+        with open(os.path.abspath(f"{self._map_file_name}.yaml"), "w") as f:
+            yaml.dump(data, f, default_flow_style=False)
+
+        return response
 
     # Save map in a loop until the thread is stopped
     def save_map_loop(self):
