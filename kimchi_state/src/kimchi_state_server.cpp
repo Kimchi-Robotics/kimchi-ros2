@@ -147,6 +147,7 @@ void KimchiStateServer::initialize() {
   // Subscribe to the save map service
   save_map_client_ =
       node_->create_client<nav2_msgs::srv::SaveMap>("/map_saver/save_map");
+  finish_map_client_ = node_->create_client<std_srvs::srv::Trigger>("/kimchi_map/finish_map");
 
   start_slam_service_ = node_->create_service<std_srvs::srv::Trigger>(
       "/kimchi_state_server/start_slam",
@@ -324,9 +325,11 @@ void KimchiStateServer::startLocalizationCallback(
 
   if (state_ == RobotState::MAPPING_WITH_TELEOP) {
     std::thread map_saved_callback_thread([this]() {
-      auto save_map_future = saveMap();
+      // auto save_map_future = saveMap();
+      auto finish_map_future = finishMap();
       navigation_manager_->stopSlam();
-      save_map_future.wait();
+      // save_map_future.wait();
+      finish_map_future.wait();
       startLocalization();
     });
     map_saved_callback_thread.detach();
@@ -370,6 +373,14 @@ void KimchiStateServer::addGoalToMissionCallback(
   navigation_manager_->addGoalToMission(
       Point2D(request->goal.x, request->goal.y));
   response->success = true;
+}
+
+std::shared_future<std_srvs::srv::Trigger::Response::SharedPtr> KimchiStateServer::finishMap() {
+  finish_map_client_->wait_for_service();
+  auto request = std::make_shared<std_srvs::srv::Trigger::Request>();
+
+  auto future = finish_map_client_->async_send_request(request);
+  return future.share();  // Return the future to allow waiting for completion
 }
 
 std::shared_future<nav2_msgs::srv::SaveMap::Response::SharedPtr>
