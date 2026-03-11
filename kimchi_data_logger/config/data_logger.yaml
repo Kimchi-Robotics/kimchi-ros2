@@ -1,0 +1,15 @@
+# Configuration for the data logger node
+data_logger_node:
+  ros__parameters:
+    # Directory where CSV files will be saved
+    output_dir: "~/kimchi_logs"
+    
+    # Topics to subscribe to
+    odom_topic: "/odom"
+    cmd_vel_topic: "/cmd_vel"
+    
+    # Logging rate in Hz
+    log_rate: 10.0
+    
+    # Session name (empty string uses timestamp)
+    session_name: ""

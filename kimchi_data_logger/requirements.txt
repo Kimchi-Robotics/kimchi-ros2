@@ -1,0 +1,7 @@
+# Python dependencies for kimchi_data_logger
+# Install with: pip3 install -r requirements.txt
+
+# For plotting and data analysis
+matplotlib>=3.5.0
+pandas>=1.4.0
+numpy>=1.21.0
