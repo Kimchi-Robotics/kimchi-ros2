@@ -14,10 +14,27 @@ COPY docker/requirements.txt .
 RUN apt-get update && apt-get install --no-install-recommends -y $(cat requirements.txt)
 RUN rm requirements.txt
 
-# Create a user with passwordless sudo
-RUN adduser --uid $USERID --gecos "ekumen developer" --disabled-password $USER
-RUN adduser $USER sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# If a user with the host's UID exists, rename them to match the host.
+# This avoids file permission issues with mounted volumes.
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    # Check if a user with the target UID exists.
+    if getent passwd "$USERID" > /dev/null; then \
+        # If they exist, find their current username.
+        ORIGINAL_USER=$(getent passwd "$USERID" | cut -d: -f1); \
+        echo "User '$ORIGINAL_USER' has a conflicting UID ($USERID). Renaming to '$USER'."; \
+        \
+        # Rename the user's group and the user account.
+        groupmod -n $USER $ORIGINAL_USER && \
+        usermod -l $USER -d /home/$USER -m $ORIGINAL_USER && \
+        \
+        # Grant the renamed user passwordless sudo access.
+        adduser $USER sudo && \
+        echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers; \
+    else \
+        RUN adduser --uid $USERID --gecos "ekumen developer" --disabled-password $USER
+        RUN adduser $USER sudo
+        RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+    fi
 RUN echo "export QT_X11_NO_MITSHM=1" >> /home/$USER/.bashrc
 RUN echo "export IGN_IP=127.0.0.1" >> /home/$USER/.bashrc
 
