@@ -1,0 +1,10 @@
+free_thresh: 0.196
+image: /home/igallesio/ws/kimchi_map.png
+mode: trinary
+negate: 0
+occupied_thresh: 0.65
+origin:
+- 9.589
+- -11.303
+- 0
+resolution: 0.05
